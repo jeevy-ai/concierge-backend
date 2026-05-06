@@ -1,0 +1,24 @@
+{
+  "name": "@jeevy/ai-action-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "tsc -p tsconfig.json --noEmit && wrangler deploy --dry-run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@jeevy/contracts": "workspace:*",
+    "hono": "^4.6.20"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8",
+    "wrangler": "^3.105.0"
+  }
+}
