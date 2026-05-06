@@ -11,6 +11,7 @@
     "deploy": "wrangler deploy"
   },
   "dependencies": {
+    "@google/genai": "^1.52.0",
     "@jeevy/contracts": "workspace:*",
     "hono": "^4.6.20"
   },
