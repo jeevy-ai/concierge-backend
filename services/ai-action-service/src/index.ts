@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runDailyAtRiskScan } from "./lib/save-interview.js";
 import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
+import { registerOutreachRoutes } from "./routes/outreach.js";
 import { registerSaveInterviewRoutes } from "./routes/save-interview.js";
 import { registerStripeWebhookRoute } from "./routes/stripe-webhook.js";
 
@@ -22,6 +23,8 @@ export type Env = {
   FROM_EMAIL: string;
   INTERNAL_API_SECRET: string;
   CLERK_SECRET_KEY: string;
+  // KV namespace for policy engine kill-switch: concierge.external_actions.enabled
+  POLICY_KV: KVNamespace;
 };
 
 export type Variables = {
@@ -47,6 +50,9 @@ registerStripeWebhookRoute(app);
 
 // Save-interview event ingestion (internal service-to-service, secret-gated)
 registerSaveInterviewRoutes(app);
+
+// Outreach adapter with policy engine (internal, secret-gated)
+registerOutreachRoutes(app);
 
 // Protected routes require Clerk auth + active Stripe subscription
 const protected_ = app.use("/api/protected/*", clerkAuthMiddleware(), entitlementGuard());

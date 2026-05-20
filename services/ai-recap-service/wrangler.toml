@@ -5,3 +5,74 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "development"
+
+# Queue consumer: processes recap jobs from tasks-default.
+# Dead letters after max_retries=3 go to tasks-default-dlq.
+[[queues.consumers]]
+queue = "tasks-default"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "tasks-default-dlq"
+
+# Dead-letter consumer: detects and alerts on unprocessable jobs.
+[[queues.consumers]]
+queue = "tasks-default-dlq"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 1
+
+# Producer binding used by the /api/queue/requeue endpoint.
+# Provision: `wrangler queues create tasks-default`
+[[queues.producers]]
+queue = "tasks-default"
+binding = "TASKS_QUEUE"
+
+# --- Named environments ---
+# Deploy: `wrangler deploy --env staging` / `wrangler deploy --env production`
+
+[env.staging]
+name = "ai-recap-service-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+[[env.staging.queues.consumers]]
+queue = "tasks-default-staging"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "tasks-default-staging-dlq"
+
+[[env.staging.queues.consumers]]
+queue = "tasks-default-staging-dlq"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 1
+
+[[env.staging.queues.producers]]
+queue = "tasks-default-staging"
+binding = "TASKS_QUEUE"
+
+[env.production]
+name = "ai-recap-service-production"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+
+[[env.production.queues.consumers]]
+queue = "tasks-default"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "tasks-default-dlq"
+
+[[env.production.queues.consumers]]
+queue = "tasks-default-dlq"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 1
+
+[[env.production.queues.producers]]
+queue = "tasks-default"
+binding = "TASKS_QUEUE"
