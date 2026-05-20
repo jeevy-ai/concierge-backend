@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 4174",
+    "dev": "NODE_ENV=development next dev -p 4174",
     "build": "next build",
     "start": "next start -p 4174",
     "typecheck": "tsc --noEmit"
