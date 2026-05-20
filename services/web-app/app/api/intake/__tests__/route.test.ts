@@ -65,6 +65,7 @@ describe('POST /api/intake', () => {
     expect(appendToSheet).toHaveBeenCalledOnce();
   });
 
+
   it('returns 400 with field errors for an invalid payload', async () => {
     const invalid = { ...VALID_PAYLOAD, email: 'not-an-email', goals: [] };
     const { status, json } = await callPost(invalid);
