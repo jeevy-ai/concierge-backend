@@ -61,7 +61,7 @@ export function StepMessaging({ selected, otherValue, onChange, onNext }: StepMe
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
             canProceed
               ? "bg-indigo-600 text-white hover:-translate-y-px hover:shadow-md active:translate-y-0"
-              : "bg-gray-100 text-gray-400 cursor-not-allowed",
+              : "bg-gray-100 text-gray-500 cursor-not-allowed",
           ].join(" ")}
         >
           Next →

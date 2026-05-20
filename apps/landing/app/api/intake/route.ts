@@ -34,7 +34,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!result.success) {
     return NextResponse.json(
       { error: "Validation failed", fields: result.error.flatten().fieldErrors },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

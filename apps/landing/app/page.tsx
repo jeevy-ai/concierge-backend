@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { track, trackPageView, observeSection } from "./lib/analytics";
+import { observeSection, track, trackPageView } from "./lib/analytics";
 
 const PRICE_MONTHLY = 29;
 const PRICE_ANNUAL = 249;
@@ -10,15 +10,26 @@ const PRICE_ANNUAL = 249;
 export default function HomePage() {
   useEffect(() => {
     trackPageView();
-    observeSection("[data-analytics='video_section']", "founder_video_viewed", { section: "founder_video" });
+    observeSection("[data-analytics='video_section']", "founder_video_viewed", {
+      section: "founder_video",
+    });
     observeSection("#pricing", "pricing_section_viewed", { section: "pricing" });
-    observeSection("[data-analytics='social_proof_section']", "social_proof_viewed", { section: "social_proof" }, 0.25);
-    observeSection("[data-analytics='final_cta_section']", "final_cta_viewed", { section: "final_cta" }, 0.25);
+    observeSection(
+      "[data-analytics='social_proof_section']",
+      "social_proof_viewed",
+      { section: "social_proof" },
+      0.25,
+    );
+    observeSection(
+      "[data-analytics='final_cta_section']",
+      "final_cta_viewed",
+      { section: "final_cta" },
+      0.25,
+    );
   }, []);
 
   return (
     <main className="min-h-screen bg-[#f5f4f0] flex flex-col">
-
       {/* S1 — Hero */}
       <section className="flex flex-col items-center justify-center px-6 pt-24 pb-16 text-center">
         <div className="max-w-2xl">
@@ -31,8 +42,8 @@ export default function HomePage() {
             <span className="text-indigo-600">built for your workflow.</span>
           </h1>
           <p className="text-xl text-gray-500 mb-10 leading-relaxed">
-            Jeevy handles scheduling, inbox triage, and follow-ups — personalized to how you actually
-            work.
+            Jeevy handles scheduling, inbox triage, and follow-ups — personalized to how you
+            actually work.
           </p>
           <Link
             href="/apply"
@@ -140,9 +151,7 @@ export default function HomePage() {
             <div className="flex items-baseline gap-1 mb-5">
               <span className="text-2xl font-semibold text-gray-400">Coming at launch</span>
             </div>
-            <p className="text-gray-500 mb-6 flex-1">
-              Full-price access once we open to everyone.
-            </p>
+            <p className="text-gray-500 mb-6 flex-1">Full-price access once we open to everyone.</p>
             <Link
               href="/apply"
               onClick={() => track("nav_cta_clicked", { position: "pricing_standard" })}
@@ -201,9 +210,7 @@ export default function HomePage() {
               key={i}
               className="rounded-xl border border-gray-200 bg-white p-6 text-left shadow-sm"
             >
-              <p className="text-gray-700 mb-4 text-sm leading-relaxed">
-                &ldquo;{t.quote}&rdquo;
-              </p>
+              <p className="text-gray-700 mb-4 text-sm leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
               <p className="text-sm font-semibold text-gray-900">{t.name}</p>
               <p className="text-xs text-gray-400">{t.title}</p>
             </div>

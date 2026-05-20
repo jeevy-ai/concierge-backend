@@ -36,9 +36,7 @@ export default function RefundPolicyPage() {
           </Section>
 
           <Section title="How to Request a Refund">
-            <p>
-              To request a refund, you do not need to contact support. You can:
-            </p>
+            <p>To request a refund, you do not need to contact support. You can:</p>
             <ol className="mt-3 space-y-2 list-decimal list-inside text-gray-500">
               <li>
                 Log in to your{" "}
@@ -82,10 +80,7 @@ export default function RefundPolicyPage() {
           <Section title="Questions">
             <p>
               Email{" "}
-              <a
-                href="mailto:support@you.app"
-                className="text-indigo-600 hover:underline"
-              >
+              <a href="mailto:support@you.app" className="text-indigo-600 hover:underline">
                 support@you.app
               </a>{" "}
               or reach out via in-app chat. We respond within 1 business day.

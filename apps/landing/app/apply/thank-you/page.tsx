@@ -62,10 +62,7 @@ export default function ThankYouPage() {
             Questions? Reply to your confirmation email — a human will answer.
           </p>
 
-          <Link
-            href="/"
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-          >
+          <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
             ← Back to jeevy.ai
           </Link>
         </div>

@@ -42,8 +42,7 @@ export function ChipSelect({
       {options.map((opt) => {
         const isSelected = selected.includes(opt.value);
         const isOther = opt.value.endsWith("_other");
-        const atMax =
-          maxSelect !== undefined && selected.length >= maxSelect && !isSelected;
+        const atMax = maxSelect !== undefined && selected.length >= maxSelect && !isSelected;
 
         return (
           <div key={opt.value} className="flex flex-col gap-2">
@@ -60,8 +59,8 @@ export function ChipSelect({
                 isSelected
                   ? "bg-indigo-600 border-indigo-600 text-white scale-[1.02] shadow-sm"
                   : atMax
-                  ? "bg-white border-gray-200 text-gray-300 cursor-not-allowed"
-                  : "bg-white border-gray-200 text-gray-700 hover:border-indigo-300 hover:text-indigo-600 cursor-pointer",
+                    ? "bg-white border-gray-200 text-gray-300 cursor-not-allowed"
+                    : "bg-white border-gray-200 text-gray-700 hover:border-indigo-300 hover:text-indigo-600 cursor-pointer",
               ].join(" ")}
             >
               {isSelected && (
