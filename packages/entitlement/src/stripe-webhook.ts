@@ -78,10 +78,12 @@ export async function handleSubscriptionEvent(
   if (!clerkUserId) return;
 
   const plan = sub.items?.data?.[0]?.price?.id ?? "unknown";
+  const status: SubscriptionStatus =
+    event.type === "customer.subscription.deleted" ? "canceled" : (sub.status as SubscriptionStatus);
   const record: StripeEntitlementRecord = {
     stripeCustomerId: sub.customer,
     stripeSubscriptionId: sub.id,
-    status: sub.status as SubscriptionStatus,
+    status,
     plan,
     periodEnd: sub.current_period_end,
     updatedAt: new Date().toISOString(),
