@@ -14,7 +14,7 @@ export async function appendToSheet(data: IntakePayload): Promise<void> {
   const { google } = await import("googleapis");
 
   const serviceAccountJson = Buffer.from(
-    process.env.GOOGLE_SERVICE_ACCOUNT_JSON!,
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON as string,
     "base64",
   ).toString("utf-8");
 
@@ -62,7 +62,7 @@ export async function appendToSheet(data: IntakePayload): Promise<void> {
   ];
 
   await sheets.spreadsheets.values.append({
-    spreadsheetId: process.env.INTAKE_SHEET_ID!,
+    spreadsheetId: process.env.INTAKE_SHEET_ID as string,
     range: "Tracker!A:Y",
     valueInputOption: "RAW",
     requestBody: { values: [row] },

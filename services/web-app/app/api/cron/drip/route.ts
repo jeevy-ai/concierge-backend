@@ -103,14 +103,17 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
 
+  const saJson = serviceAccountJson as string;
+  const sid = sheetId as string;
+
   const now = new Date();
   const resend = new Resend(resendApiKey);
-  const sheetsClient = await buildSheetsClient(serviceAccountJson!);
+  const sheetsClient = await buildSheetsClient(saJson);
 
   // Build lead list from waitlist (Sheets) + free-trial (Clerk), deduped by email
   const leadMap = new Map<string, Lead>();
 
-  const waitlistLeads = await fetchWaitlistLeads(serviceAccountJson!, sheetId!);
+  const waitlistLeads = await fetchWaitlistLeads(saJson, sid);
   for (const lead of waitlistLeads) {
     leadMap.set(lead.email, lead);
   }
@@ -137,7 +140,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
   }
 
-  const sentPairs = await loadSentPairs(sheetsClient, sheetId!);
+  const sentPairs = await loadSentPairs(sheetsClient, sid);
 
   const results: { email: string; step: DripStep | "skip"; error?: string }[] = [];
 
@@ -193,7 +196,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       if (error) throw new Error(error.message);
 
       const sentAt = now.toISOString();
-      await recordSent(sheetsClient, sheetId!, lead.email, stepDue, sentAt);
+      await recordSent(sheetsClient, sid, lead.email, stepDue, sentAt);
       sentPairs.add(pairKey);
 
       results.push({ email: lead.email, step: stepDue });
