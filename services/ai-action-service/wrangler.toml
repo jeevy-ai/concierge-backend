@@ -25,17 +25,51 @@ FROM_EMAIL = "team@jeevy.app"
 crons = ["0 2 * * *"]
 
 # KV namespace for entitlement state.
-# Fill in id once created: `wrangler kv:namespace create ENTITLEMENTS_KV`
-# Then set id and preview_id below.
+# Provisioned 2026-05-06 for YOU-296.
 [[kv_namespaces]]
 binding = "ENTITLEMENTS_KV"
-id = "FILL_IN_AFTER_YOU_296"
-preview_id = "FILL_IN_AFTER_YOU_296"
+id = "5634d6240d2142ed9d70e078999d8031"
+preview_id = "5634d6240d2142ed9d70e078999d8031"
 
 # KV namespace for save-interview state (last value events, NPS, dedup).
-# Provision: `wrangler kv:namespace create INTERVIEWS_KV`
-# Then replace FILL_IN_AFTER_YOU_343 with the returned id.
+# Provisioned 2026-05-20 for YOU-343.
 [[kv_namespaces]]
 binding = "INTERVIEWS_KV"
-id = "FILL_IN_AFTER_YOU_343"
-preview_id = "FILL_IN_AFTER_YOU_343"
+id = "49051f56c5294cbb8751c7d4af6aa83f"
+preview_id = "49051f56c5294cbb8751c7d4af6aa83f"
+
+# --- Named environments ---
+# Deploy: `wrangler deploy --env staging` / `wrangler deploy --env production`
+# Secrets: `wrangler secret put POSTHOG_API_KEY --env staging` (after first deploy)
+
+[env.staging]
+name = "ai-action-service-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+POSTHOG_HOST = "https://eu.i.posthog.com"
+FROM_EMAIL = "team@jeevy.app"
+
+[[env.staging.kv_namespaces]]
+binding = "ENTITLEMENTS_KV"
+id = "fed8625627b042f0a07069d7bb03a5f1"
+
+[[env.staging.kv_namespaces]]
+binding = "INTERVIEWS_KV"
+id = "9e12aea1abcb4e668633abffee66b56c"
+
+[env.production]
+name = "ai-action-service-production"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+POSTHOG_HOST = "https://eu.i.posthog.com"
+FROM_EMAIL = "team@jeevy.app"
+
+[[env.production.kv_namespaces]]
+binding = "ENTITLEMENTS_KV"
+id = "f8c6bfb4943e436d8591691d22b7037b"
+
+[[env.production.kv_namespaces]]
+binding = "INTERVIEWS_KV"
+id = "68e68d7db26c4bda8c97bb222c3d9018"
