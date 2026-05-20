@@ -51,7 +51,11 @@ describe("renderReminder — day7", () => {
   });
 
   it("omits proposed time when undefined and uses fallback phrasing", () => {
-    const { text } = renderReminder("day7", { firstName: vars.firstName, product: vars.product, founderName: vars.founderName });
+    const { text } = renderReminder("day7", {
+      firstName: vars.firstName,
+      product: vars.product,
+      founderName: vars.founderName,
+    });
     expect(text).not.toContain("Wednesday");
     expect(text).toContain("reply to find a time");
   });
@@ -86,7 +90,11 @@ describe("renderReminder — day30", () => {
   });
 
   it("omits proposed time when undefined", () => {
-    const { text } = renderReminder("day30", { firstName: vars.firstName, product: vars.product, founderName: vars.founderName });
+    const { text } = renderReminder("day30", {
+      firstName: vars.firstName,
+      product: vars.product,
+      founderName: vars.founderName,
+    });
     expect(text).not.toContain("Tuesday");
     expect(text).toContain("Reply and we'll find a time that works.");
   });
