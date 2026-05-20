@@ -64,6 +64,8 @@ export function registerSaveInterviewRoutes(app: App): void {
         RESEND_API_KEY: c.env.RESEND_API_KEY,
         SCHEDULING_LINK: c.env.SCHEDULING_LINK,
         FROM_EMAIL: c.env.FROM_EMAIL,
+        POSTHOG_API_KEY: c.env.POSTHOG_API_KEY,
+        POSTHOG_HOST: c.env.POSTHOG_HOST,
       },
       { userId: body.userId, email: body.email, firstName: body.firstName },
     );
@@ -89,6 +91,8 @@ export function registerSaveInterviewRoutes(app: App): void {
         RESEND_API_KEY: c.env.RESEND_API_KEY,
         SCHEDULING_LINK: c.env.SCHEDULING_LINK,
         FROM_EMAIL: c.env.FROM_EMAIL,
+        POSTHOG_API_KEY: c.env.POSTHOG_API_KEY,
+        POSTHOG_HOST: c.env.POSTHOG_HOST,
       },
       { userId: body.userId, email: body.email, firstName: body.firstName },
     );

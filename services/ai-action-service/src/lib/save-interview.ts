@@ -1,3 +1,6 @@
+import { createServerCapture } from "@jeevy/analytics/server";
+import { AnalyticsEventName } from "@jeevy/contracts";
+
 /**
  * Save interview scheduling automation.
  *
@@ -24,6 +27,8 @@ export interface InterviewsEnv {
   RESEND_API_KEY: string;
   SCHEDULING_LINK: string;
   FROM_EMAIL: string;
+  POSTHOG_API_KEY: string;
+  POSTHOG_HOST: string;
 }
 
 interface NpsRecord {
@@ -159,6 +164,19 @@ export async function sendSaveInterviewEmail(
     `user:${user.userId}:save_invite`,
     JSON.stringify({ ...record, reason }),
   );
+
+  const capture = createServerCapture({
+    apiKey: env.POSTHOG_API_KEY,
+    host: env.POSTHOG_HOST,
+  });
+  await capture({
+    distinctId: user.userId,
+    event: AnalyticsEventName.SAVE_INTERVIEW_INVITE_SENT,
+    props: { userId: user.userId, trigger: reason },
+    superProps: { env: "production", app_version: "0.1.0", surface: "app" },
+  }).catch((err) => {
+    console.error("[save-interview] analytics capture failed (non-fatal):", err);
+  });
 }
 
 export async function maybeInviteUser(

@@ -21,6 +21,7 @@ export type Env = {
   SCHEDULING_LINK: string;
   FROM_EMAIL: string;
   INTERNAL_API_SECRET: string;
+  CLERK_SECRET_KEY: string;
 };
 
 export type Variables = {
@@ -58,13 +59,33 @@ protected_.get("/api/protected/test", (c) => {
   return c.json({ ok: true, userId: c.get("clerkUserId") });
 });
 
+interface ClerkUser {
+  id: string;
+  first_name: string | null;
+  email_addresses: Array<{ email_address: string }>;
+}
+
+async function fetchClerkUserById(
+  userId: string,
+  secretKey: string,
+): Promise<{ userId: string; email: string; firstName?: string } | null> {
+  const res = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+    headers: { Authorization: `Bearer ${secretKey}` },
+  });
+  if (!res.ok) return null;
+  const user = (await res.json()) as ClerkUser;
+  const email = user.email_addresses[0]?.email_address;
+  if (!email) return null;
+  return {
+    userId: user.id,
+    email,
+    ...(user.first_name ? { firstName: user.first_name } : {}),
+  };
+}
+
 /**
  * Cloudflare Cron trigger: nightly at-risk user scan.
  * Configured in wrangler.toml: [triggers] crons = ["0 2 * * *"]
- *
- * User profile lookup (email/firstName) is stubbed — wire to Clerk API once
- * user directory integration exists. For test users use the manual
- * POST /internal/save-interview/trigger endpoint which accepts full user data.
  */
 async function scheduled(
   _event: ScheduledEvent,
@@ -77,11 +98,10 @@ async function scheduled(
       RESEND_API_KEY: env.RESEND_API_KEY,
       SCHEDULING_LINK: env.SCHEDULING_LINK,
       FROM_EMAIL: env.FROM_EMAIL,
+      POSTHOG_API_KEY: env.POSTHOG_API_KEY,
+      POSTHOG_HOST: env.POSTHOG_HOST,
     },
-    async (_userId) => {
-      // TODO(YOU-343): resolve user profile from Clerk API once available.
-      return null;
-    },
+    async (userId) => fetchClerkUserById(userId, env.CLERK_SECRET_KEY),
   );
 
   console.log(

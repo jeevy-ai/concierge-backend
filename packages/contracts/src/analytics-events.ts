@@ -21,6 +21,8 @@ export const AnalyticsEventName = {
   CHECKOUT_COMPLETED: "checkout_completed",
   SUBSCRIPTION_UPGRADED: "subscription_upgraded",
   SUBSCRIPTION_CANCELLED: "subscription_cancelled",
+  // Retention
+  SAVE_INTERVIEW_INVITE_SENT: "save_interview_invite_sent",
 } as const;
 
 export type AnalyticsEventName = (typeof AnalyticsEventName)[keyof typeof AnalyticsEventName];
@@ -102,6 +104,10 @@ export const analyticsEventSchemas = {
     stripeCustomerId: z.string(),
     reason: z.string().optional(),
     userId: z.string().optional(),
+  }),
+  [AnalyticsEventName.SAVE_INTERVIEW_INVITE_SENT]: z.object({
+    userId: z.string(),
+    trigger: z.string(),
   }),
 } satisfies Record<AnalyticsEventName, z.ZodObject<z.ZodRawShape>>;
 
