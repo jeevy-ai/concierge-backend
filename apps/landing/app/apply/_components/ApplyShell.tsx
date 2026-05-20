@@ -95,7 +95,7 @@ export function ApplyShell() {
     const idx = STEP_ORDER.indexOf(currentStep);
     if (idx < STEP_ORDER.length - 1) {
       setDirection("forward");
-      setCurrentStep(STEP_ORDER[idx + 1]!);
+      setCurrentStep(STEP_ORDER[idx + 1] as FormStep);
     }
   }
 
@@ -103,7 +103,7 @@ export function ApplyShell() {
     const idx = STEP_ORDER.indexOf(currentStep);
     if (idx > 0) {
       setDirection("back");
-      setCurrentStep(STEP_ORDER[idx - 1]!);
+      setCurrentStep(STEP_ORDER[idx - 1] as FormStep);
     }
   }
 

@@ -11,6 +11,7 @@ export function ProgressBar({ current, total }: ProgressBarProps) {
         className="h-full bg-indigo-600 transition-[width] duration-500 ease-out rounded-full"
         style={{ width: `${pct}%` }}
         role="progressbar"
+        tabIndex={-1}
         aria-valuenow={current}
         aria-valuemin={0}
         aria-valuemax={total}

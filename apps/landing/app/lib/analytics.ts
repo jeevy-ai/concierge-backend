@@ -37,12 +37,12 @@ export function observeSection(
   if (!el) return;
   const observer = new IntersectionObserver(
     (entries) => {
-      entries.forEach((entry) => {
+      for (const entry of entries) {
         if (entry.isIntersecting) {
           track(event, props);
           observer.disconnect();
         }
-      });
+      }
     },
     { threshold },
   );
