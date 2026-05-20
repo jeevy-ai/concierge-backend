@@ -1,10 +1,10 @@
 import type { Hono } from "hono";
 import type { Env, Variables } from "../index.js";
 import {
-  recordValueEvent,
-  recordNpsScore,
-  trackUser,
   maybeInviteUser,
+  recordNpsScore,
+  recordValueEvent,
+  trackUser,
 } from "../lib/save-interview.js";
 
 type App = Hono<{ Bindings: Env; Variables: Variables }>;
@@ -122,10 +122,7 @@ export function registerSaveInterviewRoutes(app: App): void {
   });
 }
 
-function verifyInternalSecret(
-  provided: string | undefined,
-  expected: string | undefined,
-): boolean {
+function verifyInternalSecret(provided: string | undefined, expected: string | undefined): boolean {
   if (!expected || !provided) return false;
   return provided === expected;
 }

@@ -1,11 +1,11 @@
-import type { Hono } from "hono";
-import {
-  handleSubscriptionEvent,
-  verifyStripeSignature,
-  type StripeWebhookEvent,
-} from "@jeevy/entitlement";
 import { createServerCapture } from "@jeevy/analytics/server";
 import { AnalyticsEventName } from "@jeevy/contracts";
+import {
+  type StripeWebhookEvent,
+  handleSubscriptionEvent,
+  verifyStripeSignature,
+} from "@jeevy/entitlement";
+import type { Hono } from "hono";
 import type { Env, Variables } from "../index.js";
 
 type App = Hono<{ Bindings: Env; Variables: Variables }>;
@@ -48,26 +48,23 @@ export function registerStripeWebhookRoute(app: App): void {
     const obj = event.data.object as AnyStripeObject;
 
     if (event.type === "checkout.session.completed") {
-      const customerId = (obj["customer"] as string | undefined) ?? "unknown";
+      const customerId = (obj.customer as string | undefined) ?? "unknown";
       const analyticsCapture = capture({
         distinctId: customerId,
         event: AnalyticsEventName.CHECKOUT_COMPLETED,
         props: {
-          planId: (obj["metadata"] as Record<string, string> | undefined)?.["planId"] ?? "unknown",
-          priceId:
-            (obj["metadata"] as Record<string, string> | undefined)?.["priceId"] ?? "unknown",
+          planId: (obj.metadata as Record<string, string> | undefined)?.planId ?? "unknown",
+          priceId: (obj.metadata as Record<string, string> | undefined)?.priceId ?? "unknown",
           stripeCustomerId: customerId,
         },
         superProps: { env, app_version: "0.1.0", surface: "billing" },
       });
       c.executionCtx.waitUntil(analyticsCapture);
     } else if (event.type === "customer.subscription.deleted") {
-      const customerId = (obj["customer"] as string | undefined) ?? "unknown";
+      const customerId = (obj.customer as string | undefined) ?? "unknown";
       const planId =
-        (
-          (obj["items"] as { data?: Array<{ price?: { id?: string } }> } | undefined)
-            ?.data?.[0]?.price?.id
-        ) ?? "unknown";
+        (obj.items as { data?: Array<{ price?: { id?: string } }> } | undefined)?.data?.[0]?.price
+          ?.id ?? "unknown";
       const analyticsCapture = capture({
         distinctId: customerId,
         event: AnalyticsEventName.SUBSCRIPTION_CANCELLED,

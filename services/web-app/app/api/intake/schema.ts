@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const IntakeSchema = z.object({
   goals: z.array(z.string()).min(1).max(3),
@@ -12,11 +12,11 @@ export const IntakeSchema = z.object({
   lastName: z.string().min(1),
   email: z.string().email(),
   contactPreference: z.enum([
-    'pref_email_link',
-    'pref_slack',
-    'pref_whatsapp',
-    'pref_async',
-    'pref_call',
+    "pref_email_link",
+    "pref_slack",
+    "pref_whatsapp",
+    "pref_async",
+    "pref_call",
   ]),
   submittedAt: z.string().datetime(),
 });

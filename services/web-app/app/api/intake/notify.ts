@@ -1,65 +1,63 @@
-import { Resend } from 'resend';
-import type { IntakePayload } from './schema';
+import { Resend } from "resend";
+import type { IntakePayload } from "./schema";
 
-const CEO_EMAIL = 'noahlaux@gmail.com';
+const CEO_EMAIL = "noahlaux@gmail.com";
 
-const CONTACT_PREF_LABELS: Record<IntakePayload['contactPreference'], string> = {
-  pref_email_link: 'Email scheduling link',
-  pref_slack: 'Slack',
-  pref_whatsapp: 'WhatsApp',
-  pref_async: 'Async (email/Loom)',
-  pref_call: 'Phone call',
+const CONTACT_PREF_LABELS: Record<IntakePayload["contactPreference"], string> = {
+  pref_email_link: "Email scheduling link",
+  pref_slack: "Slack",
+  pref_whatsapp: "WhatsApp",
+  pref_async: "Async (email/Loom)",
+  pref_call: "Phone call",
 };
 
 function buildPlainText(data: IntakePayload): string {
   const goals = data.goals
     .map((g) => `  - ${g}`)
     .concat(data.goalsOther ? [`  - Other: "${data.goalsOther}"`] : [])
-    .join('\n');
+    .join("\n");
 
-  const calendars = [
-    ...data.calendars,
-    ...(data.calendarsOther ? [data.calendarsOther] : []),
-  ].join(', ');
+  const calendars = [...data.calendars, ...(data.calendarsOther ? [data.calendarsOther] : [])].join(
+    ", ",
+  );
 
   const messaging = [
     ...data.messagingTools,
     ...(data.messagingOther ? [data.messagingOther] : []),
-  ].join(', ');
+  ].join(", ");
 
   return [
     `Name: ${data.firstName} ${data.lastName}`,
     `Email: ${data.email}`,
     `Contact pref: ${CONTACT_PREF_LABELS[data.contactPreference]}`,
-    '',
-    'Goals:',
+    "",
+    "Goals:",
     goals,
-    '',
+    "",
     `Calendars: ${calendars}`,
     `Messaging: ${messaging}`,
-    '',
-    'Success criterion:',
+    "",
+    "Success criterion:",
     `  "${data.successCriterion}"`,
-    '',
+    "",
     `Submitted: ${data.submittedAt}`,
-  ].join('\n');
+  ].join("\n");
 }
 
 function buildHtml(data: IntakePayload): string {
   const goals = [
     ...data.goals.map((g) => `<li>${g}</li>`),
     ...(data.goalsOther ? [`<li>Other: &ldquo;${data.goalsOther}&rdquo;</li>`] : []),
-  ].join('');
+  ].join("");
 
-  const calendars = [
-    ...data.calendars,
-    ...(data.calendarsOther ? [data.calendarsOther] : []),
-  ].join(', ');
+  const calendars = [...data.calendars, ...(data.calendarsOther ? [data.calendarsOther] : [])].join(
+    ", ",
+  );
 
   const messaging = [
     ...data.messagingTools,
     ...(data.messagingOther ? [data.messagingOther] : []),
-  ].join(', ');
+  ].join(", ");
 
   return `
 <p><strong>Name:</strong> ${data.firstName} ${data.lastName}<br>
@@ -80,16 +78,16 @@ function buildHtml(data: IntakePayload): string {
 }
 
 export async function sendIntakeNotification(data: IntakePayload): Promise<void> {
-  const apiKey = process.env['RESEND_API_KEY'];
+  const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    throw new Error('RESEND_API_KEY is not configured');
+    throw new Error("RESEND_API_KEY is not configured");
   }
 
   const resend = new Resend(apiKey);
   const subject = `New intake submission — ${data.firstName} ${data.lastName}`;
 
   const { error } = await resend.emails.send({
-    from: 'Jeevy Intake <intake@jeevy.ai>',
+    from: "Jeevy Intake <intake@jeevy.ai>",
     to: CEO_EMAIL,
     subject,
     text: buildPlainText(data),

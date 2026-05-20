@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
-import { Resend } from 'resend';
+import { NextResponse } from "next/server";
+import { Resend } from "resend";
 import {
+  type ReminderType,
   daysSinceSignup,
   formatProposedTime,
   renderReminder,
-  type ReminderType,
-} from './templates';
+} from "./templates";
 
 interface ClerkEmailAddress {
   email_address: string;
@@ -26,10 +26,9 @@ async function fetchClerkUsers(secretKey: string): Promise<ClerkUser[]> {
   const limit = 100;
 
   while (true) {
-    const res = await fetch(
-      `https://api.clerk.com/v1/users?limit=${limit}&offset=${offset}`,
-      { headers: { Authorization: `Bearer ${secretKey}` } },
-    );
+    const res = await fetch(`https://api.clerk.com/v1/users?limit=${limit}&offset=${offset}`, {
+      headers: { Authorization: `Bearer ${secretKey}` },
+    });
     if (!res.ok) {
       throw new Error(`Clerk API error ${res.status}: ${await res.text()}`);
     }
@@ -42,35 +41,28 @@ async function fetchClerkUsers(secretKey: string): Promise<ClerkUser[]> {
 }
 
 function getUserTimezone(user: ClerkUser): string | undefined {
-  return (
-    user.public_metadata?.timezone ??
-    user.unsafe_metadata?.timezone ??
-    undefined
-  );
+  return user.public_metadata?.timezone ?? user.unsafe_metadata?.timezone ?? undefined;
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
-  const cronSecret = process.env['CRON_SECRET'];
+  const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
-    const auth = request.headers.get('authorization');
+    const auth = request.headers.get("authorization");
     if (auth !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
 
-  const clerkSecretKey = process.env['CLERK_SECRET_KEY'];
-  const resendApiKey = process.env['RESEND_API_KEY'];
-  const productName = process.env['PRODUCT_NAME'] ?? 'Jeevy';
-  const founderName = process.env['FOUNDER_NAME'] ?? 'Noah';
-  const productDomain = process.env['PRODUCT_DOMAIN'] ?? 'jeevy.ai';
+  const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const productName = process.env.PRODUCT_NAME ?? "Jeevy";
+  const founderName = process.env.FOUNDER_NAME ?? "Noah";
+  const productDomain = process.env.PRODUCT_DOMAIN ?? "jeevy.ai";
   const fromAddress = `${founderName} at ${productName} <noah@${productDomain}>`;
 
   if (!clerkSecretKey || !resendApiKey) {
-    console.error('[reminder-cron] missing CLERK_SECRET_KEY or RESEND_API_KEY');
-    return NextResponse.json(
-      { error: 'Server misconfiguration' },
-      { status: 500 },
-    );
+    console.error("[reminder-cron] missing CLERK_SECRET_KEY or RESEND_API_KEY");
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
 
   const now = new Date();
@@ -80,32 +72,32 @@ export async function GET(request: Request): Promise<NextResponse> {
   try {
     users = await fetchClerkUsers(clerkSecretKey);
   } catch (err) {
-    console.error('[reminder-cron] failed to fetch Clerk users', err);
-    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+    console.error("[reminder-cron] failed to fetch Clerk users", err);
+    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
   }
 
-  const results: { userId: string; type: ReminderType | 'skip'; error?: string }[] = [];
+  const results: { userId: string; type: ReminderType | "skip"; error?: string }[] = [];
 
   for (const user of users) {
     const createdAt = new Date(user.created_at);
     const day = daysSinceSignup(createdAt, now);
 
     let reminderType: ReminderType | null = null;
-    if (day === 6) reminderType = 'day7';
-    else if (day === 29) reminderType = 'day30';
+    if (day === 6) reminderType = "day7";
+    else if (day === 29) reminderType = "day30";
 
     if (!reminderType) {
-      results.push({ userId: user.id, type: 'skip' });
+      results.push({ userId: user.id, type: "skip" });
       continue;
     }
 
     const email = user.email_addresses[0]?.email_address;
     if (!email) {
-      results.push({ userId: user.id, type: reminderType, error: 'no email' });
+      results.push({ userId: user.id, type: reminderType, error: "no email" });
       continue;
     }
 
-    const firstName = user.first_name ?? email.split('@')[0] ?? 'there';
+    const firstName = user.first_name ?? email.split("@")[0] ?? "there";
     const timezone = getUserTimezone(user);
     const proposedTime = formatProposedTime(now, timezone);
 
@@ -134,7 +126,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
   }
 
-  const sent = results.filter((r) => r.type !== 'skip' && !r.error).length;
+  const sent = results.filter((r) => r.type !== "skip" && !r.error).length;
   const failed = results.filter((r) => r.error).length;
   console.log(`[reminder-cron] done. sent=${sent} failed=${failed} total=${users.length}`);
 

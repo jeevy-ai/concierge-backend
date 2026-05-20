@@ -47,14 +47,8 @@ interface UserProfile {
   email: string;
 }
 
-export async function recordValueEvent(
-  kv: KVNamespace,
-  userId: string,
-): Promise<void> {
-  await kv.put(
-    `user:${userId}:last_value_event`,
-    new Date().toISOString(),
-  );
+export async function recordValueEvent(kv: KVNamespace, userId: string): Promise<void> {
+  await kv.put(`user:${userId}:last_value_event`, new Date().toISOString());
 }
 
 export async function recordNpsScore(

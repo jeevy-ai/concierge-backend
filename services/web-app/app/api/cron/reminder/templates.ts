@@ -1,4 +1,4 @@
-export type ReminderType = 'day7' | 'day30';
+export type ReminderType = "day7" | "day30";
 
 export interface ReminderTemplateVars {
   firstName: string;
@@ -13,29 +13,26 @@ export interface RenderedEmail {
   text: string;
 }
 
-export function renderReminder(
-  type: ReminderType,
-  vars: ReminderTemplateVars,
-): RenderedEmail {
+export function renderReminder(type: ReminderType, vars: ReminderTemplateVars): RenderedEmail {
   const { firstName, product, founderName, proposedTime } = vars;
 
-  if (type === 'day7') {
+  if (type === "day7") {
     const proposedLine = proposedTime
       ? `Tomorrow I'll reach out at ${proposedTime} for a quick 12-minute call to see if ${product} has been useful and whether anything needs fixing.`
       : `I'd love to connect for a quick 12-minute call to see if ${product} has been useful and whether anything needs fixing — reply to find a time.`;
 
     return {
-      subject: 'Your first week check-in — 15 min tomorrow?',
+      subject: "Your first week check-in — 15 min tomorrow?",
       text: [
         `Hi ${firstName},`,
-        '',
+        "",
         `It's been a week since you got started — I'd love to hear how it's going. ${proposedLine}`,
-        '',
+        "",
         `If that time doesn't work, just reply and we'll find a slot that does.`,
-        '',
-        'Talk soon,',
+        "",
+        "Talk soon,",
         founderName,
-      ].join('\n'),
+      ].join("\n"),
     };
   }
 
@@ -45,16 +42,16 @@ export function renderReminder(
     : `Reply and we'll find a time that works.`;
 
   return {
-    subject: 'Your 30-day check-in — 15 min tomorrow?',
+    subject: "Your 30-day check-in — 15 min tomorrow?",
     text: [
       `Hi ${firstName},`,
-      '',
+      "",
       `A month in — great milestone. I want to hear what's been working, what hasn't, and where we go from here. ${proposedLine}`,
-      '',
+      "",
       `If the time doesn't work, reply and we'll reschedule.`,
-      '',
+      "",
       founderName,
-    ].join('\n'),
+    ].join("\n"),
   };
 }
 
@@ -77,31 +74,29 @@ export function daysSinceSignup(createdAt: Date, now: Date): number {
  * Formats "tomorrow at 10:00 AM" in a user-readable string for the given timezone.
  * Returns undefined if timezone is unknown or invalid.
  */
-export function formatProposedTime(
-  now: Date,
-  timezone: string | undefined,
-): string | undefined {
+export function formatProposedTime(now: Date, timezone: string | undefined): string | undefined {
   if (!timezone) return undefined;
   try {
     // Validate timezone first
-    new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone });
 
     const tomorrow = new Date(now);
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
-    const datePart = new Intl.DateTimeFormat('en-US', {
+    const datePart = new Intl.DateTimeFormat("en-US", {
       timeZone: timezone,
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
+      weekday: "long",
+      month: "long",
+      day: "numeric",
     }).format(tomorrow);
 
-    const tzAbbr = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      timeZoneName: 'short',
-    })
-      .formatToParts(tomorrow)
-      .find((p) => p.type === 'timeZoneName')?.value ?? timezone;
+    const tzAbbr =
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        timeZoneName: "short",
+      })
+        .formatToParts(tomorrow)
+        .find((p) => p.type === "timeZoneName")?.value ?? timezone;
 
     return `${datePart} at 10:00 AM ${tzAbbr}`;
   } catch {

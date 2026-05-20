@@ -1,3 +1,9 @@
+import {
+  AnalyticsEventName,
+  type AnalyticsEventPropsMap,
+  type AnalyticsSuperProperties,
+  analyticsEventSchemas,
+} from "@jeevy/contracts";
 // Web SDK wrapper around posthog-js.
 // Rules:
 //  - autocapture: false always (manual tracking only)
@@ -5,12 +11,6 @@
 //  - Consent gate: init() is deferred until consentGranted() is called on EU traffic
 //  - In dev, track() validates props against Zod schema and logs on mismatch
 import posthog from "posthog-js";
-import {
-  AnalyticsEventName,
-  analyticsEventSchemas,
-  type AnalyticsEventPropsMap,
-  type AnalyticsSuperProperties,
-} from "@jeevy/contracts";
 
 const POSTHOG_EU_HOST = "https://eu.i.posthog.com";
 
@@ -60,8 +60,7 @@ export function track<K extends AnalyticsEventName>(
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isDev = (globalThis as any).__ANALYTICS_DEV__ === true;
+  const isDev = (globalThis as { __ANALYTICS_DEV__?: boolean }).__ANALYTICS_DEV__ === true;
   if (isDev) {
     const schema = analyticsEventSchemas[event];
     const result = schema.safeParse(props);

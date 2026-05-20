@@ -1,10 +1,10 @@
+import type { ClerkClaims } from "@jeevy/entitlement";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { ClerkClaims } from "@jeevy/entitlement";
-import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
-import { registerStripeWebhookRoute } from "./routes/stripe-webhook.js";
-import { registerSaveInterviewRoutes } from "./routes/save-interview.js";
 import { runDailyAtRiskScan } from "./lib/save-interview.js";
+import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
+import { registerSaveInterviewRoutes } from "./routes/save-interview.js";
+import { registerStripeWebhookRoute } from "./routes/stripe-webhook.js";
 
 export type Env = {
   ENVIRONMENT: string;
@@ -49,11 +49,7 @@ registerStripeWebhookRoute(app);
 registerSaveInterviewRoutes(app);
 
 // Protected routes require Clerk auth + active Stripe subscription
-const protected_ = app.use(
-  "/api/protected/*",
-  clerkAuthMiddleware(),
-  entitlementGuard(),
-);
+const protected_ = app.use("/api/protected/*", clerkAuthMiddleware(), entitlementGuard());
 
 protected_.get("/api/protected/test", (c) => {
   return c.json({ ok: true, userId: c.get("clerkUserId") });
@@ -87,11 +83,7 @@ async function fetchClerkUserById(
  * Cloudflare Cron trigger: nightly at-risk user scan.
  * Configured in wrangler.toml: [triggers] crons = ["0 2 * * *"]
  */
-async function scheduled(
-  _event: ScheduledEvent,
-  env: Env,
-  _ctx: ExecutionContext,
-): Promise<void> {
+async function scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
   const result = await runDailyAtRiskScan(
     {
       INTERVIEWS_KV: env.INTERVIEWS_KV,
@@ -104,9 +96,7 @@ async function scheduled(
     async (userId) => fetchClerkUserById(userId, env.CLERK_SECRET_KEY),
   );
 
-  console.log(
-    `[save-interview] nightly scan: ${result.invited}/${result.processed} invited`,
-  );
+  console.log(`[save-interview] nightly scan: ${result.invited}/${result.processed} invited`);
 }
 
 export default {

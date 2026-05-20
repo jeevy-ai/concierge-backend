@@ -68,6 +68,7 @@ export default function HomePage() {
         <div className="w-full max-w-3xl">
           <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
             <iframe
+              title="Founder introduction video"
               src="https://www.loom.com/embed/PLACEHOLDER_LOOM_ID?hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true"
               className="absolute inset-0 w-full h-full rounded-xl border border-white/10"
               allowFullScreen
@@ -207,6 +208,7 @@ export default function HomePage() {
             },
           ].map((t, i) => (
             <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: static inline array — index is stable
               key={i}
               className="rounded-xl border border-gray-200 bg-white p-6 text-left shadow-sm"
             >

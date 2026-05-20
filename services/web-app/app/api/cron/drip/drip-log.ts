@@ -1,17 +1,17 @@
-import type { DripStep } from './templates';
+import type { DripStep } from "./templates";
 
 type SheetsClient = Awaited<ReturnType<typeof buildSheetsClient>>;
 
 async function buildSheetsClient(serviceAccountJson: string) {
-  const { google } = await import('googleapis');
+  const { google } = await import("googleapis");
   const credentials = JSON.parse(
-    Buffer.from(serviceAccountJson, 'base64').toString('utf-8'),
+    Buffer.from(serviceAccountJson, "base64").toString("utf-8"),
   ) as Record<string, unknown>;
   const auth = new google.auth.GoogleAuth({
     credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
-  return google.sheets({ version: 'v4', auth });
+  return google.sheets({ version: "v4", auth });
 }
 
 /** Reads all (email, step) pairs that have already been sent. */
@@ -21,7 +21,7 @@ export async function loadSentPairs(
 ): Promise<Set<string>> {
   const res = await sheetsClient.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: 'DripLog!A:B',
+    range: "DripLog!A:B",
   });
   const rows = res.data.values ?? [];
   const sent = new Set<string>();
@@ -43,8 +43,8 @@ export async function recordSent(
 ): Promise<void> {
   await sheetsClient.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: 'DripLog',
-    valueInputOption: 'RAW',
+    range: "DripLog",
+    valueInputOption: "RAW",
     requestBody: { values: [[email.toLowerCase().trim(), String(step), sentAt]] },
   });
 }

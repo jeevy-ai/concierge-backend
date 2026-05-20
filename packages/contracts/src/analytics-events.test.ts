@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   AnalyticsEventName,
-  analyticsEventSchemas,
   type AnalyticsEventPropsMap,
+  analyticsEventSchemas,
 } from "./analytics-events.js";
 
 const allEventNames = Object.values(AnalyticsEventName) as AnalyticsEventName[];

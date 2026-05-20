@@ -9,6 +9,9 @@
       "recommended": true,
       "suspicious": {
         "noExplicitAny": "error"
+      },
+      "a11y": {
+        "useSemanticElements": "off"
       }
     }
   },
@@ -25,6 +28,6 @@
     }
   },
   "files": {
-    "ignore": ["node_modules", "dist", ".wrangler", "coverage"]
+    "ignore": ["node_modules", "dist", ".wrangler", "coverage", ".next", ".turbo", ".vercel"]
   }
 }

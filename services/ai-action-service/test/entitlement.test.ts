@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/index.js";
 
 // Mock the entitlement package so we can control KV + JWT outcomes
@@ -11,7 +11,7 @@ vi.mock("@jeevy/entitlement", async (importOriginal) => {
   };
 });
 
-import { verifyClerkJwt, checkEntitlement } from "@jeevy/entitlement";
+import { checkEntitlement, verifyClerkJwt } from "@jeevy/entitlement";
 
 const mockEnv = {
   ENVIRONMENT: "test",

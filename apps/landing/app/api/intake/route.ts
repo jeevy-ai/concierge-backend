@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+export const runtime = "edge";
+
 const IntakeSchema = z.object({
   goals: z.array(z.string()).min(1).max(3),
   goalsOther: z.string().optional(),

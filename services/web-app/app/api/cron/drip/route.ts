@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import { Resend } from 'resend';
-import { daysSinceSignup } from '../reminder/templates';
-import { DRIP_SCHEDULE, renderDrip, type DripStep } from './templates';
-import { buildSheetsClient, loadSentPairs, recordSent } from './drip-log';
+import { NextResponse } from "next/server";
+import { Resend } from "resend";
+import { daysSinceSignup } from "../reminder/templates";
+import { buildSheetsClient, loadSentPairs, recordSent } from "./drip-log";
+import { DRIP_SCHEDULE, type DripStep, renderDrip } from "./templates";
 
 interface ClerkEmailAddress {
   email_address: string;
@@ -20,7 +20,7 @@ interface Lead {
   firstName: string;
   signedUpAt: Date;
   /** free_trial users who converted may be suppressed from Email 5 in future. */
-  source: 'waitlist' | 'free_trial';
+  source: "waitlist" | "free_trial";
 }
 
 async function fetchClerkUsers(secretKey: string): Promise<ClerkUser[]> {
@@ -28,10 +28,9 @@ async function fetchClerkUsers(secretKey: string): Promise<ClerkUser[]> {
   let offset = 0;
   const limit = 100;
   while (true) {
-    const res = await fetch(
-      `https://api.clerk.com/v1/users?limit=${limit}&offset=${offset}`,
-      { headers: { Authorization: `Bearer ${secretKey}` } },
-    );
+    const res = await fetch(`https://api.clerk.com/v1/users?limit=${limit}&offset=${offset}`, {
+      headers: { Authorization: `Bearer ${secretKey}` },
+    });
     if (!res.ok) throw new Error(`Clerk API ${res.status}: ${await res.text()}`);
     const batch = (await res.json()) as ClerkUser[];
     users.push(...batch);
@@ -41,80 +40,82 @@ async function fetchClerkUsers(secretKey: string): Promise<ClerkUser[]> {
   return users;
 }
 
-async function fetchWaitlistLeads(
-  serviceAccountJson: string,
-  sheetId: string,
-): Promise<Lead[]> {
-  const { google } = await import('googleapis');
+async function fetchWaitlistLeads(serviceAccountJson: string, sheetId: string): Promise<Lead[]> {
+  const { google } = await import("googleapis");
   const credentials = JSON.parse(
-    Buffer.from(serviceAccountJson, 'base64').toString('utf-8'),
+    Buffer.from(serviceAccountJson, "base64").toString("utf-8"),
   ) as Record<string, unknown>;
   const auth = new google.auth.GoogleAuth({
     credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
   });
-  const sheets = google.sheets({ version: 'v4', auth });
+  const sheets = google.sheets({ version: "v4", auth });
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: 'Sheet1!A:D',
+    range: "Sheet1!A:D",
   });
   const rows = res.data.values ?? [];
   const leads: Lead[] = [];
   for (const row of rows) {
     const submittedAt = row[0] as string | undefined;
-    const firstName = (row[1] as string | undefined) ?? 'there';
+    const firstName = (row[1] as string | undefined) ?? "there";
     const email = row[3] as string | undefined;
     if (!submittedAt || !email) continue;
     const parsed = new Date(submittedAt);
-    if (isNaN(parsed.getTime())) continue;
-    leads.push({ email: email.toLowerCase().trim(), firstName, signedUpAt: parsed, source: 'waitlist' });
+    if (Number.isNaN(parsed.getTime())) continue;
+    leads.push({
+      email: email.toLowerCase().trim(),
+      firstName,
+      signedUpAt: parsed,
+      source: "waitlist",
+    });
   }
   return leads;
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
-  const cronSecret = process.env['CRON_SECRET'];
+  const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
-    const auth = request.headers.get('authorization');
+    const auth = request.headers.get("authorization");
     if (auth !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
 
-  const resendApiKey = process.env['RESEND_API_KEY'];
-  const productDomain = process.env['PRODUCT_DOMAIN'] ?? 'jeevy.ai';
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const productDomain = process.env.PRODUCT_DOMAIN ?? "jeevy.ai";
   const fromAddress = `Jeevy <hello@${productDomain}>`;
-  const pricing = process.env['DRIP_EMAIL5_PRICING'];
-  const sheetId = process.env['INTAKE_SHEET_ID'];
-  const serviceAccountJson = process.env['GOOGLE_SERVICE_ACCOUNT_JSON'];
-  const clerkSecretKey = process.env['CLERK_SECRET_KEY'];
-  const sheetsEnabled =
-    process.env['INTAKE_SHEETS_ENABLED'] === 'true' && serviceAccountJson && sheetId;
+  const pricing = process.env.DRIP_EMAIL5_PRICING;
+  const sheetId = process.env.INTAKE_SHEET_ID;
+  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const clerkSecretKey = process.env.CLERK_SECRET_KEY;
 
   if (!resendApiKey) {
-    console.error('[drip-cron] missing RESEND_API_KEY');
-    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+    console.error("[drip-cron] missing RESEND_API_KEY");
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
-  if (!sheetsEnabled) {
-    console.error('[drip-cron] Sheets not enabled — set INTAKE_SHEETS_ENABLED, GOOGLE_SERVICE_ACCOUNT_JSON, INTAKE_SHEET_ID');
-    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+  if (process.env.INTAKE_SHEETS_ENABLED !== "true" || !serviceAccountJson || !sheetId) {
+    console.error(
+      "[drip-cron] Sheets not enabled — set INTAKE_SHEETS_ENABLED, GOOGLE_SERVICE_ACCOUNT_JSON, INTAKE_SHEET_ID",
+    );
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
 
   const now = new Date();
   const resend = new Resend(resendApiKey);
-  const sheetsClient = await buildSheetsClient(serviceAccountJson!);
+  const sheetsClient = await buildSheetsClient(serviceAccountJson);
 
   // Build lead list from waitlist (Sheets) + free-trial (Clerk), deduped by email
   const leadMap = new Map<string, Lead>();
 
-  const waitlistLeads = await fetchWaitlistLeads(serviceAccountJson!, sheetId!);
+  const waitlistLeads = await fetchWaitlistLeads(serviceAccountJson, sheetId);
   for (const lead of waitlistLeads) {
     leadMap.set(lead.email, lead);
   }
 
   if (clerkSecretKey) {
     const clerkUsers = await fetchClerkUsers(clerkSecretKey).catch((err) => {
-      console.error('[drip-cron] Clerk fetch failed (non-fatal)', err);
+      console.error("[drip-cron] Clerk fetch failed (non-fatal)", err);
       return [] as ClerkUser[];
     });
     for (const user of clerkUsers) {
@@ -126,17 +127,17 @@ export async function GET(request: Request): Promise<NextResponse> {
       if (!existing || signedUpAt < existing.signedUpAt) {
         leadMap.set(email, {
           email,
-          firstName: user.first_name ?? email.split('@')[0] ?? 'there',
+          firstName: user.first_name ?? email.split("@")[0] ?? "there",
           signedUpAt,
-          source: 'free_trial',
+          source: "free_trial",
         });
       }
     }
   }
 
-  const sentPairs = await loadSentPairs(sheetsClient, sheetId!);
+  const sentPairs = await loadSentPairs(sheetsClient, sheetId);
 
-  const results: { email: string; step: DripStep | 'skip'; error?: string }[] = [];
+  const results: { email: string; step: DripStep | "skip"; error?: string }[] = [];
 
   for (const lead of leadMap.values()) {
     const day = daysSinceSignup(lead.signedUpAt, now);
@@ -150,20 +151,22 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
 
     if (stepDue === null) {
-      results.push({ email: lead.email, step: 'skip' });
+      results.push({ email: lead.email, step: "skip" });
       continue;
     }
 
     // Email 5 requires confirmed pricing
     if (stepDue === 5 && !pricing) {
-      console.warn(`[drip-cron] skipping Email 5 for ${lead.email} — DRIP_EMAIL5_PRICING not set (YOU-363 pending)`);
-      results.push({ email: lead.email, step: 'skip' });
+      console.warn(
+        `[drip-cron] skipping Email 5 for ${lead.email} — DRIP_EMAIL5_PRICING not set (YOU-363 pending)`,
+      );
+      results.push({ email: lead.email, step: "skip" });
       continue;
     }
 
     const pairKey = `${lead.email}:${stepDue}`;
     if (sentPairs.has(pairKey)) {
-      results.push({ email: lead.email, step: 'skip' });
+      results.push({ email: lead.email, step: "skip" });
       continue;
     }
 
@@ -180,15 +183,15 @@ export async function GET(request: Request): Promise<NextResponse> {
         subject,
         text,
         tags: [
-          { name: 'campaign', value: 'drip-v1' },
-          { name: 'step', value: String(stepDue) },
-          { name: 'source', value: lead.source },
+          { name: "campaign", value: "drip-v1" },
+          { name: "step", value: String(stepDue) },
+          { name: "source", value: lead.source },
         ],
       });
       if (error) throw new Error(error.message);
 
       const sentAt = now.toISOString();
-      await recordSent(sheetsClient, sheetId!, lead.email, stepDue, sentAt);
+      await recordSent(sheetsClient, sheetId, lead.email, stepDue, sentAt);
       sentPairs.add(pairKey);
 
       results.push({ email: lead.email, step: stepDue });
@@ -200,7 +203,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
   }
 
-  const sent = results.filter((r) => r.step !== 'skip' && !r.error).length;
+  const sent = results.filter((r) => r.step !== "skip" && !r.error).length;
   const failed = results.filter((r) => r.error).length;
   console.log(`[drip-cron] done. sent=${sent} failed=${failed} total=${leadMap.size}`);
 

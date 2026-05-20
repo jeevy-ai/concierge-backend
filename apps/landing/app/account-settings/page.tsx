@@ -17,6 +17,7 @@ export default function AccountSettingsPage() {
             description="Export a copy of your concierge history and personal data."
           >
             <button
+              type="button"
               disabled
               className="rounded-lg bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 opacity-50 cursor-not-allowed"
             >
@@ -30,6 +31,7 @@ export default function AccountSettingsPage() {
           >
             <div className="flex items-center gap-4">
               <button
+                type="button"
                 disabled
                 className="rounded-lg bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 opacity-50 cursor-not-allowed"
               >
