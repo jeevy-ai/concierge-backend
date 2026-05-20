@@ -4,7 +4,8 @@
     "target": "ES2022",
     "lib": ["ES2022", "DOM"],
     "moduleResolution": "bundler",
-    "noEmit": true
+    "noEmit": true,
+    "noPropertyAccessFromIndexSignature": false
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist"]

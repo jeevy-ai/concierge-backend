@@ -37,8 +37,8 @@ export async function verifyStripeSignature(
       return [p.slice(0, eq), p.slice(eq + 1)];
     }),
   );
-  const timestamp = parts["t"];
-  const sig = parts["v1"];
+  const timestamp = parts.t;
+  const sig = parts.v1;
 
   if (!timestamp || !sig) throw new Error("Invalid Stripe-Signature header");
 
@@ -74,7 +74,7 @@ export async function handleSubscriptionEvent(
   if (!HANDLED_EVENTS.has(event.type)) return;
 
   const sub = event.data.object;
-  const clerkUserId = sub.metadata?.["clerkUserId"];
+  const clerkUserId = sub.metadata?.clerkUserId;
   if (!clerkUserId) return;
 
   const plan = sub.items?.data?.[0]?.price?.id ?? "unknown";
