@@ -35,10 +35,7 @@ export default function AccountSettingsPage() {
               >
                 Request refund
               </button>
-              <Link
-                href="/refund-policy"
-                className="text-sm text-indigo-600 hover:underline"
-              >
+              <Link href="/refund-policy" className="text-sm text-indigo-600 hover:underline">
                 Refund Policy →
               </Link>
             </div>
