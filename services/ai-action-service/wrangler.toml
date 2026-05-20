@@ -12,3 +12,16 @@ ACTION_USE_LLM = "false"
 ANTHROPIC_TIMEOUT_MS = "7000"
 ANTHROPIC_SONNET_MODEL = "claude-sonnet-4-6"
 ANTHROPIC_HAIKU_MODEL = "claude-haiku-4-5-20251001"
+
+# Per-user dedup flag for first_value_delivered (one write per user ever).
+# Replace id/preview_id with real KV namespace IDs from `wrangler kv namespace create FIRST_VALUE_KV`.
+[[kv_namespaces]]
+binding = "FIRST_VALUE_KV"
+id = "83b12c1704cd4feb85d1112816eaa5a2"
+preview_id = "83b12c1704cd4feb85d1112816eaa5a2"
+
+# Time-series event store — queryable via Workers Analytics Engine SQL API.
+# Enable analytics_engine_datasets in the CF dashboard before deploying.
+[[analytics_engine_datasets]]
+binding = "CONCIERGE_ANALYTICS"
+dataset = "concierge_events"
