@@ -5,10 +5,16 @@ export async function processDlqBatch(
   _env: Env
 ): Promise<void> {
   for (const message of batch.messages) {
-    // Every message arriving here has exhausted retries on tasks-default.
-    // Log as structured error so Cloudflare Tail Workers / log drains can alert on it.
+    // Structured JSON alert — Tail Workers and log drains filter on event="dlq_alert"
     console.error(
-      `[DEAD_LETTER] queue=${batch.queue} messageId=${message.id} attempts=${message.attempts} body=${JSON.stringify(message.body)}`
+      JSON.stringify({
+        event: "dlq_alert",
+        queue: batch.queue,
+        messageId: message.id,
+        attempts: message.attempts,
+        bodyPreview: JSON.stringify(message.body).slice(0, 200),
+        ts: new Date().toISOString(),
+      })
     );
     message.ack();
   }
