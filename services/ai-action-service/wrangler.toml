@@ -47,6 +47,14 @@ binding = "POLICY_KV"
 id = "00000000000000000000000000000001"
 preview_id = "00000000000000000000000000000001"
 
+# KV namespace for workflow orchestrator + circuit breaker state (Scenario 3).
+# Stores: workflow:{sessionId}, cb:{provider}:record, metric:* counters/gauges.
+# TODO: provision real namespace IDs via `wrangler kv:namespace create CONCIERGE_KV`
+[[kv_namespaces]]
+binding = "CONCIERGE_KV"
+id = "00000000000000000000000000000004"
+preview_id = "00000000000000000000000000000004"
+
 # --- Named environments ---
 # Deploy: `wrangler deploy --env staging` / `wrangler deploy --env production`
 # Secrets: `wrangler secret put POSTHOG_API_KEY --env staging` (after first deploy)
@@ -71,6 +79,10 @@ id = "9e12aea1abcb4e668633abffee66b56c"
 binding = "POLICY_KV"
 id = "00000000000000000000000000000002"
 
+[[env.staging.kv_namespaces]]
+binding = "CONCIERGE_KV"
+id = "00000000000000000000000000000005"
+
 [env.production]
 name = "ai-action-service-production"
 
@@ -90,3 +102,7 @@ id = "68e68d7db26c4bda8c97bb222c3d9018"
 [[env.production.kv_namespaces]]
 binding = "POLICY_KV"
 id = "00000000000000000000000000000003"
+
+[[env.production.kv_namespaces]]
+binding = "CONCIERGE_KV"
+id = "00000000000000000000000000000006"

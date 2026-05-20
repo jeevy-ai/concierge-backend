@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runDailyAtRiskScan } from "./lib/save-interview.js";
 import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
+import { registerCalendarWorkflowRoutes } from "./routes/calendar-workflow.js";
 import { registerOutreachRoutes } from "./routes/outreach.js";
 import { registerSaveInterviewRoutes } from "./routes/save-interview.js";
 import { registerStripeWebhookRoute } from "./routes/stripe-webhook.js";
@@ -25,6 +26,8 @@ export type Env = {
   CLERK_SECRET_KEY: string;
   // KV namespace for policy engine kill-switch: concierge.external_actions.enabled
   POLICY_KV: KVNamespace;
+  // KV namespace for workflow orchestrator + circuit breaker state (Scenario 3)
+  CONCIERGE_KV: KVNamespace;
 };
 
 export type Variables = {
@@ -53,6 +56,9 @@ registerSaveInterviewRoutes(app);
 
 // Outreach adapter with policy engine (internal, secret-gated)
 registerOutreachRoutes(app);
+
+// Calendar workflow orchestrator + circuit breaker (Scenario 3, internal, secret-gated)
+registerCalendarWorkflowRoutes(app);
 
 // Protected routes require Clerk auth + active Stripe subscription
 const protected_ = app.use("/api/protected/*", clerkAuthMiddleware(), entitlementGuard());
