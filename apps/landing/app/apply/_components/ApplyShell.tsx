@@ -1,25 +1,18 @@
 "use client";
 
-import { useReducer, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useReducer, useState } from "react";
 import { ProgressBar } from "./ProgressBar";
-import { StepTransition } from "./StepTransition";
-import { StepGoals } from "./StepGoals";
 import { StepCalendars } from "./StepCalendars";
+import { StepContact } from "./StepContact";
+import { StepGoals } from "./StepGoals";
 import { StepMessaging } from "./StepMessaging";
 import { StepSuccess } from "./StepSuccess";
-import { StepContact } from "./StepContact";
+import { StepTransition } from "./StepTransition";
 
 type FormStep = "welcome" | "goals" | "calendars" | "messaging" | "success" | "contact";
 
-const STEP_ORDER: FormStep[] = [
-  "welcome",
-  "goals",
-  "calendars",
-  "messaging",
-  "success",
-  "contact",
-];
+const STEP_ORDER: FormStep[] = ["welcome", "goals", "calendars", "messaging", "success", "contact"];
 
 const PROGRESS_STEP: Record<FormStep, number> = {
   welcome: 0,
@@ -64,7 +57,11 @@ function formReducer(state: FormData, action: FormAction): FormData {
     case "SET_CALENDARS":
       return { ...state, calendars: action.calendars, calendarsOther: action.calendarsOther };
     case "SET_MESSAGING":
-      return { ...state, messagingTools: action.messagingTools, messagingOther: action.messagingOther };
+      return {
+        ...state,
+        messagingTools: action.messagingTools,
+        messagingOther: action.messagingOther,
+      };
     case "SET_SUCCESS":
       return { ...state, successCriterion: action.successCriterion };
     case "SET_CONTACT":
@@ -87,7 +84,6 @@ const initialFormData: FormData = {
   email: "",
   contactPreference: "",
 };
-
 
 export function ApplyShell() {
   const router = useRouter();
@@ -147,7 +143,7 @@ export function ApplyShell() {
   const totalSteps = 5;
 
   return (
-    <div className="min-h-screen bg-[#f5f4f0] flex items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-[#f5f4f0] flex items-start sm:items-center justify-center px-4 py-10">
       <div className="w-full max-w-[600px]">
         {!isWelcome && (
           <div className="mb-6">
@@ -265,4 +261,3 @@ export function ApplyShell() {
     </div>
   );
 }
-

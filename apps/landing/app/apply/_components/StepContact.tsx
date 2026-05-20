@@ -9,7 +9,7 @@ const contactSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   contactPreference: z.enum(
     ["pref_email_link", "pref_slack", "pref_whatsapp", "pref_async", "pref_call"],
-    { errorMap: () => ({ message: "Please select a contact preference" }) }
+    { errorMap: () => ({ message: "Please select a contact preference" }) },
   ),
 });
 
@@ -69,7 +69,7 @@ export function StepContact({ data, onChange, onSubmit }: StepContactProps) {
 
   async function handleSubmit() {
     const allTouched = Object.fromEntries(
-      Object.keys(contactSchema.shape).map((k) => [k, true])
+      Object.keys(contactSchema.shape).map((k) => [k, true]),
     ) as Record<FieldName, boolean>;
     setTouched(allTouched);
 
@@ -109,130 +109,137 @@ export function StepContact({ data, onChange, onSubmit }: StepContactProps) {
   }
 
   return (
-    <div>
-      <h2
-        ref={headingRef}
-        tabIndex={-1}
-        className="text-2xl md:text-[28px] font-semibold text-gray-900 mb-2 focus:outline-none"
-      >
-        How should we reach out to set you up?
-      </h2>
-      <p className="text-sm text-gray-500 mb-6">Almost there — just a few details.</p>
+    <div className="flex flex-col">
+      {/* Scrollable content — capped on mobile so submit button stays visible */}
+      <div className="overflow-y-auto max-h-[calc(100svh-260px)] sm:max-h-none pr-0.5">
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-2xl md:text-[28px] font-semibold text-gray-900 mb-2 focus:outline-none"
+        >
+          How should we reach out to set you up?
+        </h2>
+        <p className="text-sm text-gray-500 mb-6">Almost there — just a few details.</p>
 
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-              First name
-            </label>
-            <input
-              id="firstName"
-              type="text"
-              value={data.firstName}
-              onChange={(e) => onChange({ firstName: e.target.value })}
-              onBlur={() => handleBlur("firstName")}
-              autoComplete="given-name"
-              placeholder="Alex"
-              {...field("firstName")}
-            />
-            {touched.firstName && errors.firstName && (
-              <p id="firstName-error" role="alert" className="mt-1 text-xs text-red-600">
-                {errors.firstName}
-              </p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-              Last name
-            </label>
-            <input
-              id="lastName"
-              type="text"
-              value={data.lastName}
-              onChange={(e) => onChange({ lastName: e.target.value })}
-              onBlur={() => handleBlur("lastName")}
-              autoComplete="family-name"
-              placeholder="Rivera"
-              {...field("lastName")}
-            />
-            {touched.lastName && errors.lastName && (
-              <p id="lastName-error" role="alert" className="mt-1 text-xs text-red-600">
-                {errors.lastName}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={data.email}
-            onChange={(e) => onChange({ email: e.target.value })}
-            onBlur={() => handleBlur("email")}
-            autoComplete="email"
-            placeholder="alex@company.com"
-            {...field("email")}
-          />
-          {touched.email && errors.email && (
-            <p id="email-error" role="alert" className="mt-1 text-xs text-red-600">
-              {errors.email}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <fieldset>
-            <legend className="block text-sm font-medium text-gray-700 mb-3">
-              Contact preference
-            </legend>
-            <div className="space-y-2">
-              {CONTACT_PREFS.map((pref) => (
-                <label
-                  key={pref.value}
-                  className={[
-                    "flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer",
-                    "transition-colors min-h-[44px]",
-                    data.contactPreference === pref.value
-                      ? "border-indigo-600 bg-indigo-50"
-                      : "border-gray-200 bg-white hover:border-gray-300",
-                  ].join(" ")}
-                >
-                  <input
-                    type="radio"
-                    name="contactPreference"
-                    value={pref.value}
-                    checked={data.contactPreference === pref.value}
-                    onChange={() => {
-                      onChange({ contactPreference: pref.value });
-                      setTouched((prev) => ({ ...prev, contactPreference: true }));
-                      setErrors((prev) => ({ ...prev, contactPreference: undefined }));
-                    }}
-                    className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                  />
-                  <span className="text-sm text-gray-800">{pref.label}</span>
-                </label>
-              ))}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                First name
+              </label>
+              <input
+                id="firstName"
+                type="text"
+                value={data.firstName}
+                onChange={(e) => onChange({ firstName: e.target.value })}
+                onBlur={() => handleBlur("firstName")}
+                autoComplete="given-name"
+                placeholder="Alex"
+                {...field("firstName")}
+              />
+              {touched.firstName && errors.firstName && (
+                <p id="firstName-error" role="alert" className="mt-1 text-xs text-red-600">
+                  {errors.firstName}
+                </p>
+              )}
             </div>
-            {touched.contactPreference && errors.contactPreference && (
-              <p id="contactPreference-error" role="alert" className="mt-2 text-xs text-red-600">
-                {errors.contactPreference}
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                Last name
+              </label>
+              <input
+                id="lastName"
+                type="text"
+                value={data.lastName}
+                onChange={(e) => onChange({ lastName: e.target.value })}
+                onBlur={() => handleBlur("lastName")}
+                autoComplete="family-name"
+                placeholder="Rivera"
+                {...field("lastName")}
+              />
+              {touched.lastName && errors.lastName && (
+                <p id="lastName-error" role="alert" className="mt-1 text-xs text-red-600">
+                  {errors.lastName}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={data.email}
+              onChange={(e) => onChange({ email: e.target.value })}
+              onBlur={() => handleBlur("email")}
+              autoComplete="email"
+              placeholder="alex@company.com"
+              {...field("email")}
+            />
+            {touched.email && errors.email && (
+              <p id="email-error" role="alert" className="mt-1 text-xs text-red-600">
+                {errors.email}
               </p>
             )}
-          </fieldset>
+          </div>
+
+          <div>
+            <fieldset>
+              <legend className="block text-sm font-medium text-gray-700 mb-3">
+                Contact preference
+              </legend>
+              {/* Relative wrapper for fade-scroll hint on mobile */}
+              <div className="relative">
+                <div className="space-y-2">
+                  {CONTACT_PREFS.map((pref) => (
+                    <label
+                      key={pref.value}
+                      className={[
+                        "flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer",
+                        "transition-colors min-h-[44px]",
+                        data.contactPreference === pref.value
+                          ? "border-indigo-600 bg-indigo-50"
+                          : "border-gray-200 bg-white hover:border-gray-300",
+                      ].join(" ")}
+                    >
+                      <input
+                        type="radio"
+                        name="contactPreference"
+                        value={pref.value}
+                        checked={data.contactPreference === pref.value}
+                        onChange={() => {
+                          onChange({ contactPreference: pref.value });
+                          setTouched((prev) => ({ ...prev, contactPreference: true }));
+                          setErrors((prev) => ({ ...prev, contactPreference: undefined }));
+                        }}
+                        className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                      />
+                      <span className="text-sm text-gray-800">{pref.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {touched.contactPreference && errors.contactPreference && (
+                <p id="contactPreference-error" role="alert" className="mt-2 text-xs text-red-600">
+                  {errors.contactPreference}
+                </p>
+              )}
+            </fieldset>
+          </div>
         </div>
+
+        {submitError && (
+          <div role="alert" className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200">
+            <p className="text-sm text-red-700">{submitError}</p>
+          </div>
+        )}
       </div>
 
-      {submitError && (
-        <div role="alert" className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200">
-          <p className="text-sm text-red-700">{submitError}</p>
-        </div>
-      )}
-
-      <div className="mt-6">
+      {/* Submit always visible below scroll area */}
+      <div className="mt-6 pt-2">
         <button
           type="button"
           onClick={handleSubmit}
