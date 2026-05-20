@@ -1,9 +1,9 @@
 import type { ClerkClaims } from "./types.js";
 
-function b64url(s: string): Uint8Array {
+function b64url(s: string): Uint8Array<ArrayBuffer> {
   const base64 = s.replace(/-/g, "+").replace(/_/g, "/");
   const raw = atob(base64);
-  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+  return new Uint8Array([...raw].map((c) => c.charCodeAt(0)));
 }
 
 function decodePayload(token: string): Record<string, unknown> {
@@ -38,7 +38,7 @@ async function verifyRs256(token: string, key: CryptoKey): Promise<boolean> {
  */
 export async function verifyClerkJwt(token: string, jwksUri: string): Promise<ClerkClaims> {
   const header = decodeHeader(token);
-  const kid = typeof header.kid === "string" ? header.kid : undefined;
+  const kid = typeof header["kid"] === "string" ? header["kid"] : undefined;
 
   const res = await fetch(jwksUri);
   if (!res.ok) throw new Error(`JWKS fetch failed: ${res.status}`);
@@ -60,16 +60,16 @@ export async function verifyClerkJwt(token: string, jwksUri: string): Promise<Cl
 
   const claims = decodePayload(token);
   const now = Math.floor(Date.now() / 1000);
-  if (typeof claims.exp === "number" && claims.exp < now) {
+  if (typeof claims["exp"] === "number" && claims["exp"] < now) {
     throw new Error("JWT expired");
   }
-  if (typeof claims.sub !== "string") throw new Error("Missing sub claim");
+  if (typeof claims["sub"] !== "string") throw new Error("Missing sub claim");
 
   return {
-    sub: claims.sub,
-    org_id: typeof claims.org_id === "string" ? claims.org_id : undefined,
-    org_role: typeof claims.org_role === "string" ? claims.org_role : undefined,
-    exp: typeof claims.exp === "number" ? claims.exp : 0,
-    iat: typeof claims.iat === "number" ? claims.iat : 0,
+    sub: claims["sub"],
+    ...(typeof claims["org_id"] === "string" ? { org_id: claims["org_id"] } : {}),
+    ...(typeof claims["org_role"] === "string" ? { org_role: claims["org_role"] } : {}),
+    exp: typeof claims["exp"] === "number" ? claims["exp"] : 0,
+    iat: typeof claims["iat"] === "number" ? claims["iat"] : 0,
   };
 }
