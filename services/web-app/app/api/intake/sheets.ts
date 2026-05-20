@@ -13,9 +13,10 @@ export async function appendToSheet(data: IntakePayload): Promise<void> {
 
   const { google } = await import("googleapis");
 
-  const googleServiceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-  if (!googleServiceAccountJson) return;
-  const serviceAccountJson = Buffer.from(googleServiceAccountJson, "base64").toString("utf-8");
+  const serviceAccountJson = Buffer.from(
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON!,
+    "base64",
+  ).toString("utf-8");
 
   const credentials = JSON.parse(serviceAccountJson) as Record<string, unknown>;
 
@@ -60,10 +61,8 @@ export async function appendToSheet(data: IntakePayload): Promise<void> {
     empty, // Y notes
   ];
 
-  const intakeSheetId = process.env.INTAKE_SHEET_ID;
-  if (!intakeSheetId) return;
   await sheets.spreadsheets.values.append({
-    spreadsheetId: intakeSheetId,
+    spreadsheetId: process.env.INTAKE_SHEET_ID!,
     range: "Tracker!A:Y",
     valueInputOption: "RAW",
     requestBody: { values: [row] },

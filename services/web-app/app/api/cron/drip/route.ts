@@ -89,12 +89,14 @@ export async function GET(request: Request): Promise<NextResponse> {
   const sheetId = process.env.INTAKE_SHEET_ID;
   const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+  const sheetsEnabled =
+    process.env.INTAKE_SHEETS_ENABLED === "true" && serviceAccountJson && sheetId;
 
   if (!resendApiKey) {
     console.error("[drip-cron] missing RESEND_API_KEY");
     return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
-  if (process.env.INTAKE_SHEETS_ENABLED !== "true" || !serviceAccountJson || !sheetId) {
+  if (!sheetsEnabled) {
     console.error(
       "[drip-cron] Sheets not enabled — set INTAKE_SHEETS_ENABLED, GOOGLE_SERVICE_ACCOUNT_JSON, INTAKE_SHEET_ID",
     );
@@ -103,12 +105,12 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   const now = new Date();
   const resend = new Resend(resendApiKey);
-  const sheetsClient = await buildSheetsClient(serviceAccountJson);
+  const sheetsClient = await buildSheetsClient(serviceAccountJson!);
 
   // Build lead list from waitlist (Sheets) + free-trial (Clerk), deduped by email
   const leadMap = new Map<string, Lead>();
 
-  const waitlistLeads = await fetchWaitlistLeads(serviceAccountJson, sheetId);
+  const waitlistLeads = await fetchWaitlistLeads(serviceAccountJson!, sheetId!);
   for (const lead of waitlistLeads) {
     leadMap.set(lead.email, lead);
   }
@@ -135,7 +137,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
   }
 
-  const sentPairs = await loadSentPairs(sheetsClient, sheetId);
+  const sentPairs = await loadSentPairs(sheetsClient, sheetId!);
 
   const results: { email: string; step: DripStep | "skip"; error?: string }[] = [];
 
@@ -191,7 +193,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       if (error) throw new Error(error.message);
 
       const sentAt = now.toISOString();
-      await recordSent(sheetsClient, sheetId, lead.email, stepDue, sentAt);
+      await recordSent(sheetsClient, sheetId!, lead.email, stepDue, sentAt);
       sentPairs.add(pairKey);
 
       results.push({ email: lead.email, step: stepDue });
