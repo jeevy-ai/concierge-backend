@@ -5,3 +5,36 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "development"
+POSTHOG_HOST = "https://eu.i.posthog.com"
+# FROM_EMAIL should be a Resend-verified sender address, e.g. "team@jeevy.app"
+FROM_EMAIL = "team@jeevy.app"
+# CLERK_JWKS_URL is set per-environment via wrangler secret put or .dev.vars
+
+# Secrets (set via `wrangler secret put <NAME>`):
+#   CLERK_JWKS_URL
+#   STRIPE_WEBHOOK_SECRET
+#   STRIPE_SECRET_KEY
+#   POSTHOG_API_KEY       (staging key for dev/staging, prod key for production env)
+#   RESEND_API_KEY        (Resend API key for transactional email)
+#   SCHEDULING_LINK       (UXDesigner Calendly/Cal.com 20-min link, M-F 9am-5pm)
+#   INTERNAL_API_SECRET   (shared secret for /internal/* routes)
+
+# Cron trigger: nightly at-risk user scan for save-interview outreach.
+[triggers]
+crons = ["0 2 * * *"]
+
+# KV namespace for entitlement state.
+# Fill in id once created: `wrangler kv:namespace create ENTITLEMENTS_KV`
+# Then set id and preview_id below.
+[[kv_namespaces]]
+binding = "ENTITLEMENTS_KV"
+id = "FILL_IN_AFTER_YOU_296"
+preview_id = "FILL_IN_AFTER_YOU_296"
+
+# KV namespace for save-interview state (last value events, NPS, dedup).
+# Provision: `wrangler kv:namespace create INTERVIEWS_KV`
+# Then replace FILL_IN_AFTER_YOU_343 with the returned id.
+[[kv_namespaces]]
+binding = "INTERVIEWS_KV"
+id = "FILL_IN_AFTER_YOU_343"
+preview_id = "FILL_IN_AFTER_YOU_343"

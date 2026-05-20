@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import app from "../src/index.js";
+import { app } from "../src/index.js";
 
 describe("ai-action-service", () => {
   it("GET /health returns ok", async () => {
