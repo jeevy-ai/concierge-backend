@@ -60,8 +60,7 @@ export function track<K extends AnalyticsEventName>(
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isDev = (globalThis as any).__ANALYTICS_DEV__ === true;
+  const isDev = (globalThis as Record<string, unknown>).__ANALYTICS_DEV__ === true;
   if (isDev) {
     const schema = analyticsEventSchemas[event];
     const result = schema.safeParse(props);
