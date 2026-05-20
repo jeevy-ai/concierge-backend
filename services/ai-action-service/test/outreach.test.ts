@@ -18,6 +18,7 @@ function makeEnv(kvStore: Record<string, string>) {
   return {
     INTERNAL_API_SECRET: INTERNAL_SECRET,
     POLICY_KV: makeKV(kvStore),
+    CONCIERGE_KV: makeKV({}),
     RESEND_API_KEY: "re_test",
     FROM_EMAIL: "test@example.com",
     POSTHOG_API_KEY: "",
