@@ -416,8 +416,98 @@
   <!-- ── Sidebar ── -->
   <aside class="sidebar">
     <div class="tab-nav">
-      <button class="tab-btn active" onclick="switchSection('actions', this)">Actions</button>
+      <button class="tab-btn active" onclick="switchSection('concierge', this)">Concierge</button>
+      <button class="tab-btn" onclick="switchSection('actions', this)">Actions</button>
       <button class="tab-btn" onclick="switchSection('recap', this)">Recap</button>
+    </div>
+
+    <!-- Concierge pane -->
+    <div id="pane-concierge" class="tab-pane active">
+      <div class="field">
+        <label>API Endpoint</label>
+        <input type="url" id="conciergeUrl" value="https://ai-action-service.noahlaux.workers.dev/v1/ai/concierge">
+      </div>
+      <div class="field">
+        <label>Auth Token (optional)</label>
+        <input type="text" id="conciergeToken" placeholder="Leave blank — auth is disabled">
+      </div>
+      <div class="field">
+        <label>Verb</label>
+        <select id="conciergeVerb" onchange="onConciergeVerbChange()">
+          <option value="">— Select a verb —</option>
+          <option value="book_reservation">book_reservation — Book a reservation</option>
+          <option value="schedule_meeting">schedule_meeting — Schedule a meeting</option>
+          <option value="plan_my_day">plan_my_day — Plan my day</option>
+          <option value="remind_me">remind_me — Set a reminder</option>
+          <option value="errand_request">errand_request — Request an errand</option>
+        </select>
+      </div>
+
+      <!-- Concierge verb-specific fields -->
+      <div id="conciergeFieldsSection" style="display:none;margin:16px 0">
+        <div class="section-title">Verb Details</div>
+
+        <!-- book_reservation -->
+        <div id="concierge-book_reservation" style="display:none">
+          <div class="field">
+            <label>Reservation Request</label>
+            <textarea id="conciergeReservationText" rows="3" placeholder="e.g., Book a table for 2 at La Cicchetteria for tonight at 7pm…"></textarea>
+          </div>
+          <div class="field">
+            <label>Date & Time (optional)</label>
+            <input type="datetime-local" id="conciergeReservationDateTime">
+          </div>
+        </div>
+
+        <!-- schedule_meeting -->
+        <div id="concierge-schedule_meeting" style="display:none">
+          <div class="field">
+            <label>Meeting Request</label>
+            <textarea id="conciergeMeetingRequest" rows="3" placeholder="e.g., Schedule a meeting with Alice about Q2 roadmap next Tuesday at 2pm…"></textarea>
+          </div>
+        </div>
+
+        <!-- plan_my_day -->
+        <div id="concierge-plan_my_day" style="display:none">
+          <div class="field">
+            <label>Calendar/Inbox Paste</label>
+            <textarea id="conciergeDayPlanText" rows="5" placeholder="Paste your calendar events, emails, or goals here…"></textarea>
+          </div>
+        </div>
+
+        <!-- remind_me -->
+        <div id="concierge-remind_me" style="display:none">
+          <div class="field">
+            <label>Reminder Subject</label>
+            <input type="text" id="conciergeReminderSubject" placeholder="e.g., Follow up with team">
+          </div>
+          <div class="field">
+            <label>Contact / Person (optional)</label>
+            <input type="text" id="conciergeReminderContact" placeholder="e.g., Alice, or leave blank for self">
+          </div>
+          <div class="field">
+            <label>When</label>
+            <select id="conciergeReminderDelay">
+              <option value="in 1 hour">In 1 hour</option>
+              <option value="in 2 hours">In 2 hours</option>
+              <option value="tomorrow">Tomorrow at 9am</option>
+              <option value="next week">Next week at 9am</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- errand_request -->
+        <div id="concierge-errand_request" style="display:none">
+          <div class="field">
+            <label>Errand Description</label>
+            <textarea id="conciergeErrandText" rows="3" placeholder="e.g., Pick up dry cleaning, then schedule a haircut appointment…"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn btn-ghost" id="conciergeLoadDemoBtn" onclick="loadConciergeDemo()" style="display:none">Load demo</button>
+      </div>
     </div>
 
     <!-- Actions pane -->
@@ -434,20 +524,97 @@
         <label>Action</label>
         <select id="actionId" onchange="onActionChange()">
           <option value="">— Select an action —</option>
-          <option value="summarize_email">summarize_email — Draft email from tabs</option>
-          <option value="outline_doc">outline_doc — Doc outline from tabs</option>
-          <option value="bullet_slides">bullet_slides — Slide bullets from tabs</option>
-          <option value="compare_tabs">compare_tabs — Comparison table (≥ 2 tabs)</option>
-          <option value="research_brief">research_brief — Research brief</option>
-          <option value="regroup_windows">regroup_windows — Regroup into windows</option>
+          <optgroup label="Existing Actions">
+            <option value="summarize_email">summarize_email — Draft email from tabs</option>
+            <option value="outline_doc">outline_doc — Doc outline from tabs</option>
+            <option value="bullet_slides">bullet_slides — Slide bullets from tabs</option>
+            <option value="compare_tabs">compare_tabs — Comparison table (≥ 2 tabs)</option>
+            <option value="research_brief">research_brief — Research brief</option>
+            <option value="regroup_windows">regroup_windows — Regroup into windows</option>
+          </optgroup>
+          <optgroup label="Concierge">
+            <option value="schedule_meeting">schedule_meeting — Schedule a meeting</option>
+            <option value="plan_my_day">plan_my_day — Plan my day</option>
+            <option value="remind_me">remind_me — Set a reminder</option>
+            <option value="errand_request">errand_request — Request an errand</option>
+            <option value="book_reservation">book_reservation — Book a reservation</option>
+          </optgroup>
         </select>
       </div>
       <div class="field">
         <label>Context Hint <span style="font-weight:400;text-transform:none">(optional, max 250 chars)</span></label>
         <textarea id="contextHint" rows="2" placeholder="Extra context for the action…"></textarea>
       </div>
-      <hr>
-      <div class="section-title">Tabs</div>
+
+      <!-- Concierge secondary fields -->
+      <div id="secondaryFieldsSection" style="display:none;margin:16px 0">
+        <div class="section-title">Action Details</div>
+
+        <!-- schedule_meeting -->
+        <div id="field-schedule_meeting" style="display:none">
+          <div class="field">
+            <label>Meeting Request</label>
+            <textarea id="meetingRequest" rows="3" placeholder="e.g., Schedule a meeting with Alice about Q2 roadmap next Tuesday at 2pm…"></textarea>
+          </div>
+        </div>
+
+        <!-- plan_my_day -->
+        <div id="field-plan_my_day" style="display:none">
+          <div class="field">
+            <label>Today's Goals</label>
+            <textarea id="dayPlanText" rows="4" placeholder="What do you want to accomplish today?…" style="font-family:inherit"></textarea>
+          </div>
+        </div>
+
+        <!-- remind_me -->
+        <div id="field-remind_me" style="display:none">
+          <div class="field">
+            <label>Reminder Subject</label>
+            <input type="text" id="reminderSubject" placeholder="e.g., Follow up with team">
+          </div>
+          <div class="field">
+            <label>Contact / Person</label>
+            <input type="text" id="reminderContact" placeholder="e.g., Team lead, or leave blank for self">
+          </div>
+          <div class="field">
+            <label>When</label>
+            <select id="reminderDelay">
+              <option value="in 1 hour">In 1 hour</option>
+              <option value="in 2 hours">In 2 hours</option>
+              <option value="tomorrow">Tomorrow at 9am</option>
+              <option value="next week">Next week at 9am</option>
+              <option value="custom">Custom time…</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- errand_request -->
+        <div id="field-errand_request" style="display:none">
+          <div class="field">
+            <label>Errand Description</label>
+            <textarea id="errandText" rows="4" placeholder="What errand or task do you need help with?…"></textarea>
+          </div>
+        </div>
+
+        <!-- book_reservation -->
+        <div id="field-book_reservation" style="display:none">
+          <div class="field">
+            <label>Venue / Restaurant</label>
+            <input type="text" id="reservationVenue" placeholder="e.g., La Cicchetteria">
+          </div>
+          <div class="field">
+            <label>Date & Time</label>
+            <input type="datetime-local" id="reservationDateTime">
+          </div>
+          <div class="field">
+            <label>Party Size</label>
+            <input type="number" id="partySize" min="1" max="50" value="2" placeholder="2">
+          </div>
+        </div>
+      </div>
+
+      <hr id="tabsHr">
+      <div class="section-title" id="tabsTitle">Tabs</div>
       <div class="tabs-list" id="actionTabsList"></div>
       <div class="field">
         <label>Tab Title</label>
@@ -512,8 +679,30 @@
 'use strict';
 
 // ── State ──
-let activeSection = 'actions';
+let activeSection = 'concierge';
 const actionTabs = [];
+const conciergeDemos = {
+  book_reservation: {
+    text: 'Book a table for 2 at La Cicchetteria tomorrow at 7pm'
+  },
+  schedule_meeting: {
+    text: 'Schedule a meeting with Alice about Q2 roadmap next Tuesday at 2pm'
+  },
+  plan_my_day: {
+    text: `9am - Team standup
+10am - Code review for PR #42
+12pm - Lunch
+1pm - Design sync for Concierge UI
+3pm - Work on database migration
+4pm - 1-1 with manager`
+  },
+  remind_me: {
+    text: 'Follow up with Bob about contract review'
+  },
+  errand_request: {
+    text: 'Pick up dry cleaning at the corner shop, then schedule a haircut appointment'
+  }
+};
 
 // ── Section switching ──
 function switchSection(section, btn) {
@@ -587,6 +776,46 @@ function loadDemoTabs() {
 
 function onActionChange() {
   const id = document.getElementById('actionId').value;
+  const conciergeVerbs = ['schedule_meeting', 'plan_my_day', 'remind_me', 'errand_request', 'book_reservation'];
+  const isConcierge = conciergeVerbs.includes(id);
+
+  // Show/hide secondary fields and tabs section
+  const secondaryFields = document.getElementById('secondaryFieldsSection');
+  const tabsHr = document.getElementById('tabsHr');
+  const tabsTitle = document.getElementById('tabsTitle');
+  const tabsList = document.getElementById('actionTabsList');
+  const tabsSection = tabsList.parentElement;
+
+  if (isConcierge) {
+    secondaryFields.style.display = 'block';
+    tabsHr.style.display = 'none';
+    tabsTitle.style.display = 'none';
+    // Hide all tab-related fields
+    const tabFields = tabsSection.querySelectorAll('.field');
+    tabFields.forEach(f => f.style.display = 'none');
+    tabsList.style.display = 'none';
+    const btnRow = tabsSection.querySelector('.btn-row');
+    if (btnRow) btnRow.style.display = 'none';
+  } else {
+    secondaryFields.style.display = 'none';
+    tabsHr.style.display = 'block';
+    tabsTitle.style.display = 'block';
+    // Show all tab-related fields
+    const tabFields = tabsSection.querySelectorAll('.field');
+    tabFields.forEach(f => f.style.display = 'block');
+    tabsList.style.display = 'block';
+    const btnRow = tabsSection.querySelector('.btn-row');
+    if (btnRow) btnRow.style.display = 'flex';
+  }
+
+  // Show/hide individual secondary field
+  document.querySelectorAll('[id^="field-"]').forEach(el => el.style.display = 'none');
+  if (isConcierge) {
+    const field = document.getElementById('field-' + id);
+    if (field) field.style.display = 'block';
+  }
+
+  // Show compare_tabs hint
   document.getElementById('compare-hint').style.display = id === 'compare_tabs' ? 'block' : 'none';
 }
 
@@ -646,27 +875,82 @@ async function sendAction() {
   if (!url) return showError('API Endpoint is required.');
   if (!userId) return showError('User ID is required. Set it in the header.');
   if (!actionId) return showError('Select an action.');
-  if (actionTabs.length === 0) return showError('Add at least one tab.');
-  if (actionId === 'compare_tabs' && actionTabs.length < 2) return showError('compare_tabs requires at least 2 tabs.');
 
-  const payload = { userId, actionId, tabs: actionTabs, ...(contextHint ? { contextHint } : {}) };
-  showLoading('Running ' + actionId + '…');
-  setSendDisabled(true);
+  const conciergeVerbs = ['schedule_meeting', 'plan_my_day', 'remind_me', 'errand_request', 'book_reservation'];
+  const isConcierge = conciergeVerbs.includes(actionId);
 
-  try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
-    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
-    const data = await res.json();
-    setSendDisabled(false);
-    if (!res.ok || data.error) {
-      showErrorResponse(data);
-    } else {
-      showActionResult(data);
+  if (isConcierge) {
+    // For concierge verbs, validate required secondary fields
+    let requestText = '';
+    switch (actionId) {
+      case 'schedule_meeting':
+        requestText = document.getElementById('meetingRequest').value.trim();
+        if (!requestText) return showError('Meeting request is required.');
+        break;
+      case 'plan_my_day':
+        requestText = document.getElementById('dayPlanText').value.trim();
+        if (!requestText) return showError('Today\'s goals are required.');
+        break;
+      case 'remind_me':
+        const subject = document.getElementById('reminderSubject').value.trim();
+        if (!subject) return showError('Reminder subject is required.');
+        requestText = subject;
+        break;
+      case 'errand_request':
+        requestText = document.getElementById('errandText').value.trim();
+        if (!requestText) return showError('Errand description is required.');
+        break;
+      case 'book_reservation':
+        const venue = document.getElementById('reservationVenue').value.trim();
+        const datetime = document.getElementById('reservationDateTime').value;
+        const partySize = document.getElementById('partySize').value;
+        if (!venue) return showError('Venue is required.');
+        if (!datetime) return showError('Date & time is required.');
+        requestText = `${partySize} people at ${venue} on ${datetime}`;
+        break;
     }
-  } catch (err) {
-    setSendDisabled(false);
-    showError('Request failed: ' + err.message);
+    const payload = { userId, actionId, requestText, ...(contextHint ? { contextHint } : {}) };
+    showLoading('Running ' + actionId + '…');
+    setSendDisabled(true);
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+      const data = await res.json();
+      setSendDisabled(false);
+      if (!res.ok || data.error) {
+        showErrorResponse(data);
+      } else {
+        showActionResult(data);
+      }
+    } catch (err) {
+      setSendDisabled(false);
+      showError('Request failed: ' + err.message);
+    }
+  } else {
+    // For existing actions, tabs are required
+    if (actionTabs.length === 0) return showError('Add at least one tab.');
+    if (actionId === 'compare_tabs' && actionTabs.length < 2) return showError('compare_tabs requires at least 2 tabs.');
+
+    const payload = { userId, actionId, tabs: actionTabs, ...(contextHint ? { contextHint } : {}) };
+    showLoading('Running ' + actionId + '…');
+    setSendDisabled(true);
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+      const data = await res.json();
+      setSendDisabled(false);
+      if (!res.ok || data.error) {
+        showErrorResponse(data);
+      } else {
+        showActionResult(data);
+      }
+    } catch (err) {
+      setSendDisabled(false);
+      showError('Request failed: ' + err.message);
+    }
   }
 }
 
@@ -799,13 +1083,18 @@ function showActionResult(data) {
   let content = '';
 
   switch (actionId) {
-    case 'summarize_email': content = renderEmail(payload); break;
-    case 'outline_doc':     content = renderOutline(payload); break;
-    case 'bullet_slides':   content = renderSlides(payload); break;
-    case 'compare_tabs':    content = renderCompare(payload); break;
-    case 'research_brief':  content = renderBrief(payload); break;
-    case 'regroup_windows': content = renderGroups(payload); break;
-    default:                content = `<pre class="raw-json-pre">${esc(JSON.stringify(payload, null, 2))}</pre>`;
+    case 'summarize_email':   content = renderEmail(payload); break;
+    case 'outline_doc':       content = renderOutline(payload); break;
+    case 'bullet_slides':     content = renderSlides(payload); break;
+    case 'compare_tabs':      content = renderCompare(payload); break;
+    case 'research_brief':    content = renderBrief(payload); break;
+    case 'regroup_windows':   content = renderGroups(payload); break;
+    case 'schedule_meeting':  content = renderMeeting(payload); break;
+    case 'plan_my_day':       content = renderDayPlan(payload); break;
+    case 'remind_me':         content = renderReminder(payload); break;
+    case 'errand_request':    content = renderErrand(payload); break;
+    case 'book_reservation':  content = renderReservation(payload); break;
+    default:                  content = `<pre class="raw-json-pre">${esc(JSON.stringify(payload, null, 2))}</pre>`;
   }
 
   document.getElementById('resultArea').innerHTML = `
@@ -970,6 +1259,122 @@ function renderCluster(c) {
         </div>
         <span>Windows: ${(c.intentWindowIds || []).join(', ')}</span>
       </div>
+    </div>`;
+}
+
+// ── Concierge result renderers ──
+function renderMeeting(p) {
+  const attendee = p.attendee || '';
+  const slots = Array.isArray(p.proposedSlots) ? p.proposedSlots : [];
+  const invite = p.draftInvite || '';
+  return `
+    <div class="email-field">
+      <div class="email-label">Attendee</div>
+      <div class="email-value">${esc(attendee)}</div>
+    </div>
+    ${slots.length ? `<div class="email-field">
+      <div class="email-label">Proposed Slots</div>
+      <ul style="list-style:disc;margin-left:20px">
+        ${slots.map(s => `<li>${esc(s.label || s.iso)}</li>`).join('')}
+      </ul>
+    </div>` : ''}
+    <div class="email-field">
+      <div class="email-label">Draft Invite</div>
+      <div class="email-value">${esc(invite)}</div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn btn-ghost" style="font-size:12px" onclick="copyText(${JSON.stringify(invite)})">Copy invite</button>
+    </div>`;
+}
+
+function renderDayPlan(p) {
+  const plan = Array.isArray(p.rankedPlan) ? p.rankedPlan : [];
+  const rationale = p.rationale || '';
+  const priorityColor = { high: 'var(--err)', medium: 'var(--warn)', low: 'var(--text3)' };
+  return `
+    ${plan.map(item => `
+      <div style="margin-bottom:12px;padding:10px;background:var(--surface2);border-radius:6px">
+        <div style="font-weight:600;color:var(--text);margin-bottom:4px">${esc(item.time)} — ${esc(item.task)}</div>
+        <div style="font-size:11px;color:${priorityColor[item.priority] || 'var(--text3)'}">Priority: ${esc(item.priority)}</div>
+      </div>`).join('')}
+    <div style="margin-top:14px;padding:10px;background:var(--accent-light);border-left:3px solid var(--accent);border-radius:4px">
+      <div style="font-size:12px;font-weight:600;color:var(--accent-dark);margin-bottom:4px">Rationale</div>
+      <div style="font-size:13px;color:var(--accent-dark)">${esc(rationale)}</div>
+    </div>`;
+}
+
+function renderReminder(p) {
+  const subject = p.subject || '';
+  const contact = p.contact || '';
+  const dueAt = p.dueAt || '';
+  const ack = p.ack || '';
+  const dueTime = dueAt ? new Date(dueAt).toLocaleString('en-US', { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+  return `
+    <div class="email-field">
+      <div class="email-label">Subject</div>
+      <div class="email-value">${esc(subject)}</div>
+    </div>
+    <div class="email-field">
+      <div class="email-label">Contact / Recipient</div>
+      <div class="email-value">${esc(contact)}</div>
+    </div>
+    <div class="email-field">
+      <div class="email-label">Due At</div>
+      <div class="email-value">${esc(dueTime)}</div>
+    </div>
+    <div style="margin-top:14px;padding:10px;background:var(--success-bg);border-left:3px solid var(--success);border-radius:4px">
+      <div style="font-size:12px;font-weight:600;color:var(--success);margin-bottom:4px">Confirmation</div>
+      <div style="font-size:13px;color:var(--success)">${esc(ack)}</div>
+    </div>`;
+}
+
+function renderErrand(p) {
+  const summary = p.summary || '';
+  const checklist = Array.isArray(p.checklist) ? p.checklist : [];
+  const nextActions = Array.isArray(p.nextActions) ? p.nextActions : [];
+  return `
+    <div style="margin-bottom:14px;padding:10px;background:var(--surface2);border-radius:6px">
+      <div style="font-size:13px;color:var(--text);line-height:1.6">${esc(summary)}</div>
+    </div>
+    ${checklist.length ? `<div class="section-title">Checklist</div>
+    <ul style="list-style:disc;margin-left:20px;margin-bottom:14px">
+      ${checklist.map(item => `<li style="margin-bottom:4px">${esc(item)}</li>`).join('')}
+    </ul>` : ''}
+    ${nextActions.length ? `<div style="padding:10px;background:var(--accent-light);border-left:3px solid var(--accent);border-radius:4px">
+      <div style="font-size:12px;font-weight:600;color:var(--accent-dark);margin-bottom:6px">Next Steps</div>
+      <ul style="list-style:disc;margin-left:20px">
+        ${nextActions.map(action => `<li style="font-size:13px;color:var(--text);margin-bottom:3px">${esc(action)}</li>`).join('')}
+      </ul>
+    </div>` : ''}`;
+}
+
+function renderReservation(p) {
+  const venue = p.venue || '';
+  const slot = p.slot || '';
+  const partySize = p.partySize || '';
+  const fallbacks = Array.isArray(p.fallbacks) ? p.fallbacks : [];
+  const calLink = p.calendarAddLink || '';
+  return `
+    <div class="email-field">
+      <div class="email-label">Venue</div>
+      <div class="email-value">${esc(venue)}</div>
+    </div>
+    <div class="email-field">
+      <div class="email-label">Reservation Time</div>
+      <div class="email-value">${esc(slot)}</div>
+    </div>
+    <div class="email-field">
+      <div class="email-label">Party Size</div>
+      <div class="email-value">${esc(String(partySize))} people</div>
+    </div>
+    ${fallbacks.length ? `<div class="email-field">
+      <div class="email-label">Fallback Options</div>
+      <ul style="list-style:disc;margin-left:20px">
+        ${fallbacks.map(f => `<li>${esc(f)}</li>`).join('')}
+      </ul>
+    </div>` : ''}
+    <div style="margin-top:12px">
+      ${calLink ? `<button class="btn btn-primary" style="font-size:12px" onclick="window.open(${JSON.stringify(calLink)},'_blank')">Add to Calendar</button>` : ''}
     </div>`;
 }
 
