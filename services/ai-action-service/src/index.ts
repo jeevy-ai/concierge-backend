@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { type AiErrorCode, type AiErrorEnvelope } from "@jeevy/contracts";
 import { type ActionDef, type MinimizedTab, type RawTab, minimizeTab } from "./actions/_shared.js";
 import { ACTIONS, ACTION_IDS } from "./actions/index.js";
 
@@ -27,12 +28,11 @@ export type Warning = { code: string; message: string };
 type IdempotencyEntry = { storedAt: number; response: ActionResponse };
 const idempotencyCache = new Map<string, IdempotencyEntry>();
 
-type ErrorEnvelope = {
+type ErrorEnvelope = AiErrorEnvelope & {
   actionId: string | null;
   result: null;
   confidence: 0;
   warnings: [];
-  error: { code: string; message: string; retryable: boolean };
 };
 
 type ActionResponse = {
@@ -46,8 +46,8 @@ type ActionResponse = {
   warnings: Warning[];
 };
 
-function envelopeError(actionId: string | null, code: string, message: string, retryable: boolean): ErrorEnvelope {
-  return { actionId, result: null, confidence: 0, warnings: [], error: { code, message, retryable } };
+function envelopeError(actionId: string | null, code: AiErrorCode, message: string, retryable: boolean): ErrorEnvelope {
+  return { actionId, result: null, confidence: 0, warnings: [], error: { code, message, retryable }, fallback: null };
 }
 
 function unauthorized(actionId: string | null): ErrorEnvelope {

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { type AiErrorEnvelope, type AiFallback } from "@jeevy/contracts";
 import { type RecapProvider, createProvider } from "./recap-provider.js";
 
 export type Env = {
@@ -86,12 +87,7 @@ type RecapResponse = {
   warnings: string[];
 };
 
-type ErrorBody = {
-  error: { code: string; message: string; retryable: boolean };
-  fallback: { overview: string; suggestedNextActions: string[] };
-};
-
-function emptyFallback(overview: string): { overview: string; suggestedNextActions: string[] } {
+function emptyFallback(overview: string): AiFallback {
   return {
     overview,
     suggestedNextActions: [
@@ -101,25 +97,25 @@ function emptyFallback(overview: string): { overview: string; suggestedNextActio
   };
 }
 
-function unauthorized(message: string): ErrorBody {
+function unauthorized(message: string): AiErrorEnvelope {
   return { error: { code: "UNAUTHORIZED", message, retryable: false }, fallback: emptyFallback("Authentication required.") };
 }
 
-function badRequest(message: string): ErrorBody {
+function badRequest(message: string): AiErrorEnvelope {
   return {
     error: { code: "INVALID_INPUT", message, retryable: false },
     fallback: emptyFallback("Could not process intent windows for recap."),
   };
 }
 
-function payloadTooLarge(message: string): ErrorBody {
+function payloadTooLarge(message: string): AiErrorEnvelope {
   return {
     error: { code: "PAYLOAD_TOO_LARGE", message, retryable: false },
     fallback: emptyFallback("Intent window batch exceeded recap size limits."),
   };
 }
 
-function upstreamError(message: string): ErrorBody {
+function upstreamError(message: string): AiErrorEnvelope {
   return {
     error: { code: "UPSTREAM_ERROR", message, retryable: true },
     fallback: emptyFallback("Recap generator unavailable; try again shortly."),
@@ -190,7 +186,7 @@ function minimizeTab(tab: RawTab): MinimizedTab {
 
 type ValidatedRequest = { userId: string; intentWindows: IntentWindow[]; totalTabs: number };
 
-function validateRequest(payload: unknown): { ok: true; data: ValidatedRequest } | { ok: false; error: ErrorBody } {
+function validateRequest(payload: unknown): { ok: true; data: ValidatedRequest } | { ok: false; error: AiErrorEnvelope } {
   if (!payload || typeof payload !== "object") {
     return { ok: false, error: badRequest("I couldn't read that request — the body needs to be a JSON object.") };
   }
