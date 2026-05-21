@@ -4,6 +4,8 @@ import { cors } from "hono/cors";
 import { type AiErrorCode, type AiErrorEnvelope } from "@jeevy/contracts";
 import { type ActionDef, type MinimizedTab, type RawTab, minimizeTab } from "./actions/_shared.js";
 import { ACTIONS, ACTION_IDS } from "./actions/index.js";
+import type { ConciergeVerbDef } from "./verbs/_shared.js";
+import { VERBS, VERB_IDS } from "./verbs/index.js";
 
 export type Env = {
   ENVIRONMENT: string;
@@ -345,6 +347,155 @@ async function runAction(
   return buildResponse(action, validated, "deterministic", warnings, new Date().toISOString());
 }
 
+// ─── Concierge verb types + helpers ───────────────────────────────────────────
+
+type VerbResponse = {
+  contractVersion: string;
+  verbId: string;
+  generatedAt: string;
+  source: "llm" | "deterministic";
+  isConfident: boolean;
+  confidence: number;
+  result: { kind: string; payload: Record<string, unknown> };
+  warnings: Warning[];
+};
+
+type ConciergePayload = { userId: string; verbId: string; text: string };
+
+function validateConciergeRequest(
+  payload: unknown,
+): { ok: true; data: ConciergePayload } | { ok: false; error: ErrorEnvelope } {
+  if (!payload || typeof payload !== "object") {
+    return { ok: false, error: badRequest(null, "I couldn't read that request — the body needs to be a JSON object.") };
+  }
+  const p = payload as Record<string, unknown>;
+  if (typeof p["userId"] !== "string" || p["userId"].length === 0) {
+    return { ok: false, error: badRequest(null, "I'll need a userId to continue — please include one in the request body.") };
+  }
+  const verbId = p["verbId"];
+  if (typeof verbId !== "string" || !VERB_IDS.includes(verbId)) {
+    return {
+      ok: false,
+      error: badRequest(
+        typeof verbId === "string" ? verbId : null,
+        `I don't recognise that verb. Available verbs: ${VERB_IDS.join(", ")}.`,
+      ),
+    };
+  }
+  if (typeof p["text"] !== "string" || p["text"].trim().length === 0) {
+    return { ok: false, error: badRequest(verbId, "I'll need a non-empty text field to work with.") };
+  }
+  if (p["text"].length > 2000) {
+    return { ok: false, error: payloadTooLarge(verbId, "The text field is too long — please keep it to 2000 characters or fewer.") };
+  }
+  return { ok: true, data: { userId: p["userId"] as string, verbId, text: p["text"] as string } };
+}
+
+async function callAnthropicForVerb(
+  verb: ConciergeVerbDef,
+  text: string,
+  apiKey: string,
+  timeoutMs: number,
+  sonnetModel: string,
+  haikuModel: string,
+): Promise<unknown> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const modelId = verb.model === "haiku" ? haikuModel : sonnetModel;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: modelId,
+        max_tokens: 2048,
+        system: [{ type: "text", text: verb.systemPrompt, cache_control: { type: "ephemeral" } }],
+        messages: [{ role: "user", content: verb.buildUserMessage(text) }],
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`anthropic ${res.status}`);
+    const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
+    const responseText = Array.isArray(data.content)
+      ? data.content
+          .filter((part) => part.type === "text")
+          .map((part) => part.text ?? "")
+          .join("")
+      : "";
+    if (!responseText) throw new Error("anthropic empty response");
+    try {
+      return JSON.parse(responseText) as unknown;
+    } catch {
+      const match = responseText.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("anthropic non-json");
+      return JSON.parse(match[0]) as unknown;
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function buildVerbResponse(verb: ConciergeVerbDef, validated: ReturnType<ConciergeVerbDef["validate"]>, source: "llm" | "deterministic", extraWarnings: string[], generatedAt: string): VerbResponse {
+  const v = validated!;
+  const envelope = verb.toEnvelopeFields(v);
+  const warnings: Warning[] = [
+    ...envelope.warnings.map((message) => ({ code: "WARNING", message })),
+    ...extraWarnings.map((message) => ({ code: "LLM_FALLBACK", message })),
+  ];
+  if (envelope.confidence < verb.defaultConfidenceThreshold) {
+    warnings.push({
+      code: "LOW_CONFIDENCE",
+      message: "My confidence in this result is below the reliability threshold — treat it as a starting point and verify before acting on it.",
+    });
+  }
+  return {
+    contractVersion: CONTRACT_VERSION,
+    verbId: verb.id,
+    generatedAt,
+    source,
+    isConfident: envelope.confidence >= verb.defaultConfidenceThreshold,
+    confidence: envelope.confidence,
+    result: { kind: verb.resultKind, payload: verb.toResultPayload(v) },
+    warnings,
+  };
+}
+
+async function runVerb(verb: ConciergeVerbDef, text: string, env: Env): Promise<VerbResponse> {
+  const warnings: string[] = [];
+  const actionUseLlm = env.ACTION_USE_LLM === "true";
+  const apiKey = env.ANTHROPIC_API_KEY;
+  const timeoutMs = Number.parseInt(env.ANTHROPIC_TIMEOUT_MS || "7000", 10);
+  const sonnetModel = env.ANTHROPIC_SONNET_MODEL || "claude-sonnet-4-6";
+  const haikuModel = env.ANTHROPIC_HAIKU_MODEL || "claude-haiku-4-5-20251001";
+
+  if (actionUseLlm && apiKey) {
+    try {
+      const raw = await callAnthropicForVerb(verb, text, apiKey, timeoutMs, sonnetModel, haikuModel);
+      const validated = verb.validate(raw);
+      if (validated) {
+        return buildVerbResponse(verb, validated, "llm", warnings, new Date().toISOString());
+      }
+      warnings.push("LLM response failed schema validation; using deterministic fallback.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "unknown";
+      warnings.push(`LLM call failed (${msg}); using deterministic fallback.`);
+    }
+  } else if (actionUseLlm && !apiKey) {
+    warnings.push("ACTION_USE_LLM is set but ANTHROPIC_API_KEY is missing; using deterministic fallback.");
+  }
+
+  const fallback = verb.deterministic(text);
+  const validated = verb.validate(fallback);
+  if (!validated) throw new Error(`deterministic fallback failed validation for ${verb.id}`);
+  return buildVerbResponse(verb, validated, "deterministic", warnings, new Date().toISOString());
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.use("*", cors());
@@ -405,6 +556,48 @@ app.post("/v1/ai/action", async (c) => {
     const msg = err instanceof Error ? err.message : "action generation failed";
     c.header("X-Request-Id", requestId);
     return c.json({ requestId, ...upstreamError(actionId, msg) }, 502);
+  }
+});
+
+app.post("/v1/ai/concierge", async (c) => {
+  const requestId = crypto.randomUUID();
+  const env = c.env;
+  const authMode = env.AUTH_MODE || "none";
+  const authToken = env.AUTH_BEARER_TOKEN || "";
+
+  if (!isAuthorized(c.req.header("authorization"), authMode, authToken)) {
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...unauthorized(null) }, 401);
+  }
+
+  let payload: unknown;
+  try {
+    payload = await c.req.json();
+  } catch {
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...badRequest(null, "I couldn't parse that request — the body must be valid JSON.") }, 400);
+  }
+
+  const validation = validateConciergeRequest(payload);
+  if (!validation.ok) {
+    const code = validation.error.error.code;
+    const status = code === "PAYLOAD_TOO_LARGE" ? 413 : 400;
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...validation.error }, status);
+  }
+
+  const { userId, verbId, text } = validation.data;
+  const verb = VERBS[verbId]!;
+
+  try {
+    const response = await runVerb(verb, text, env);
+    await emitFirstValue(userId, verbId, response.source, response.confidence, env).catch(() => {});
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...response }, 200);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "verb generation failed";
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...upstreamError(verbId, msg) }, 502);
   }
 });
 

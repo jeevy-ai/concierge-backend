@@ -4,6 +4,7 @@ import { bullet_slides } from "../src/actions/bullet_slides.js";
 import { regroup_windows } from "../src/actions/regroup_windows.js";
 import { research_brief } from "../src/actions/research_brief.js";
 import { compare_tabs } from "../src/actions/compare_tabs.js";
+import { VERB_IDS } from "../src/verbs/index.js";
 
 const BASE_ENV: Env = {
   ENVIRONMENT: "test",
@@ -538,6 +539,166 @@ describe("butler-voiced deterministic fallback — YOU-509", () => {
   it("research_brief overview references contextHint when provided", () => {
     const result = research_brief.deterministic([TAB], "Q2 planning session") as unknown as AnyBrief;
     expect(result.overview).toContain("Q2 planning session");
+  });
+});
+
+describe("YOU-567: POST /v1/ai/concierge", () => {
+  const BASE_CONCIERGE = { userId: "user-concierge-1", verbId: "book_reservation", text: "Book a table at Noma for 4 people next Saturday evening" };
+
+  it("returns 200 with structured result for all 5 verb IDs", async () => {
+    const verbs = VERB_IDS;
+    const texts: Record<string, string> = {
+      book_reservation: "Book a table at Noma for 4 people next Saturday",
+      schedule_meeting: "Schedule a meeting with Alice about the Q3 roadmap tomorrow at 10am",
+      plan_my_day: "I need to review PRs, write the spec, and prep for the 3pm standup",
+      remind_me: "Remind me to call the dentist tomorrow morning",
+      errand_request: "Pick up dry cleaning, buy groceries, and drop off the package at the post office",
+    };
+    for (const verbId of verbs) {
+      const text = texts[verbId] ?? "do something";
+      const res = await app.request(
+        "/v1/ai/concierge",
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "test-user", verbId, text }) },
+        BASE_ENV,
+      );
+      expect(res.status, `${verbId} should return 200`).toBe(200);
+      const body = (await res.json()) as { verbId: string; contractVersion: string; result: { kind: string; payload: unknown }; source: string };
+      expect(body.verbId).toBe(verbId);
+      expect(body.contractVersion).toBe("2026-05-03");
+      expect(body.source).toBe("deterministic");
+      expect(body.result.kind).toBeTruthy();
+      expect(body.result.payload).toBeTruthy();
+    }
+  });
+
+  it("returns 400 INVALID_INPUT for unknown verbId", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "test-user", verbId: "unknown_verb", text: "do stuff" }) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("INVALID_INPUT");
+  });
+
+  it("returns 400 when text is missing", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "test-user", verbId: "book_reservation" }) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("INVALID_INPUT");
+  });
+
+  it("returns 400 when userId is missing", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ verbId: "book_reservation", text: "book a table" }) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("book_reservation deterministic passes validate()", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(BASE_CONCIERGE) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { result: { payload: { venue: string; partySize: number; fallbacks: string[]; calendarAddLink: string } } };
+    expect(typeof body.result.payload.venue).toBe("string");
+    expect(body.result.payload.partySize).toBeGreaterThan(0);
+    expect(Array.isArray(body.result.payload.fallbacks)).toBe(true);
+    expect(typeof body.result.payload.calendarAddLink).toBe("string");
+  });
+
+  it("schedule_meeting deterministic passes validate()", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "u1", verbId: "schedule_meeting", text: "Schedule a meeting with Bob about the launch" }) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { result: { payload: { attendee: string; proposedSlots: unknown[]; draftInvite: string } } };
+    expect(typeof body.result.payload.attendee).toBe("string");
+    expect(Array.isArray(body.result.payload.proposedSlots)).toBe(true);
+    expect(body.result.payload.proposedSlots.length).toBeGreaterThan(0);
+    expect(typeof body.result.payload.draftInvite).toBe("string");
+  });
+
+  it("plan_my_day deterministic passes validate()", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "u2", verbId: "plan_my_day", text: "Review PRs and write the spec and prep standup" }) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { result: { payload: { rankedPlan: unknown[]; rationale: string } } };
+    expect(Array.isArray(body.result.payload.rankedPlan)).toBe(true);
+    expect(body.result.payload.rankedPlan.length).toBeGreaterThan(0);
+    expect(typeof body.result.payload.rationale).toBe("string");
+  });
+
+  it("remind_me deterministic passes validate()", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "u3", verbId: "remind_me", text: "Remind me to call the dentist tomorrow" }) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { result: { payload: { subject: string; contact: string; dueAt: string; ack: string } } };
+    expect(typeof body.result.payload.subject).toBe("string");
+    expect(typeof body.result.payload.dueAt).toBe("string");
+    expect(typeof body.result.payload.ack).toBe("string");
+  });
+
+  it("errand_request deterministic passes validate()", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "u4", verbId: "errand_request", text: "Pick up dry cleaning and buy groceries" }) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { result: { payload: { summary: string; checklist: string[]; nextActions: string[] } } };
+    expect(typeof body.result.payload.summary).toBe("string");
+    expect(Array.isArray(body.result.payload.checklist)).toBe(true);
+    expect(body.result.payload.checklist.length).toBeGreaterThan(0);
+    expect(Array.isArray(body.result.payload.nextActions)).toBe(true);
+  });
+
+  it("returns X-Request-Id header on success", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(BASE_CONCIERGE) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-request-id")).toBeTruthy();
+  });
+
+  it("returns X-Request-Id header on 400 error", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "u", verbId: "bad", text: "x" }) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(400);
+    expect(res.headers.get("x-request-id")).toBeTruthy();
+  });
+
+  it("413 when text exceeds 2000 chars", async () => {
+    const res = await app.request(
+      "/v1/ai/concierge",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "u", verbId: "book_reservation", text: "x".repeat(2001) }) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(413);
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("PAYLOAD_TOO_LARGE");
   });
 });
 
