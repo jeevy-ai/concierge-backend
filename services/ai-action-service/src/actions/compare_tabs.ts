@@ -111,6 +111,13 @@ function validate(raw: unknown): ValidatedTable | null {
   if (!isNonEmptyString(r["markdown"], 8000)) return null;
   if (!isNonEmptyString(r["csv"], 8000)) return null;
   if (!Array.isArray(r["warnings"])) return null;
+  // Reject when any column has every cell as a dash placeholder — the LLM failed to compare
+  const dashRe = /^[-—–]+$/;
+  for (let col = 0; col < (cols as string[]).length; col++) {
+    if ((rows as Array<Record<string, unknown>>).every((row) => dashRe.test(((row["cells"] as string[])[col] ?? "").trim()))) {
+      return null;
+    }
+  }
   return {
     columns: (cols as string[]).map((c) => truncate(c, 40)),
     rows: (rows as Array<{ item: string; cells: string[] }>).map((row) => ({

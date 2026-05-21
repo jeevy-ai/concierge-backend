@@ -3,6 +3,7 @@ import app, { type Env } from "../src/index.js";
 import { bullet_slides } from "../src/actions/bullet_slides.js";
 import { regroup_windows } from "../src/actions/regroup_windows.js";
 import { research_brief } from "../src/actions/research_brief.js";
+import { compare_tabs } from "../src/actions/compare_tabs.js";
 
 const BASE_ENV: Env = {
   ENVIRONMENT: "test",
@@ -518,5 +519,46 @@ describe("butler-voiced deterministic fallback — YOU-509", () => {
   it("research_brief overview references contextHint when provided", () => {
     const result = research_brief.deterministic([TAB], "Q2 planning session") as unknown as AnyBrief;
     expect(result.overview).toContain("Q2 planning session");
+  });
+});
+
+describe("compare_tabs validate() — YOU-528 all-dash Notes guard", () => {
+  function rawTable(notesValues: string[]): unknown {
+    const rows = notesValues.map((note, i) => ({
+      item: `Tab ${i + 1}`,
+      cells: [`Tab ${i + 1}`, "notion.so", note],
+    }));
+    const md =
+      "| Item | Domain | Notes |\n| --- | --- | --- |\n" +
+      rows.map((r) => `| ${r.cells.join(" | ")} |`).join("\n");
+    return {
+      columns: ["Item", "Domain", "Notes"],
+      rows,
+      markdown: md,
+      csv: `Item,Domain,Notes\n${rows.map((r) => r.cells.join(",")).join("\n")}`,
+      confidence: 0.8,
+      warnings: [],
+    };
+  }
+
+  // YOU-528 exact evidence: all Notes = "-"
+  it("rejects LLM response where every Notes cell is a hyphen", () => {
+    expect(compare_tabs.validate(rawTable(["-", "-"]))).toBeNull();
+  });
+
+  it("rejects LLM response where every Notes cell is an em-dash", () => {
+    expect(compare_tabs.validate(rawTable(["—", "—"]))).toBeNull();
+  });
+
+  it("rejects when all rows have multi-dash Notes (e.g. '---')", () => {
+    expect(compare_tabs.validate(rawTable(["---", "---"]))).toBeNull();
+  });
+
+  it("accepts when at least one Notes cell is substantive", () => {
+    expect(compare_tabs.validate(rawTable(["Docs & design", "-"]))).not.toBeNull();
+  });
+
+  it("accepts a fully substantive Notes column", () => {
+    expect(compare_tabs.validate(rawTable(["Feature spec v1", "Feature spec v2"]))).not.toBeNull();
   });
 });
