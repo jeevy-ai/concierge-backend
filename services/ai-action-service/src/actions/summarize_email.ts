@@ -32,13 +32,17 @@ const SYSTEM_PROMPT = [
 function deterministic(tabs: MinimizedTab[]): ValidatedEmail {
   const first = tabs[0];
   const label = clusterLabelForDomain(first?.domain ?? "");
-  const subject = truncate(`${label} follow-up (${tabs.length} tab${tabs.length === 1 ? "" : "s"})`, 80);
+  const firstTitle = first?.title || "";
+  const subject = firstTitle
+    ? truncate(`${firstTitle}${tabs.length > 1 ? ` — ${tabs.length} tabs` : ""}`, 80)
+    : truncate(`${label} (${tabs.length} tab${tabs.length === 1 ? "" : "s"})`, 80);
   const lines = tabs.slice(0, 8).map((t) => `- ${truncate(t.title || t.domain || t.url, 80)}`);
   const more = tabs.length > 8 ? `\n- …and ${tabs.length - 8} more` : "";
+  const intro = firstTitle
+    ? `Started with "${firstTitle}"${tabs.length > 1 ? ` and ${tabs.length - 1} related tab${tabs.length - 1 === 1 ? "" : "s"}` : ""}`
+    : `${tabs.length} ${label.toLowerCase()} tab${tabs.length === 1 ? "" : "s"}`;
   const body = truncate(
-    `Hi team,\n\nQuick share — I pulled together ${tabs.length} ${label.toLowerCase()} tab${
-      tabs.length === 1 ? "" : "s"
-    } and the headline is below. Open the links if you want context.\n\n${lines.join("\n")}${more}\n\nBest,`,
+    `Hi team,\n\n${intro}. Sharing for context:\n\n${lines.join("\n")}${more}\n\nBest,`,
     TEXT_LIMITS.EMAIL_BODY_MAX,
   );
   return { subject, body, recipients: ["team"], confidence: 0.45, warnings: [] };

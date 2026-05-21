@@ -75,6 +75,36 @@ describe("low-confidence warning (YOU-516)", () => {
   });
 });
 
+describe("butler-voiced LOW_CONFIDENCE warning (YOU-521)", () => {
+  const MULTI_TABS = [
+    { tabId: 1, title: "Tab A", url: "https://google.com", domain: "google.com" },
+    { tabId: 2, title: "Tab B", url: "https://notion.so/doc", domain: "notion.so" },
+  ];
+
+  it.each([
+    ["regroup_windows", 0.4, 0.6],
+    ["summarize_email", 0.45, 0.5],
+    ["outline_doc", 0.45, 0.5],
+    ["research_brief", 0.45, 0.5],
+    ["bullet_slides", 0.45, 0.5],
+    ["compare_tabs", 0.4, 0.6],
+  ] as const)("%s emits LOW_CONFIDENCE with butler-voiced message", async (actionId) => {
+    const res = await app.request(
+      "/v1/ai/action",
+      { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: `you521-${actionId}`, actionId, tabs: MULTI_TABS }) },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { confidence: number; confidenceThreshold: number; warnings: { code: string; message: string }[] };
+    expect(body.confidence).toBeLessThan(body.confidenceThreshold);
+    const lowConf = body.warnings.find((w) => w.code === "LOW_CONFIDENCE");
+    expect(lowConf, `${actionId} must emit LOW_CONFIDENCE warning`).toBeDefined();
+    expect(lowConf?.message).toMatch(/my confidence/i);
+    expect(lowConf?.message).toMatch(/threshold/i);
+  });
+});
+
 describe("compare_tabs input validation", () => {
   const ONE_TAB = { tabId: 1, title: "Only one tab", url: "https://example.com", domain: "example.com" };
 

@@ -293,7 +293,7 @@ function buildResponse(
   if (envelope.confidence < action.defaultConfidenceThreshold) {
     warnings.push({
       code: "LOW_CONFIDENCE",
-      message: "Result confidence is below threshold. Review before acting.",
+      message: "My confidence in this result is below the reliability threshold — treat it as a starting point and verify before acting on it.",
     });
   }
   return {
