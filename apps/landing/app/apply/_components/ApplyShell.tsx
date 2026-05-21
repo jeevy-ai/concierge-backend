@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { track, AnalyticsEventName } from "@jeevy/analytics/web";
+import { trackSignupStarted, trackSignupSubmitted, trackSignupFailed } from "@/app/lib/signup-tracking";
 import { ProgressBar } from "./ProgressBar";
 import { StepCalendars } from "./StepCalendars";
 import { StepContact } from "./StepContact";
@@ -91,6 +92,10 @@ export function ApplyShell() {
   const [currentStep, setCurrentStep] = useState<FormStep>("welcome");
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [formData, dispatch] = useReducer(formReducer, initialFormData);
+
+  useEffect(() => {
+    trackSignupStarted({ planIntent: "founder" });
+  }, []);
 
   function advance() {
     const idx = STEP_ORDER.indexOf(currentStep);
