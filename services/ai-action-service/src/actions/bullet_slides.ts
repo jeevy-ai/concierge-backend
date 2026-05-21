@@ -23,6 +23,9 @@ const SYSTEM_PROMPT = [
   '{"clusters":[{"clusterId":string,"title":string,"bullets":string[]}],"copyAll":string,"confidence":number,"warnings":string[]}',
   "1..4 clusters; each title <= 60 chars; bullets is 1..7 entries; each bullet <= 120 chars and a single line.",
   "Derive bullets from actual tab content \u2014 never emit placeholder text.",
+  "FORBIDDEN: never emit template/placeholder strings such as 'Open question \u2014 fill in before sharing', 'Click to add title', 'Add a text box', or any lorem ipsum variant.",
+  "FORBIDDEN: never repeat the same bullet text twice within a cluster.",
+  "If the tab title is the only signal, derive 1\u20133 distinct bullets from its keywords instead of inventing content.",
   "Bullets are punchy, scannable, and avoid full sentences. No emoji.",
   "copyAll: the full slide deck as plain text \u2014 one cluster per block, blank lines between blocks, bullets prefixed with '- '.",
   "confidence: 0..1; warnings: short strings flagging gaps the user should verify.",
@@ -71,6 +74,18 @@ function deterministic(tabs: MinimizedTab[]): ValidatedSlides {
   return { clusters, copyAll, confidence: 0.45, warnings: [] };
 }
 
+// Patterns known to be Google Slides / deck template placeholders rather than real content.
+const PLACEHOLDER_BULLET_RE =
+  /open\s+question\s*[—–-]|fill\s+in\s+before\s+sharing|click\s+to\s+add\s+(title|text|subtitle)|add\s+a\s+text\s+box|lorem\s+ipsum/i;
+
+function filterBullets(raw: string[]): string[] {
+  return raw.filter((b) => !PLACEHOLDER_BULLET_RE.test(b));
+}
+
+function allIdentical(arr: string[]): boolean {
+  return arr.length > 1 && new Set(arr).size === 1;
+}
+
 function validate(raw: unknown): ValidatedSlides | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
@@ -87,13 +102,28 @@ function validate(raw: unknown): ValidatedSlides | null {
   }
   if (!isNonEmptyString(r["copyAll"], 4000)) return null;
   if (!Array.isArray(r["warnings"])) return null;
+
+  const validClusters = (cls as Array<{ clusterId: string; title: string; bullets: string[] }>)
+    .map((c, idx) => {
+      const cleaned = filterBullets(c.bullets.map((b) => truncate(b, 120)));
+      return {
+        clusterId: truncate(c.clusterId || `cls_${idx + 1}`, 80),
+        title: truncate(c.title, 60),
+        bullets: cleaned,
+      };
+    })
+    .filter((c) => c.bullets.length > 0 && !allIdentical(c.bullets));
+
+  // If placeholder/loop filtering wiped all clusters, fall back to deterministic
+  if (validClusters.length === 0) return null;
+
+  const copyAll = validClusters
+    .map((c) => `${c.title}\n${c.bullets.map((b) => `- ${b}`).join("\n")}`)
+    .join("\n\n");
+
   return {
-    clusters: (cls as Array<{ clusterId: string; title: string; bullets: string[] }>).map((c, idx) => ({
-      clusterId: truncate(c.clusterId || `cls_${idx + 1}`, 80),
-      title: truncate(c.title, 60),
-      bullets: c.bullets.map((b) => truncate(b, 120)),
-    })),
-    copyAll: truncate(r["copyAll"] as string, 4000),
+    clusters: validClusters,
+    copyAll,
     confidence: clampConfidence(r["confidence"]),
     warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
   };

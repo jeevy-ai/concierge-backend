@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import app, { type Env } from "../src/index.js";
+import { bullet_slides } from "../src/actions/bullet_slides.js";
 
 const BASE_ENV: Env = {
   ENVIRONMENT: "test",
@@ -333,5 +334,65 @@ describe("bullet_slides deterministic fallback — YOU-517 regression", () => {
     const envelope = (await res.json()) as { result: { payload: { clusters: { bullets: string[] }[] } } };
     const allBullets = envelope.result.payload.clusters.flatMap((c) => c.bullets);
     expect(allBullets.every((b) => b !== "Open question — fill in before sharing.")).toBe(true);
+  });
+});
+
+describe("bullet_slides validate() — YOU-522 placeholder / loop guard", () => {
+  const OPEN_Q = "Open question — fill in before sharing.";
+
+  type RawCluster = { clusterId: string; title: string; bullets: string[] };
+  type RawSlides = { clusters: RawCluster[]; copyAll: string; confidence: number; warnings: string[] };
+  type ValidatedSlides = { clusters: { bullets: string[] }[] } | null;
+
+  function raw(clusters: RawCluster[]): RawSlides {
+    return {
+      clusters,
+      copyAll: clusters.map((c) => `${c.title}\n${c.bullets.map((b) => `- ${b}`).join("\n")}`).join("\n\n"),
+      confidence: 0.8,
+      warnings: [],
+    };
+  }
+
+  it("rejects when all bullets in every cluster are the placeholder string", () => {
+    const result = bullet_slides.validate(raw([{ clusterId: "cls_1", title: "Q2 Kickoff", bullets: [OPEN_Q, OPEN_Q, OPEN_Q, OPEN_Q] }]));
+    expect(result).toBeNull();
+  });
+
+  it("rejects when all bullets in every cluster are identical (loop detection)", () => {
+    const result = bullet_slides.validate(raw([{ clusterId: "cls_1", title: "Q2 Kickoff", bullets: ["Same bullet", "Same bullet", "Same bullet"] }]));
+    expect(result).toBeNull();
+  });
+
+  it("filters placeholder bullets but preserves real ones in the same cluster", () => {
+    const result = bullet_slides.validate(
+      raw([{ clusterId: "cls_1", title: "Q2 Kickoff", bullets: ["Revenue targets up 15%", OPEN_Q, "Team expansion to 50"] }]),
+    ) as ValidatedSlides;
+    expect(result).not.toBeNull();
+    const bullets = result!.clusters[0]!.bullets;
+    expect(bullets).not.toContain(OPEN_Q);
+    expect(bullets).toContain("Revenue targets up 15%");
+    expect(bullets).toContain("Team expansion to 50");
+  });
+
+  it("rejects response with placeholder-only cluster even when another cluster is valid", () => {
+    // All-placeholder cluster is dropped; if it was the only cluster → null
+    const result = bullet_slides.validate(
+      raw([{ clusterId: "cls_1", title: "Slides", bullets: [OPEN_Q, OPEN_Q] }]),
+    );
+    expect(result).toBeNull();
+  });
+
+  it("accepts when a single-bullet cluster has real content", () => {
+    const result = bullet_slides.validate(raw([{ clusterId: "cls_1", title: "Single", bullets: ["Q2 Kickoff Deck"] }]));
+    expect(result).not.toBeNull();
+  });
+
+  it("rebuilds copyAll from filtered clusters (not the raw copyAll)", () => {
+    const result = bullet_slides.validate(
+      raw([{ clusterId: "cls_1", title: "Q2 Kickoff", bullets: ["Revenue up 15%", OPEN_Q] }]),
+    ) as ValidatedSlides & { copyAll: string };
+    expect(result).not.toBeNull();
+    expect((result as unknown as { copyAll: string }).copyAll).not.toContain(OPEN_Q);
+    expect((result as unknown as { copyAll: string }).copyAll).toContain("Revenue up 15%");
   });
 });
