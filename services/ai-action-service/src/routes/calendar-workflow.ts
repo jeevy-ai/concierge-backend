@@ -19,6 +19,7 @@
  */
 
 import { makeError } from "@jeevy/contracts";
+import { createServerCapture } from "@jeevy/analytics/server";
 import type { Hono } from "hono";
 import type { ForceError } from "../adapters/google-calendar.js";
 import { GoogleCalendarAdapter } from "../adapters/google-calendar.js";
@@ -70,34 +71,25 @@ export function registerCalendarWorkflowRoutes(app: App): void {
       return c.json(err, 400);
     }
 
-    const session = await createCalendarRescheduleWorkflow(c.env.CONCIERGE_KV as unknown as import("../lib/metrics.js").ConciergeKV, {
+    const kv_ = c.env.CONCIERGE_KV as unknown as import("../lib/metrics.js").ConciergeKV;
+    const capture_ = sandbox
+      ? undefined
+      : createServerCapture({ apiKey: c.env.POSTHOG_API_KEY, host: c.env.POSTHOG_HOST });
+
+    const session = await createCalendarRescheduleWorkflow(kv_, {
       operatorId: body.operatorId,
       correlationId,
       eventId: body.eventId,
       newStartIso: body.newStartIso,
       newEndIso: body.newEndIso,
       ...(body.reason !== undefined ? { reason: body.reason } : {}),
-    });
+    }, capture_);
 
-    const approved = await approveWorkflow(
-      c.env.CONCIERGE_KV as unknown as import("../lib/metrics.js").ConciergeKV,
-      session.sessionId,
-      body.operatorId,
-      correlationId,
-    );
+    const approved = await approveWorkflow(kv_, session.sessionId, body.operatorId, correlationId);
 
-    const adapter = new GoogleCalendarAdapter({
-      kv: c.env.CONCIERGE_KV as unknown as import("../lib/metrics.js").ConciergeKV,
-      forceError,
-      sandbox,
-    });
+    const adapter = new GoogleCalendarAdapter({ kv: kv_, forceError, sandbox });
 
-    const final = await executeCalendarReschedule(
-      c.env.CONCIERGE_KV as unknown as import("../lib/metrics.js").ConciergeKV,
-      approved.sessionId,
-      adapter,
-      correlationId,
-    );
+    const final = await executeCalendarReschedule(kv_, approved.sessionId, adapter, correlationId, capture_);
 
     return c.json({ session: final, correlationId });
   });
@@ -164,8 +156,11 @@ export function registerCalendarWorkflowRoutes(app: App): void {
       throw err;
     }
 
+    const capture2 = sandbox
+      ? undefined
+      : createServerCapture({ apiKey: c.env.POSTHOG_API_KEY, host: c.env.POSTHOG_HOST });
     const adapter = new GoogleCalendarAdapter({ kv, forceError, sandbox });
-    const final = await executeCalendarReschedule(kv, approved.sessionId, adapter, correlationId);
+    const final = await executeCalendarReschedule(kv, approved.sessionId, adapter, correlationId, capture2);
 
     return c.json({ session: final, correlationId });
   });

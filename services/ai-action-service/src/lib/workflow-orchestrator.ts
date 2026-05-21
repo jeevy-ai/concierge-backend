@@ -14,8 +14,10 @@
 import type { CalendarAdapter, RescheduleRequest } from "@jeevy/contracts";
 import { isValidTransition } from "@jeevy/contracts";
 import type { OrchestratorStatus } from "@jeevy/contracts";
+import type { ServerCapture } from "@jeevy/analytics/server";
 import { ProviderCircuitOpen } from "./circuit-breaker.js";
 import { type ConciergeKV, emitMetricLog, incrementCounter, setGauge } from "./metrics.js";
+import { trackFirstActionAttempted, trackValueDelivered } from "./activation-analytics.js";
 
 export type WorkflowReasonCode =
   | "provider_4xx"
@@ -109,6 +111,7 @@ export async function createCalendarRescheduleWorkflow(
     newEndIso: string;
     reason?: string;
   },
+  capture?: ServerCapture,
 ): Promise<WorkflowSession> {
   const sessionId = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -133,6 +136,15 @@ export async function createCalendarRescheduleWorkflow(
   await incrementCounter(kv, "workflow_created_total", { workflow_class: "calendar_reschedule" });
   emitMetricLog("workflow_created_total", { workflow_class: "calendar_reschedule" }, 1);
 
+  if (capture) {
+    await trackFirstActionAttempted(kv, capture, {
+      userId: params.operatorId,
+      actionType: "calendar",
+      sessionId,
+      correlationId: params.correlationId,
+    });
+  }
+
   return transition(kv, draft, "awaiting_approval", params.correlationId);
 }
 
@@ -155,6 +167,7 @@ export async function executeCalendarReschedule(
   sessionId: string,
   adapter: CalendarAdapter,
   correlationId: string,
+  capture?: ServerCapture,
 ): Promise<WorkflowSession> {
   const session = await loadSession(kv, sessionId);
   if (!session) throw new Error(`Session not found: ${sessionId}`);
@@ -183,7 +196,17 @@ export async function executeCalendarReschedule(
   try {
     const result = await adapter.reschedule(req);
     if (result.ok) {
-      return transition(kv, session, "completed", correlationId);
+      const completed = await transition(kv, session, "completed", correlationId);
+      if (capture) {
+        await trackValueDelivered(kv, capture, {
+          userId: session.operatorId,
+          actionType: "calendar",
+          sessionId: session.sessionId,
+          correlationId,
+          createdAt: session.createdAt,
+        });
+      }
+      return completed;
     }
     return transition(kv, session, "failed", correlationId);
   } catch (err) {
