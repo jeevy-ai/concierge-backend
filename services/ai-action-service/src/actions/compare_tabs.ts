@@ -37,12 +37,45 @@ function csvEscape(value: string): string {
   return value;
 }
 
+function extractTitleDelta(title: string, groupTitles: string[]): string {
+  if (groupTitles.length <= 1) return "—";
+  const ref = groupTitles[0]!;
+  const minLen = Math.min(...groupTitles.map((t) => t.length));
+
+  let pfx = 0;
+  while (pfx < minLen && groupTitles.every((t) => t[pfx] === ref[pfx])) pfx++;
+  // Retreat to last whitespace so the delta starts on a full token
+  while (pfx > 0 && !/\s/.test(title[pfx - 1] ?? "")) pfx--;
+
+  const maxSfx = Math.min(...groupTitles.map((t) => t.length - pfx));
+  let sfx = 0;
+  while (sfx < maxSfx && groupTitles.every((t) => t[t.length - 1 - sfx] === title[title.length - 1 - sfx])) sfx++;
+  while (sfx > 0 && !/\s/.test(title[title.length - sfx] ?? "")) sfx--;
+
+  const end = sfx > 0 ? title.length - sfx : title.length;
+  const delta = title.slice(pfx, end).trim();
+  return delta && delta !== title.trim() ? delta : "Duplicate";
+}
+
 function deterministic(tabs: MinimizedTab[]): ValidatedTable {
   const columns = ["Item", "Domain", "Notes"];
-  const rows: TableRow[] = tabs.slice(0, 8).map((t) => ({
-    item: truncate(t.title || t.url || t.domain || "Tab", 200),
-    cells: [truncate(t.title || t.url || t.domain || "Tab", 200), truncate(t.domain || "—", 200), "—"],
-  }));
+
+  // Group by domain so same-domain variants get a meaningful title delta
+  const byDomain = new Map<string, string[]>();
+  for (const t of tabs.slice(0, 8)) {
+    const d = t.domain || "—";
+    const titles = byDomain.get(d) ?? [];
+    titles.push(t.title || t.url || d);
+    byDomain.set(d, titles);
+  }
+
+  const rows: TableRow[] = tabs.slice(0, 8).map((t) => {
+    const domain = t.domain || "—";
+    const label = truncate(t.title || t.url || domain || "Tab", 200);
+    const groupTitles = byDomain.get(domain) ?? [];
+    const note = groupTitles.length > 1 ? truncate(extractTitleDelta(t.title || t.url || domain, groupTitles), 200) : "—";
+    return { item: label, cells: [label, truncate(domain, 200), note] };
+  });
   const header = `| ${columns.join(" | ")} |`;
   const sep = `| ${columns.map(() => "---").join(" | ")} |`;
   const body = rows.map((r) => `| ${r.cells.map((c) => c.replace(/\|/g, "\\|")).join(" | ")} |`).join("\n");
