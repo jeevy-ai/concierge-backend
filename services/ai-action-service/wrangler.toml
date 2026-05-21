@@ -6,8 +6,8 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENVIRONMENT = "development"
 POSTHOG_HOST = "https://eu.i.posthog.com"
-# FROM_EMAIL should be a Resend-verified sender address, e.g. "team@jeevy.app"
-FROM_EMAIL = "team@jeevy.app"
+# FROM_EMAIL must be a Resend-verified sender address — use jeevy.ai (verified), not jeevy.app (unowned)
+FROM_EMAIL = "team@jeevy.ai"
 # CLERK_JWKS_URL is set per-environment via wrangler secret put or .dev.vars
 
 # Secrets (set via `wrangler secret put <NAME>`):
@@ -65,7 +65,7 @@ name = "ai-action-service-staging"
 [env.staging.vars]
 ENVIRONMENT = "staging"
 POSTHOG_HOST = "https://eu.i.posthog.com"
-FROM_EMAIL = "onboarding@resend.dev"
+FROM_EMAIL = "team@jeevy.ai"
 
 [[env.staging.kv_namespaces]]
 binding = "ENTITLEMENTS_KV"
@@ -89,7 +89,7 @@ name = "ai-action-service-production"
 [env.production.vars]
 ENVIRONMENT = "production"
 POSTHOG_HOST = "https://eu.i.posthog.com"
-FROM_EMAIL = "team@jeevy.app"
+FROM_EMAIL = "team@jeevy.ai"
 
 [[env.production.kv_namespaces]]
 binding = "ENTITLEMENTS_KV"
