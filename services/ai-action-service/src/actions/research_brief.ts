@@ -31,20 +31,36 @@ const SYSTEM_PROMPT = [
   "confidence: 0..1; warnings: short strings flagging gaps.",
 ].join("\n");
 
-function deterministic(tabs: MinimizedTab[]): ValidatedBrief {
+function deterministic(tabs: MinimizedTab[], contextHint?: string): ValidatedBrief {
   const sources: BriefSource[] = tabs.slice(0, 10).map((t) => ({
     title: truncate(t.title || t.domain || t.url, 140),
     url: t.url,
-    summary: truncate(`Source from ${t.domain || "the web"}.`, 240),
+    summary: truncate(
+      t.title ? `"${t.title}" — from ${t.domain || "the web"}.` : `Source from ${t.domain || "the web"}.`,
+      240,
+    ),
   }));
+  const titles = tabs
+    .slice(0, 2)
+    .map((t) => t.title || t.domain || "")
+    .filter(Boolean);
   const overview = truncate(
-    `Research brief assembled from ${tabs.length} open tab${
-      tabs.length === 1 ? "" : "s"
-    }. Use the sources below as a starting point and answer the open questions before sharing.`,
+    contextHint
+      ? `${contextHint}. Drawing on ${tabs.length} source${tabs.length === 1 ? "" : "s"} — review before sharing.`
+      : titles.length >= 2
+        ? `Research covering "${titles[0]}" and ${tabs.length - 1} related source${tabs.length - 1 === 1 ? "" : "s"}. Review the sources below and answer the open questions before sharing.`
+        : titles.length === 1
+          ? `Research starting from "${titles[0]}" — ${tabs.length} source${tabs.length === 1 ? "" : "s"} total. Review before sharing.`
+          : `Research brief from ${tabs.length} source${tabs.length === 1 ? "" : "s"}. Use the sources below as a starting point.`,
     TEXT_LIMITS.PARAGRAPH_MAX,
   );
+  const briefTitle = contextHint
+    ? truncate(contextHint, 100)
+    : titles.length > 0
+      ? truncate(`${titles[0]}${tabs.length > 1 ? ` (${tabs.length} sources)` : ""}`, 100)
+      : truncate(`Research brief (${tabs.length} sources)`, 100);
   return {
-    title: truncate(`Research brief (${tabs.length} sources)`, 100),
+    title: briefTitle,
     overview,
     sources,
     openQuestions: [

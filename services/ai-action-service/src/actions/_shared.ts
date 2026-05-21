@@ -41,7 +41,7 @@ export interface ActionDef {
   // validate/deterministic return a ValidatedBase-compatible object; each concrete action
   // knows the exact shape and casts inside toResultPayload.
   validate(raw: unknown, ctx?: Set<string | number> | null): ValidatedBase | null;
-  deterministic(tabs: MinimizedTab[]): ValidatedBase;
+  deterministic(tabs: MinimizedTab[], contextHint?: string): ValidatedBase;
   toResultPayload(v: ValidatedBase): Record<string, unknown>;
   toEnvelopeFields(v: ValidatedBase): { confidence: number; warnings: string[] };
 }

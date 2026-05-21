@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import app, { type Env } from "../src/index.js";
 import { bullet_slides } from "../src/actions/bullet_slides.js";
+import { regroup_windows } from "../src/actions/regroup_windows.js";
+import { research_brief } from "../src/actions/research_brief.js";
 
 const BASE_ENV: Env = {
   ENVIRONMENT: "test",
@@ -474,5 +476,47 @@ describe("bullet_slides validate() — YOU-522 placeholder / loop guard", () => 
     const bullets = result!.clusters[0]!.bullets;
     expect(bullets).toEqual(["Slides - Q2 Kickoff Deck"]);
     expect(bullets.some((b) => b === OPEN_Q)).toBe(false);
+  });
+});
+
+describe("butler-voiced deterministic fallback — YOU-509", () => {
+  const TAB = { tabId: 1, title: "Google Search", url: "https://google.com", domain: "google.com" };
+  const TAB2 = { tabId: 2, title: "MDN Web Docs", url: "https://developer.mozilla.org", domain: "developer.mozilla.org" };
+
+  type AnyGroups = { groups: Array<{ rationale: string }> };
+  type AnyBrief = { title: string; overview: string; sources: Array<{ summary: string }> };
+
+  it("regroup_windows rationale contains tab title, not just domain-count filler", () => {
+    const result = regroup_windows.deterministic([TAB, TAB2]) as unknown as AnyGroups;
+    const rationale = result.groups[0]?.rationale ?? "";
+    expect(rationale).toMatch(/Google Search|MDN Web Docs/);
+    expect(rationale).not.toMatch(/^\d+ tabs? from /);
+  });
+
+  it("regroup_windows rationale includes contextHint when provided", () => {
+    const result = regroup_windows.deterministic([TAB], "Q2 planning") as unknown as AnyGroups;
+    const rationale = result.groups[0]?.rationale ?? "";
+    expect(rationale).toContain("Q2 planning");
+  });
+
+  it("research_brief source summary contains tab title", () => {
+    const result = research_brief.deterministic([TAB, TAB2]) as unknown as AnyBrief;
+    const summary = result.sources[0]?.summary ?? "";
+    expect(summary).toContain("Google Search");
+  });
+
+  it("research_brief title derived from first tab title", () => {
+    const result = research_brief.deterministic([TAB, TAB2]) as unknown as AnyBrief;
+    expect(result.title).toContain("Google Search");
+  });
+
+  it("research_brief title is contextHint when provided", () => {
+    const result = research_brief.deterministic([TAB], "Deep dive into TypeScript") as unknown as AnyBrief;
+    expect(result.title).toBe("Deep dive into TypeScript");
+  });
+
+  it("research_brief overview references contextHint when provided", () => {
+    const result = research_brief.deterministic([TAB], "Q2 planning session") as unknown as AnyBrief;
+    expect(result.overview).toContain("Q2 planning session");
   });
 });

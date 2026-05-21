@@ -27,7 +27,7 @@ const SYSTEM_PROMPT = [
   "warnings: short strings flagging anything the user should sanity-check before applying.",
 ].join("\n");
 
-function deterministic(tabs: MinimizedTab[]): ValidatedGroups {
+function deterministic(tabs: MinimizedTab[], contextHint?: string): ValidatedGroups {
   const buckets = new Map<string, MinimizedTab[]>();
   for (const t of tabs) {
     const label = clusterLabelForDomain(t.domain ?? "");
@@ -38,10 +38,23 @@ function deterministic(tabs: MinimizedTab[]): ValidatedGroups {
   let i = 0;
   for (const [label, list] of buckets.entries()) {
     i += 1;
+    const titles = list
+      .slice(0, 2)
+      .map((t) => t.title || t.domain || "")
+      .filter(Boolean);
+    const extra = list.length > 2 ? ` and ${list.length - 2} more` : "";
+    const hint = contextHint ? ` (${contextHint.slice(0, 60)})` : "";
+    const rationale =
+      titles.length > 0
+        ? truncate(
+            `Grouped "${titles.join('" and "')}"${extra} — ${label.toLowerCase()} context${hint}.`,
+            200,
+          )
+        : truncate(`${list.length} tab${list.length === 1 ? "" : "s"} from ${label.toLowerCase()}.`, 200);
     groups.push({
       groupId: `grp_${i}`,
       name: truncate(label, 40),
-      rationale: truncate(`${list.length} tab${list.length === 1 ? "" : "s"} from ${label.toLowerCase()}.`, 200),
+      rationale,
       tabIds: list.map((t) => t.tabId).filter((id): id is string | number => id !== null),
     });
     if (groups.length >= 6) break;
