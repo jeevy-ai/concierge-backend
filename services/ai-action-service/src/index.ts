@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 import { runDailyAtRiskScan } from "./lib/save-interview.js";
 import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
 import { registerCalendarWorkflowRoutes } from "./routes/calendar-workflow.js";
+import { registerDemoRoutes } from "./routes/demo.js";
 import { registerOutreachRoutes } from "./routes/outreach.js";
 import { registerSaveInterviewRoutes } from "./routes/save-interview.js";
 import { registerStripeWebhookRoute } from "./routes/stripe-webhook.js";
@@ -28,6 +29,10 @@ export type Env = {
   POLICY_KV: KVNamespace;
   // KV namespace for workflow orchestrator + circuit breaker state (Scenario 3)
   CONCIERGE_KV: KVNamespace;
+  // TTFV event emission (W2.5a / YOU-453)
+  SENTRY_DSN?: string;
+  GOOGLE_SERVICE_ACCOUNT_JSON?: string;
+  INTAKE_SHEET_ID?: string;
 };
 
 export type Variables = {
@@ -59,6 +64,9 @@ registerOutreachRoutes(app);
 
 // Calendar workflow orchestrator + circuit breaker (Scenario 3, internal, secret-gated)
 registerCalendarWorkflowRoutes(app);
+
+// Demo routes — sandbox only, no auth, blocked in production (board Wave 0 test pass)
+registerDemoRoutes(app);
 
 // Protected routes require Clerk auth + active Stripe subscription
 const protected_ = app.use("/api/protected/*", clerkAuthMiddleware(), entitlementGuard());

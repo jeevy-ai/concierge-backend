@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jeevy — Concierge Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .tab-btn.active { background: #4f46e5; color: white; }
+    .tab-btn { background: #f3f4f6; color: #374151; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <div class="max-w-3xl mx-auto px-4 py-10">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+          Wave 0 · Internal Board Test
+        </span>
+        <span id="env-badge" class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">staging</span>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900">Jeevy Concierge</h1>
+      <p class="text-gray-500 mt-1 text-sm">Test the real product APIs — calendar reschedule and outreach policy.</p>
+    </div>
+
+    <!-- Worker URL config -->
+    <div class="mb-6 bg-white rounded-xl border border-gray-200 p-4">
+      <label class="block text-xs font-semibold text-gray-500 mb-1">Worker URL (staging)</label>
+      <input id="worker-url"
+        class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-300"
+        value="https://ai-action-service-staging.noahlaux.workers.dev"
+        placeholder="https://ai-action-service-staging.noahlaux.workers.dev" />
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-6">
+      <button class="tab-btn active rounded-lg px-4 py-2 text-sm font-semibold transition-colors" onclick="showTab('calendar', this)">
+        Calendar Reschedule
+      </button>
+      <button class="tab-btn rounded-lg px-4 py-2 text-sm font-semibold transition-colors" onclick="showTab('outreach', this)">
+        Outreach Policy
+      </button>
+    </div>
+
+    <!-- Calendar Tab -->
+    <div id="tab-calendar" class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="font-semibold text-gray-900 mb-1">Reschedule a Meeting</h2>
+      <p class="text-sm text-gray-500 mb-5">Picks up a fixture calendar event and rescheduled it via the workflow orchestrator. No real Google Calendar access — uses sandbox fixtures.</p>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Event</label>
+          <select id="cal-event" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+            <option value="CAL-01">CAL-01 — Q2 Planning (May 3, 09:00–10:00 Copenhagen)</option>
+            <option value="CAL-02">CAL-02 — 1:1 Sync (May 4, 14:00–14:30 Copenhagen)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">New Start (ISO 8601)</label>
+            <input id="cal-start" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              value="2026-05-05T09:00:00Z" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">New End (ISO 8601)</label>
+            <input id="cal-end" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              value="2026-05-05T10:00:00Z" />
+          </div>
+        </div>
+
+        <button onclick="runCalendar()"
+          class="w-full bg-indigo-600 text-white rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-indigo-700 transition-colors">
+          Reschedule via Concierge
+        </button>
+      </div>
+
+      <div id="cal-result" class="mt-5 hidden">
+        <div id="cal-status" class="flex items-center gap-2 text-sm font-semibold mb-2"></div>
+        <pre id="cal-json" class="bg-gray-50 rounded-lg p-4 text-xs text-gray-700 border border-gray-100"></pre>
+      </div>
+    </div>
+
+    <!-- Outreach Tab -->
+    <div id="tab-outreach" class="bg-white rounded-xl border border-gray-200 p-6 hidden">
+      <h2 class="font-semibold text-gray-900 mb-1">Outreach Policy Check</h2>
+      <p class="text-sm text-gray-500 mb-5">Validates whether an outreach action would be allowed by the policy engine. Dry-run only — no email is sent.</p>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Action Class</label>
+          <select id="out-class" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+            <option value="outreach_send">outreach_send — Send an email or message</option>
+            <option value="calendar_write">calendar_write — Modify a calendar event</option>
+            <option value="travel_book">travel_book — Book travel/accommodation</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Approval Token (leave blank to test rejection)</label>
+          <input id="out-token" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            placeholder="e.g. tok_abc123 — or leave blank" />
+          <p class="text-xs text-gray-400 mt-1">Without a token → rejected. With any token → allowed (kill-switch permitting).</p>
+        </div>
+
+        <button onclick="runOutreach()"
+          class="w-full bg-indigo-600 text-white rounded-lg px-4 py-2.5 text-sm font-semibold hover:bg-indigo-700 transition-colors">
+          Check Policy
+        </button>
+      </div>
+
+      <div id="out-result" class="mt-5 hidden">
+        <div id="out-status" class="flex items-center gap-2 text-sm font-semibold mb-2"></div>
+        <pre id="out-json" class="bg-gray-50 rounded-lg p-4 text-xs text-gray-700 border border-gray-100"></pre>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-center text-xs text-gray-400 mt-8">
+      Board feedback: comment on
+      <a href="https://paperclip.ing/YOU/issues/YOU-549" class="underline hover:text-gray-600" target="_blank">YOU-549</a>
+      — type <strong>approve Wave 0 — open Wave A</strong> or leave a punch-list.
+    </p>
+  </div>
+
+  <script>
+    function workerUrl() {
+      return document.getElementById('worker-url').value.replace(/\/$/, '');
+    }
+
+    function showTab(name, btn) {
+      document.getElementById('tab-calendar').classList.add('hidden');
+      document.getElementById('tab-outreach').classList.add('hidden');
+      document.getElementById('tab-' + name).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function setResult(prefix, ok, label, data) {
+      const el = document.getElementById(prefix + '-result');
+      const status = document.getElementById(prefix + '-status');
+      const json = document.getElementById(prefix + '-json');
+      el.classList.remove('hidden');
+      status.innerHTML = ok
+        ? `<span class="text-green-600">✓</span> <span class="text-green-700">${label}</span>`
+        : `<span class="text-red-500">✗</span> <span class="text-red-700">${label}</span>`;
+      json.textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function runCalendar() {
+      const eventId = document.getElementById('cal-event').value;
+      const newStartIso = document.getElementById('cal-start').value;
+      const newEndIso = document.getElementById('cal-end').value;
+      try {
+        const res = await fetch(`${workerUrl()}/api/demo/calendar/reschedule`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventId, newStartIso, newEndIso }),
+        });
+        const data = await res.json();
+        const ok = res.ok && data.session?.status === 'completed';
+        setResult('cal', ok,
+          ok ? `Rescheduled → ${data.session?.status}` : `Status: ${data.session?.status ?? res.status}`,
+          data);
+      } catch (err) {
+        setResult('cal', false, `Network error: ${err.message}`, { error: err.message });
+      }
+    }
+
+    async function runOutreach() {
+      const actionClass = document.getElementById('out-class').value;
+      const approvalToken = document.getElementById('out-token').value || undefined;
+      try {
+        const res = await fetch(`${workerUrl()}/api/demo/outreach/validate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ actionClass, approvalToken }),
+        });
+        const data = await res.json();
+        const allowed = data.decision?.allowed === true;
+        setResult('out', allowed,
+          allowed ? 'Allowed by policy engine' : `Rejected: ${data.decision?.reason ?? 'unknown'}`,
+          data);
+      } catch (err) {
+        setResult('out', false, `Network error: ${err.message}`, { error: err.message });
+      }
+    }
+
+    // Ping worker to detect environment
+    fetch(workerUrl() + '/health').then(r => r.json()).then(d => {
+      document.getElementById('env-badge').textContent = 'staging · worker live';
+    }).catch(() => {
+      document.getElementById('env-badge').textContent = 'worker unreachable';
+      document.getElementById('env-badge').className = 'rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700';
+    });
+  </script>
+</body>
+</html>
