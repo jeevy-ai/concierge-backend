@@ -1,0 +1,3 @@
+name = "concierge-ui"
+type = "javascript"
+pages_build_output_dir = "."
