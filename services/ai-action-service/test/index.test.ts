@@ -66,11 +66,11 @@ describe("low-confidence warning (YOU-516)", () => {
       BASE_ENV,
     );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { confidence: number; confidenceThreshold: number; warnings: string[] };
+    const body = (await res.json()) as { confidence: number; confidenceThreshold: number; warnings: { code: string; message: string }[] };
     expect(body.confidence).toBeLessThan(body.confidenceThreshold);
     expect(body.warnings.length).toBeGreaterThan(0);
-    expect(body.warnings.some((w) => /confidence/i.test(w))).toBe(true);
-    expect(body.warnings.some((w) => /threshold/i.test(w))).toBe(true);
+    expect(body.warnings.some((w) => /confidence/i.test(w.message))).toBe(true);
+    expect(body.warnings.some((w) => /threshold/i.test(w.message))).toBe(true);
   });
 });
 
@@ -106,6 +106,34 @@ describe("compare_tabs input validation", () => {
       BASE_ENV,
     );
     expect(res.status).toBe(200);
+  });
+
+  it("Notes column is non-dash for same-domain variants (YOU-518)", async () => {
+    // Exact tabs from the issue evidence — two Notion spec versions on same domain
+    const NOTION_TABS = [
+      { tabId: 1, title: "Notion - Feature spec v1", url: "https://notion.so/spec-v1", domain: "notion.so" },
+      { tabId: 2, title: "Notion - Feature spec v2", url: "https://notion.so/spec-v2", domain: "notion.so" },
+    ];
+    const res = await app.request(
+      "/v1/ai/action",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: "test-you518", actionId: "compare_tabs", tabs: NOTION_TABS }),
+      },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { result: { payload: { rows: { cells: string[] }[] } } };
+    const { rows } = body.result.payload;
+    // Notes is the third cell (index 2); neither row should be "—"
+    for (const row of rows) {
+      expect(row.cells[2]).not.toBe("—");
+    }
+    // Each row's note should surface the unique version token
+    const notes = rows.map((r) => r.cells[2]);
+    expect(notes[0]).toContain("v1");
+    expect(notes[1]).toContain("v2");
   });
 });
 
