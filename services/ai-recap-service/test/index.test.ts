@@ -112,7 +112,7 @@ describe("meeting domain classification (YOU-519)", () => {
     });
   }
 
-  it("single Google Meet tab (YOU-524) is not Research and not ignore", async () => {
+  it("single Google Meet tab (YOU-529) is Meeting/archive, never Research/ignore", async () => {
     const res = await app.request(
       "/v1/ai/recap",
       {
@@ -135,8 +135,8 @@ describe("meeting domain classification (YOU-519)", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { clusters: Array<{ label: string; suggestedAction: string }> };
     const cluster = body.clusters[0]!;
-    expect(cluster.label).not.toBe("Research");
-    expect(cluster.suggestedAction).not.toBe("ignore");
+    expect(cluster.label).toBe("Meeting");
+    expect(cluster.suggestedAction).toBe("archive");
   });
 });
 
