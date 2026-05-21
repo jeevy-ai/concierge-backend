@@ -4,6 +4,7 @@ import {
   type ValidatedBase,
   buildUserMessage,
   clampConfidence,
+  clusterLabelForDomain,
   isNonEmptyString,
   truncate,
 } from "./_shared.js";
@@ -25,7 +26,11 @@ const SYSTEM_PROMPT = [
   "columns: 2..5 entries (the first column header should describe the dimension being compared, e.g. 'Aspect').",
   "Every column header is non-empty and <= 40 chars.",
   "rows: 2..8 entries; rows[i].cells.length === columns.length; each cell <= 200 chars.",
-  "If a column does not apply for a row, set the cell to '—' rather than inventing.",
+  "Notes column rules (required — never leave Notes as '-' or '—' for all rows):",
+  "  - Same-domain tabs: surface the title delta — what makes each variant distinct (e.g. version number, document section, feature branch).",
+  "  - Cross-domain tabs: categorise the tab's purpose (e.g. 'Engineering', 'Docs & design', 'Research', 'Communication', 'Commerce', 'Media').",
+  "  - Every Notes cell must contain substantive text; '—' is only allowed when the tab genuinely cannot be categorised.",
+  "If a non-Notes column does not apply for a row, set the cell to '—' rather than inventing.",
   "markdown: the same table rendered as a GitHub-flavored markdown table (header row + separator + data rows).",
   "csv: the same table rendered as RFC 4180 CSV (header row first; quote cells that contain commas or quotes).",
   "confidence: 0..1; lower if you had to invent a comparison axis the tabs don't support.",
@@ -73,7 +78,10 @@ function deterministic(tabs: MinimizedTab[]): ValidatedTable {
     const domain = t.domain || "—";
     const label = truncate(t.title || t.url || domain || "Tab", 200);
     const groupTitles = byDomain.get(domain) ?? [];
-    const note = groupTitles.length > 1 ? truncate(extractTitleDelta(t.title || t.url || domain, groupTitles), 200) : "—";
+    const note =
+      groupTitles.length > 1
+        ? truncate(extractTitleDelta(t.title || t.url || domain, groupTitles), 200)
+        : clusterLabelForDomain(domain);
     return { item: label, cells: [label, truncate(domain, 200), note] };
   });
   const header = `| ${columns.join(" | ")} |`;

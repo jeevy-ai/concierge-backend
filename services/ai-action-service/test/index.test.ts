@@ -136,6 +136,38 @@ describe("compare_tabs input validation", () => {
     expect(notes[0]).toContain("v1");
     expect(notes[1]).toContain("v2");
   });
+
+  it("Notes column is non-dash for cross-domain tabs (YOU-523)", async () => {
+    // Tabs from different domains — each domain unique, previous bug: all Notes = "—"
+    const CROSS_DOMAIN_TABS = [
+      { tabId: 1, title: "Notion - Feature spec v1", url: "https://notion.so/spec-v1", domain: "notion.so" },
+      { tabId: 2, title: "Linear issue: YOU-523", url: "https://linear.app/you/issue/YOU-523", domain: "linear.app" },
+      { tabId: 3, title: "GitHub PR #42", url: "https://github.com/jeevy-ai/concierge/pull/42", domain: "github.com" },
+    ];
+    const res = await app.request(
+      "/v1/ai/action",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: "test-you523", actionId: "compare_tabs", tabs: CROSS_DOMAIN_TABS }),
+      },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { result: { payload: { rows: { cells: string[] }[] } } };
+    const { rows } = body.result.payload;
+    // Every Notes cell must be a non-dash substantive label
+    for (const row of rows) {
+      expect(row.cells[2]).not.toBe("—");
+      expect(row.cells[2]).not.toBe("-");
+      expect(row.cells[2].trim().length).toBeGreaterThan(0);
+    }
+    // notion.so and figma.com map to "Docs & design"; linear.app and github.com map to "Engineering"
+    const notes = rows.map((r) => r.cells[2]);
+    expect(notes[0]).toBe("Docs & design");
+    expect(notes[1]).toBe("Engineering");
+    expect(notes[2]).toBe("Engineering");
+  });
 });
 
 describe("first_value_delivered instrumentation", () => {
