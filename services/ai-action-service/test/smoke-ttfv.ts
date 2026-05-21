@@ -2,14 +2,17 @@
  * TTFV Spec §9 Integration Smoke Test
  *
  * Prerequisites (set in .dev.vars or env before running):
- *   SENTRY_DSN             — staging Sentry project DSN
- *   SENTRY_AUTH_TOKEN      — Sentry API token (read events)
+ *   SENTRY_AUTH_TOKEN      — Sentry API token (read events to assert delivery)
  *   SENTRY_ORG             — Sentry org slug (e.g. "jeevy")
  *   SENTRY_PROJECT         — Sentry project slug (e.g. "ai-action-service")
  *   GOOGLE_SERVICE_ACCOUNT_JSON — base64-encoded service account JSON
  *   INTAKE_SHEET_ID        — Google Sheets spreadsheet ID
  *   SMOKE_ENDPOINT         — base URL of running service (default: http://localhost:8787)
  *   INTERNAL_API_SECRET    — value of INTERNAL_API_SECRET on running service
+ *   CLOUDFLARE_EMAIL       — CF account email (seeds entitlement into CONCIERGE_KV staging)
+ *   CLOUDFLARE_API_KEY     — CF Global API Key (same purpose)
+ *   CF_ACCOUNT_ID          — CF account ID (default: 4bad758433de05f8b1b18c44be5a534c)
+ *   CF_CONCIERGE_KV_NS     — CONCIERGE_KV staging namespace ID (default: 3869105e18f240029c504a3762814531)
  *
  * Run with:
  *   pnpm exec tsx test/smoke-ttfv.ts
@@ -25,9 +28,18 @@ const SENTRY_PROJECT = process.env["SENTRY_PROJECT"];
 const GOOGLE_SA_JSON = process.env["GOOGLE_SERVICE_ACCOUNT_JSON"];
 const INTAKE_SHEET_ID = process.env["INTAKE_SHEET_ID"];
 
-// Synthetic paid user — must exist in CRM-lite sheet + ENTITLEMENTS_KV with status=active
+// CF credentials for KV seeding — required to provision synthetic user's entitlement
+const CF_ACCOUNT_ID = process.env["CF_ACCOUNT_ID"] ?? "4bad758433de05f8b1b18c44be5a534c";
+const CF_CONCIERGE_KV_NS = process.env["CF_CONCIERGE_KV_NS"] ?? "3869105e18f240029c504a3762814531";
+const CF_EMAIL = process.env["CLOUDFLARE_EMAIL"];
+const CF_API_KEY = process.env["CLOUDFLARE_API_KEY"];
+
+// Synthetic paid user — seeded into CONCIERGE_KV staging before test run
 const SYNTHETIC_USER_ID = `smoke-ttfv-${Date.now()}`;
 const SYNTHETIC_USER_EMAIL = `smoke-ttfv-${Date.now()}@jeevy-test.internal`;
+
+// Sandbox-only fixture event IDs (see src/adapters/google-calendar.ts SANDBOX_EVENTS)
+const SANDBOX_EVENT_ID = "CAL-01";
 const INTAKE_SUBMITTED_AT = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(); // 2h ago
 
 function requireEnv(name: string): string {
@@ -38,6 +50,38 @@ function requireEnv(name: string): string {
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+// Seed synthetic user into CONCIERGE_KV staging with status=active (paid user gate)
+async function seedEntitlement(): Promise<void> {
+  const cfEmail = requireEnv("CLOUDFLARE_EMAIL");
+  const cfKey = requireEnv("CLOUDFLARE_API_KEY");
+  const kvKey = `entitlement:${SYNTHETIC_USER_ID}`;
+  const record = JSON.stringify({
+    stripeCustomerId: "cus_smoke_ttfv",
+    stripeSubscriptionId: "sub_smoke_ttfv",
+    status: "active",
+    plan: "pro",
+    periodEnd: 9999999999,
+    updatedAt: new Date().toISOString(),
+  });
+
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_CONCIERGE_KV_NS}/values/${encodeURIComponent(kvKey)}`,
+    {
+      method: "PUT",
+      headers: {
+        "X-Auth-Email": cfEmail,
+        "X-Auth-Key": cfKey,
+        "Content-Type": "text/plain",
+      },
+      body: record,
+    },
+  );
+  const json = await res.json() as { success: boolean; errors?: Array<{ message: string }> };
+  if (!json.success) {
+    throw new Error(`CF KV seed failed: ${JSON.stringify(json.errors)}`);
+  }
 }
 
 // §9.1 — Trigger calendar.event_created action via orchestrator
@@ -51,7 +95,7 @@ async function triggerAction(opts: { isTest: boolean; correlationId: string }): 
     },
     body: JSON.stringify({
       operatorId: SYNTHETIC_USER_ID,
-      eventId: "evt_smoke_test_001",
+      eventId: SANDBOX_EVENT_ID, // Must be a known fixture ID — sandbox rejects unknown IDs
       newStartIso: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       newEndIso: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
       reason: "TTFV smoke test",
@@ -162,6 +206,11 @@ async function runSmokeTest(): Promise<void> {
   console.log(`Synthetic user ID: ${SYNTHETIC_USER_ID}`);
   console.log(`Synthetic user email: ${SYNTHETIC_USER_EMAIL}`);
   console.log(`Intake submitted at: ${INTAKE_SUBMITTED_AT}\n`);
+
+  // §9.0 — Seed synthetic paid user into CONCIERGE_KV staging
+  console.log("Step 0: Seeding synthetic paid user into CONCIERGE_KV...");
+  await seedEntitlement();
+  console.log(`  ✓ Entitlement seeded: entitlement:${SYNTHETIC_USER_ID} → status=active\n`);
 
   // §9.1 + §9.2 — Trigger first action (is_test=true to avoid polluting TTFV cohort)
   console.log("Step 1: Triggering first calendar.event_created action (is_test=true)...");
