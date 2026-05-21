@@ -66,11 +66,12 @@ describe("low-confidence warning (YOU-516)", () => {
       BASE_ENV,
     );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { confidence: number; confidenceThreshold: number; warnings: string[] };
+    const body = (await res.json()) as { confidence: number; confidenceThreshold: number; warnings: Array<{ code: string; message: string }> };
     expect(body.confidence).toBeLessThan(body.confidenceThreshold);
     expect(body.warnings.length).toBeGreaterThan(0);
-    expect(body.warnings.some((w) => /confidence/i.test(w))).toBe(true);
-    expect(body.warnings.some((w) => /threshold/i.test(w))).toBe(true);
+    const lowConfWarn = body.warnings.find((w) => w.code === "LOW_CONFIDENCE");
+    expect(lowConfWarn).toBeDefined();
+    expect(lowConfWarn?.message).toMatch(/confidence/i);
   });
 });
 

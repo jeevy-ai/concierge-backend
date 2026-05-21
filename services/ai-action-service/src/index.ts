@@ -22,6 +22,8 @@ const CONTRACT_VERSION = "2026-05-03";
 const MAX_TABS = 60;
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
 
+export type Warning = { code: string; message: string };
+
 type IdempotencyEntry = { storedAt: number; response: ActionResponse };
 const idempotencyCache = new Map<string, IdempotencyEntry>();
 
@@ -41,7 +43,7 @@ type ActionResponse = {
   confidenceThreshold: number;
   confidence: number;
   result: { kind: string; payload: Record<string, unknown> };
-  warnings: string[];
+  warnings: Warning[];
 };
 
 function envelopeError(actionId: string | null, code: string, message: string, retryable: boolean): ErrorEnvelope {
@@ -284,10 +286,16 @@ function buildResponse(
   // validated is non-null here: callers only invoke after a null-check
   const v = validated!;
   const envelope = action.toEnvelopeFields(v);
-  const warnings = [...envelope.warnings, ...extraWarnings];
+  const warnings: Warning[] = [
+    ...envelope.warnings.map((message) => ({ code: "WARNING", message })),
+    ...extraWarnings.map((message) => ({ code: "LLM_FALLBACK", message })),
+  ];
   if (envelope.confidence < action.defaultConfidenceThreshold) {
-    warnings.push(
-      `My confidence in this result is below the reliability threshold (${Math.round(envelope.confidence * 100)}% vs. ${Math.round(action.defaultConfidenceThreshold * 100)}% needed) — treat it as a starting point and verify before acting on it.`,
+    warnings.push({
+      code: "LOW_CONFIDENCE",
+      message: "Result confidence is below threshold. Review before acting.",
+    });
+  }% vs. ${Math.round(action.defaultConfidenceThreshold * 100)}% needed) — treat it as a starting point and verify before acting on it.`,
     );
   }
   return {
