@@ -50,7 +50,7 @@ function makeEnv(kvOverride?: ConciergeKV) {
     INTERVIEWS_KV: {},
     RESEND_API_KEY: "re_test",
     SCHEDULING_LINK: "https://cal.example.com",
-    FROM_EMAIL: "team@jeevy.app",
+    FROM_EMAIL: "team@jeevy.ai",
     INTERNAL_API_SECRET: SECRET,
     CLERK_SECRET_KEY: "sk_clerk_test",
     POLICY_KV: {},
