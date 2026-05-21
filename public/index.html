@@ -819,6 +819,19 @@ function onActionChange() {
   document.getElementById('compare-hint').style.display = id === 'compare_tabs' ? 'block' : 'none';
 }
 
+function onConciergeVerbChange() {
+  const verb = document.getElementById('conciergeVerb').value;
+  const fieldsSection = document.getElementById('conciergeFieldsSection');
+  if (!verb) {
+    fieldsSection.style.display = 'none';
+    return;
+  }
+  document.querySelectorAll('[id^="concierge-"]').forEach(el => el.style.display = 'none');
+  const verbField = document.getElementById('concierge-' + verb);
+  if (verbField) verbField.style.display = 'block';
+  fieldsSection.style.display = 'block';
+}
+
 // ── Recap demo ──
 function loadDemoRecap() {
   const userId = document.getElementById('globalUserId').value || 'test-ux';
