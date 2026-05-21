@@ -34,6 +34,8 @@ export const AnalyticsEventName = {
   ACTIVATION_FIRST_ACTION_ATTEMPTED: "activation_first_action_attempted",
   ACTIVATION_FIRST_VALUE_DELIVERED: "activation_first_value_delivered",
   ACTIVATION_NTH_VALUE_DELIVERED: "activation_nth_value_delivered",
+  // TTFV (W2.5a / YOU-453)
+  CONCIERGE_ACTION_DELIVERED: "concierge.action.delivered",
 } as const;
 
 export type AnalyticsEventName = (typeof AnalyticsEventName)[keyof typeof AnalyticsEventName];
@@ -164,6 +166,20 @@ export const analyticsEventSchemas = {
     session_id: z.string(),
     correlation_id: z.string(),
     count: z.number().int().positive(),
+  }),
+  [AnalyticsEventName.CONCIERGE_ACTION_DELIVERED]: z.object({
+    user_id: z.string(),
+    action_type: z.enum(["calendar.event_created", "message.sent", "recap.delivered", "agenda.updated", "travel.itinerary_sent"]),
+    correlation_id: z.string(),
+    delivered_at: z.string(),
+    triggered_by: z.string(),
+    success: z.boolean(),
+    is_test: z.boolean(),
+    success_criterion_id: z.string().optional(),
+    metadata: z.object({
+      plan: z.string().optional(),
+      source_flow: z.string().optional(),
+    }).optional(),
   }),
 } satisfies Record<AnalyticsEventName, z.ZodObject<z.ZodRawShape>>;
 

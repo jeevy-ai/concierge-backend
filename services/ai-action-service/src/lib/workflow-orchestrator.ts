@@ -18,6 +18,9 @@ import type { ServerCapture } from "@jeevy/analytics/server";
 import { ProviderCircuitOpen } from "./circuit-breaker.js";
 import { type ConciergeKV, emitMetricLog, incrementCounter, setGauge } from "./metrics.js";
 import { trackFirstActionAttempted, trackValueDelivered } from "./activation-analytics.js";
+import { handleActionDelivered } from "./action-delivery-handler.js";
+import type { EventEmitter } from "./ttfv-events.js";
+import type { CRMLiteWriter } from "./crm-lite-ttfv.js";
 
 export type WorkflowReasonCode =
   | "provider_4xx"
@@ -110,6 +113,10 @@ export async function createCalendarRescheduleWorkflow(
     newStartIso: string;
     newEndIso: string;
     reason?: string;
+    userEmail?: string;
+    intakeSubmittedAt?: string;
+    successCriterionId?: string;
+    isTest?: boolean;
   },
   capture?: ServerCapture,
 ): Promise<WorkflowSession> {
@@ -129,6 +136,10 @@ export async function createCalendarRescheduleWorkflow(
       newStartIso: params.newStartIso,
       newEndIso: params.newEndIso,
       reason: params.reason,
+      userEmail: params.userEmail,
+      intakeSubmittedAt: params.intakeSubmittedAt,
+      successCriterionId: params.successCriterionId,
+      isTest: params.isTest,
     },
     history: [],
   };
@@ -168,6 +179,8 @@ export async function executeCalendarReschedule(
   adapter: CalendarAdapter,
   correlationId: string,
   capture?: ServerCapture,
+  emitter?: EventEmitter,
+  crmWriter?: CRMLiteWriter,
 ): Promise<WorkflowSession> {
   const session = await loadSession(kv, sessionId);
   if (!session) throw new Error(`Session not found: ${sessionId}`);
@@ -178,11 +191,15 @@ export async function executeCalendarReschedule(
     );
   }
 
-  const { eventId, newStartIso, newEndIso, reason } = session.payload as {
+  const { eventId, newStartIso, newEndIso, reason, userEmail, intakeSubmittedAt, successCriterionId, isTest } = session.payload as {
     eventId: string;
     newStartIso: string;
     newEndIso: string;
     reason?: string;
+    userEmail?: string;
+    intakeSubmittedAt?: string;
+    successCriterionId?: string;
+    isTest?: boolean;
   };
 
   const req: RescheduleRequest = {
@@ -206,6 +223,29 @@ export async function executeCalendarReschedule(
           createdAt: session.createdAt,
         });
       }
+
+      // Emit TTFV event for first qualifying action delivery
+      if (emitter && userEmail && intakeSubmittedAt) {
+        try {
+          await handleActionDelivered({
+            userId: session.operatorId,
+            actionType: "calendar.event_created",
+            correlationId,
+            triggeredBy: "orchestrator",
+            intakeSubmittedAt,
+            userEmail,
+            successCriterionId,
+            isTest,
+            kv,
+            emitter,
+            crmWriter,
+          });
+        } catch (err) {
+          // Log but don't fail the action delivery
+          console.error("Failed to emit TTFV event:", err);
+        }
+      }
+
       return completed;
     }
     return transition(kv, session, "failed", correlationId);

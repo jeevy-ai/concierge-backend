@@ -1,0 +1,229 @@
+/**
+ * TTFV Spec §9 Integration Smoke Test
+ *
+ * Prerequisites (set in .dev.vars or env before running):
+ *   SENTRY_DSN             — staging Sentry project DSN
+ *   SENTRY_AUTH_TOKEN      — Sentry API token (read events)
+ *   SENTRY_ORG             — Sentry org slug (e.g. "jeevy")
+ *   SENTRY_PROJECT         — Sentry project slug (e.g. "ai-action-service")
+ *   GOOGLE_SERVICE_ACCOUNT_JSON — base64-encoded service account JSON
+ *   INTAKE_SHEET_ID        — Google Sheets spreadsheet ID
+ *   SMOKE_ENDPOINT         — base URL of running service (default: http://localhost:8787)
+ *   INTERNAL_API_SECRET    — value of INTERNAL_API_SECRET on running service
+ *
+ * Run with:
+ *   pnpm exec tsx test/smoke-ttfv.ts
+ */
+
+import { google } from "googleapis";
+
+const ENDPOINT = process.env["SMOKE_ENDPOINT"] ?? "http://localhost:8787";
+const INTERNAL_SECRET = process.env["INTERNAL_API_SECRET"];
+const SENTRY_AUTH_TOKEN = process.env["SENTRY_AUTH_TOKEN"];
+const SENTRY_ORG = process.env["SENTRY_ORG"];
+const SENTRY_PROJECT = process.env["SENTRY_PROJECT"];
+const GOOGLE_SA_JSON = process.env["GOOGLE_SERVICE_ACCOUNT_JSON"];
+const INTAKE_SHEET_ID = process.env["INTAKE_SHEET_ID"];
+
+// Synthetic paid user — must exist in CRM-lite sheet + ENTITLEMENTS_KV with status=active
+const SYNTHETIC_USER_ID = `smoke-ttfv-${Date.now()}`;
+const SYNTHETIC_USER_EMAIL = `smoke-ttfv-${Date.now()}@jeevy-test.internal`;
+const INTAKE_SUBMITTED_AT = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(); // 2h ago
+
+function requireEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing required env: ${name}`);
+  return v;
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+// §9.1 — Trigger calendar.event_created action via orchestrator
+async function triggerAction(opts: { isTest: boolean; correlationId: string }): Promise<unknown> {
+  const res = await fetch(`${ENDPOINT}/internal/workflow/calendar/reschedule`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": requireEnv("INTERNAL_API_SECRET"),
+      "x-correlation-id": opts.correlationId,
+    },
+    body: JSON.stringify({
+      operatorId: SYNTHETIC_USER_ID,
+      eventId: "evt_smoke_test_001",
+      newStartIso: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      newEndIso: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+      reason: "TTFV smoke test",
+      userEmail: SYNTHETIC_USER_EMAIL,
+      intakeSubmittedAt: INTAKE_SUBMITTED_AT,
+      successCriterionId: "sc_smoke_001",
+      isTest: opts.isTest,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Orchestrator returned ${res.status}: ${await res.text()}`);
+  }
+
+  return res.json();
+}
+
+// §9.3 — Assert concierge.action.delivered event in Sentry
+async function assertSentryEvent(correlationId: string): Promise<unknown> {
+  const authToken = requireEnv("SENTRY_AUTH_TOKEN");
+  const org = requireEnv("SENTRY_ORG");
+  const project = requireEnv("SENTRY_PROJECT");
+
+  // Sentry event propagation can take a few seconds
+  await sleep(3000);
+
+  const url = `https://sentry.io/api/0/projects/${org}/${project}/events/${correlationId}/`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${authToken}` },
+  });
+
+  if (res.status === 404) {
+    throw new Error(`Sentry event not found for correlationId=${correlationId}. Event may not have been emitted.`);
+  }
+  if (!res.ok) {
+    throw new Error(`Sentry API error ${res.status}: ${await res.text()}`);
+  }
+
+  const event = await res.json() as Record<string, unknown>;
+
+  // Validate all required fields per spec §4
+  const ctx = (event["contexts"] as Record<string, unknown>)?.["action_delivered"] as Record<string, unknown>;
+  const tags = event["tags"] as Array<{ key: string; value: string }>;
+
+  const requiredFields: Array<[string, unknown]> = [
+    ["user_id", SYNTHETIC_USER_ID],
+    ["action_type", "calendar.event_created"],
+    ["correlation_id", correlationId],
+    ["triggered_by", expect_triggered_by],
+    ["success", true],
+    ["is_test", true],
+  ];
+
+  for (const [field] of requiredFields) {
+    if (ctx?.[field] === undefined) {
+      throw new Error(`Sentry event missing required field: contexts.action_delivered.${field}`);
+    }
+  }
+
+  const tagMap = Object.fromEntries((tags ?? []).map((t) => [t.key, t.value]));
+  if (tagMap["action_type"] !== "calendar.event_created") {
+    throw new Error(`Sentry tag action_type wrong: ${tagMap["action_type"]}`);
+  }
+  if (tagMap["is_test"] !== "true") {
+    throw new Error(`Sentry tag is_test wrong: ${tagMap["is_test"]}`);
+  }
+
+  return event;
+}
+
+// §9.4 + §9.6 — Verify CRM-lite row first_action_delivered_at + ttfv_hours
+async function getCRMLiteRow(): Promise<{
+  rowIndex: number;
+  firstActionDeliveredAt: string | null;
+  ttfvHours: number | null;
+}> {
+  const saJson = Buffer.from(requireEnv("GOOGLE_SERVICE_ACCOUNT_JSON"), "base64").toString("utf-8");
+  const credentials = JSON.parse(saJson);
+  const auth = new google.auth.GoogleAuth({ credentials, scopes: ["https://www.googleapis.com/auth/spreadsheets"] });
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = requireEnv("INTAKE_SHEET_ID");
+
+  const emailsRes = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Tracker!A:D" });
+  const rows = emailsRes.data.values ?? [];
+  let rowIndex = -1;
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i]?.[3]?.toLowerCase() === SYNTHETIC_USER_EMAIL.toLowerCase()) { rowIndex = i; break; }
+  }
+  if (rowIndex === -1) throw new Error(`Synthetic user not found in CRM-lite sheet: ${SYNTHETIC_USER_EMAIL}`);
+
+  const ttfvRes = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `Tracker!N${rowIndex + 1}:O${rowIndex + 1}`,
+  });
+  const vals = ttfvRes.data.values?.[0] ?? [];
+  return {
+    rowIndex,
+    firstActionDeliveredAt: (vals[0] as string) ?? null,
+    ttfvHours: vals[1] !== undefined ? parseFloat(vals[1] as string) : null,
+  };
+}
+
+const expect_triggered_by = "orchestrator";
+
+async function runSmokeTest(): Promise<void> {
+  console.log("=== TTFV Spec §9 Smoke Test ===\n");
+  console.log(`Endpoint: ${ENDPOINT}`);
+  console.log(`Synthetic user ID: ${SYNTHETIC_USER_ID}`);
+  console.log(`Synthetic user email: ${SYNTHETIC_USER_EMAIL}`);
+  console.log(`Intake submitted at: ${INTAKE_SUBMITTED_AT}\n`);
+
+  // §9.1 + §9.2 — Trigger first action (is_test=true to avoid polluting TTFV cohort)
+  console.log("Step 1: Triggering first calendar.event_created action (is_test=true)...");
+  const corrId1 = `smoke-corr-${Date.now()}-1`;
+  const result1 = await triggerAction({ isTest: true, correlationId: corrId1 });
+  console.log(`  ✓ Orchestrator completed. correlation_id=${corrId1}`);
+  console.log(`  Session: ${JSON.stringify((result1 as Record<string, unknown>)["session"] ?? result1, null, 2)}\n`);
+
+  // §9.3 — Assert Sentry event
+  console.log("Step 2: Asserting concierge.action.delivered event in Sentry...");
+  const sentryEvent = await assertSentryEvent(corrId1);
+  console.log(`  ✓ Sentry event found. event_id=${corrId1}`);
+  console.log(`  Required fields all present: user_id, action_type, correlation_id, triggered_by, success, is_test`);
+  console.log(`  Sentry event JSON:\n${JSON.stringify(sentryEvent, null, 2)}\n`);
+
+  // §9.4 — Verify CRM-lite row
+  console.log("Step 3: Verifying CRM-lite row...");
+  const rowBefore = await getCRMLiteRow();
+  if (!rowBefore.firstActionDeliveredAt) {
+    throw new Error("first_action_delivered_at NOT set after first action — write failed");
+  }
+  if (rowBefore.ttfvHours === null || rowBefore.ttfvHours <= 0) {
+    throw new Error(`ttfv_hours invalid: ${rowBefore.ttfvHours}`);
+  }
+  console.log(`  ✓ CRM-lite row updated:`);
+  console.log(`    first_action_delivered_at: ${rowBefore.firstActionDeliveredAt}`);
+  console.log(`    ttfv_hours: ${rowBefore.ttfvHours}\n`);
+
+  // §9.5 — Cohort query: synthetic user should appear with ttfv_hours > 0
+  // Note: CRM-lite uses Google Sheets, not SQL. Direct row verification above proves §9.5.
+  console.log("Step 4: Cohort query (Google Sheets direct verification)...");
+  console.log(`  ✓ User appears in CRM-lite with ttfv_hours=${rowBefore.ttfvHours} > 0`);
+  console.log(`  (Spec §8 SQL cohort query maps to Sheets row check since CRM-lite = Google Sheets)\n`);
+
+  // §9.6 — Re-trigger → first-write-wins
+  console.log("Step 5: Re-triggering action to verify first-write-wins...");
+  const corrId2 = `smoke-corr-${Date.now()}-2`;
+  await sleep(500); // ensure different timestamp
+  await triggerAction({ isTest: true, correlationId: corrId2 });
+  console.log(`  Triggered second action. correlation_id=${corrId2}`);
+
+  const rowAfter = await getCRMLiteRow();
+  if (rowAfter.firstActionDeliveredAt !== rowBefore.firstActionDeliveredAt) {
+    throw new Error(
+      `first-write-wins VIOLATED: value changed from ${rowBefore.firstActionDeliveredAt} to ${rowAfter.firstActionDeliveredAt}`,
+    );
+  }
+  if (rowAfter.ttfvHours !== rowBefore.ttfvHours) {
+    throw new Error(`first-write-wins VIOLATED: ttfv_hours changed from ${rowBefore.ttfvHours} to ${rowAfter.ttfvHours}`);
+  }
+  console.log(`  ✓ first-write-wins confirmed: first_action_delivered_at unchanged after second trigger`);
+  console.log(`    value remains: ${rowAfter.firstActionDeliveredAt}\n`);
+
+  console.log("=== ALL CHECKS PASSED ===");
+  console.log("\nEvidence summary:");
+  console.log(`  1. Sentry event: event_id=${corrId1}, all required fields present`);
+  console.log(`  2. CRM-lite: first_action_delivered_at=${rowBefore.firstActionDeliveredAt}, ttfv_hours=${rowBefore.ttfvHours}`);
+  console.log(`  3. First-write-wins: re-trigger did not overwrite`);
+}
+
+runSmokeTest().catch((err) => {
+  console.error("\n=== SMOKE TEST FAILED ===");
+  console.error(err.message);
+  process.exit(1);
+});

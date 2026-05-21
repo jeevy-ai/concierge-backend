@@ -1,4 +1,5 @@
 import type { ClerkClaims } from "@jeevy/entitlement";
+import { withSentry } from "@sentry/cloudflare";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runDailyAtRiskScan } from "./lib/save-interview.js";
@@ -103,7 +104,7 @@ async function fetchClerkUserById(
  * Cloudflare Cron trigger: nightly at-risk user scan.
  * Configured in wrangler.toml: [triggers] crons = ["0 2 * * *"]
  */
-async function scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
+async function scheduled(_event: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
   const result = await runDailyAtRiskScan(
     {
       ENVIRONMENT: env.ENVIRONMENT,
@@ -120,7 +121,14 @@ async function scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContex
   console.log(`[save-interview] nightly scan: ${result.invited}/${result.processed} invited`);
 }
 
-export default {
-  fetch: app.fetch,
-  scheduled,
-};
+export default withSentry(
+  (env: Env) => ({
+    ...(env.SENTRY_DSN ? { dsn: env.SENTRY_DSN } : {}),
+    environment: env.ENVIRONMENT,
+    tracesSampleRate: 1.0,
+  }),
+  {
+    fetch: app.fetch,
+    scheduled,
+  },
+);

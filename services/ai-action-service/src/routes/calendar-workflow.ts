@@ -31,6 +31,8 @@ import {
   executeCalendarReschedule,
   loadSession,
 } from "../lib/workflow-orchestrator.js";
+import { SentryEventEmitter } from "../lib/ttfv-events.js";
+import { getCRMLiteWriter } from "../lib/crm-lite-ttfv.js";
 import type { Env, Variables } from "../index.js";
 
 type App = Hono<{ Bindings: Env; Variables: Variables }>;
@@ -59,6 +61,10 @@ export function registerCalendarWorkflowRoutes(app: App): void {
       newStartIso: string;
       newEndIso: string;
       reason?: string;
+      userEmail?: string;
+      intakeSubmittedAt?: string;
+      successCriterionId?: string;
+      isTest?: boolean;
     }>();
 
     if (!body?.operatorId || !body?.eventId || !body?.newStartIso || !body?.newEndIso) {
@@ -83,13 +89,28 @@ export function registerCalendarWorkflowRoutes(app: App): void {
       newStartIso: body.newStartIso,
       newEndIso: body.newEndIso,
       ...(body.reason !== undefined ? { reason: body.reason } : {}),
+      ...(body.userEmail !== undefined ? { userEmail: body.userEmail } : {}),
+      ...(body.intakeSubmittedAt !== undefined ? { intakeSubmittedAt: body.intakeSubmittedAt } : {}),
+      ...(body.successCriterionId !== undefined ? { successCriterionId: body.successCriterionId } : {}),
+      ...(body.isTest !== undefined ? { isTest: body.isTest } : {}),
     }, capture_);
 
     const approved = await approveWorkflow(kv_, session.sessionId, body.operatorId, correlationId);
 
     const adapter = new GoogleCalendarAdapter({ kv: kv_, forceError, sandbox });
 
-    const final = await executeCalendarReschedule(kv_, approved.sessionId, adapter, correlationId, capture_);
+    const emitter = c.env.SENTRY_DSN ? new SentryEventEmitter() : undefined;
+    const crmWriter = getCRMLiteWriter() || undefined;
+
+    const final = await executeCalendarReschedule(
+      kv_,
+      approved.sessionId,
+      adapter,
+      correlationId,
+      capture_,
+      emitter,
+      crmWriter,
+    );
 
     return c.json({ session: final, correlationId });
   });
