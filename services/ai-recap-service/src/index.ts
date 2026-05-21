@@ -10,6 +10,7 @@ export type Env = {
   RECAP_USE_LLM: string;
   VERTEX_REGION: string;
   VERTEX_PROJECT_ID: string;
+  VERTEX_SA_JSON: string;
   RECAP_MODEL: string;
   RECAP_TIMEOUT_MS: string;
 };
@@ -37,6 +38,7 @@ function getProvider(env: Env): RecapProvider | null {
     region: env.VERTEX_REGION || "us-central1",
     model: env.RECAP_MODEL || "gemini-2.5-flash",
     timeoutMs: Number.parseInt(env.RECAP_TIMEOUT_MS || "8000", 10),
+    saJson: env.VERTEX_SA_JSON || undefined,
   });
   cachedProviderKey = key;
   return cachedProvider;
@@ -329,6 +331,28 @@ function deterministicCluster(intentWindows: IntentWindow[]): RecapCluster[] {
   return clusters;
 }
 
+// Post-process LLM clusters: enforce meeting-domain overrides that the system prompt
+// cannot guarantee (LLMs may ignore instructions). Checks each cluster's referenced
+// windows for meeting-domain tabs and overrides label+suggestedAction when found.
+export function applyMeetingDomainOverrides(
+  clusters: RecapCluster[],
+  intentWindows: IntentWindow[],
+): RecapCluster[] {
+  const windowDomains = new Map<string, string[]>();
+  for (const w of intentWindows) {
+    windowDomains.set(w.windowId, w.tabs.map((t) => t.domain));
+  }
+  return clusters.map((cluster) => {
+    if (cluster.label === "Meeting") return cluster;
+    const hasMeetingTab = cluster.intentWindowIds.some((wid) => {
+      const domains = windowDomains.get(wid) ?? [];
+      return domains.some((d) => MEETING_DOMAINS.test(d));
+    });
+    if (!hasMeetingTab) return cluster;
+    return { ...cluster, label: "Meeting", suggestedAction: "archive" };
+  });
+}
+
 const SYSTEM_PROMPT = [
   "You are the recap clustering model for the Zenbrain tab manager.",
   "You receive a set of intent windows captured from a user's browser session.",
@@ -404,7 +428,7 @@ async function generateClusters(
       const raw = await provider.generate(SYSTEM_PROMPT, buildUserMessage(intentWindows));
       const validated = validateLlmClusters(raw, allowedWindowIds);
       if (validated && validated.length > 0) {
-        return { clusters: validated, source: "llm" };
+        return { clusters: applyMeetingDomainOverrides(validated, intentWindows), source: "llm" };
       }
       warnings.push("LLM response failed schema validation; using deterministic fallback.");
     } catch (err) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import app from "../src/index.js";
+import app, { applyMeetingDomainOverrides } from "../src/index.js";
 import type { Env } from "../src/index.js";
 
 const testEnv: Env = {
@@ -9,6 +9,7 @@ const testEnv: Env = {
   RECAP_USE_LLM: "false",
   VERTEX_REGION: "",
   VERTEX_PROJECT_ID: "",
+  VERTEX_SA_JSON: "",
   RECAP_MODEL: "",
   RECAP_TIMEOUT_MS: "",
 };
@@ -111,7 +112,7 @@ describe("meeting domain classification (YOU-519)", () => {
     });
   }
 
-  it("single Google Meet tab is not Research and not ignore", async () => {
+  it("single Google Meet tab (YOU-524) is not Research and not ignore", async () => {
     const res = await app.request(
       "/v1/ai/recap",
       {
@@ -136,5 +137,76 @@ describe("meeting domain classification (YOU-519)", () => {
     const cluster = body.clusters[0]!;
     expect(cluster.label).not.toBe("Research");
     expect(cluster.suggestedAction).not.toBe("ignore");
+  });
+});
+
+// Inline helpers matching internal types without re-exporting them.
+const meetWindow = (windowId: string, domain: string) => ({
+  windowId,
+  startedAt: "2026-05-01T10:00:00Z",
+  endedAt: "2026-05-01T11:00:00Z",
+  tabs: [{ title: "Meeting", url: `https://${domain}/room`, domain }],
+});
+
+const makeCluster = (windowId: string, label: string, suggestedAction: "resume" | "archive" | "ignore") => ({
+  clusterId: "cls_1",
+  label,
+  headline: `${label}: Tab`,
+  summary: "A tab.",
+  confidence: 0.8,
+  intentWindowIds: [windowId],
+  suggestedAction,
+});
+
+describe("applyMeetingDomainOverrides (YOU-524)", () => {
+  it("overrides Research/ignore LLM cluster for meet.google.com to Meeting/archive", () => {
+    const windows = [meetWindow("w1", "meet.google.com")];
+    const result = applyMeetingDomainOverrides([makeCluster("w1", "Research", "ignore")], windows);
+    expect(result[0]!.label).toBe("Meeting");
+    expect(result[0]!.suggestedAction).toBe("archive");
+  });
+
+  it("overrides for zoom.us", () => {
+    const windows = [meetWindow("w1", "zoom.us")];
+    const result = applyMeetingDomainOverrides([makeCluster("w1", "Research", "ignore")], windows);
+    expect(result[0]!.label).toBe("Meeting");
+    expect(result[0]!.suggestedAction).toBe("archive");
+  });
+
+  it("overrides for teams.microsoft.com", () => {
+    const windows = [meetWindow("w1", "teams.microsoft.com")];
+    const result = applyMeetingDomainOverrides([makeCluster("w1", "Research", "resume")], windows);
+    expect(result[0]!.label).toBe("Meeting");
+    expect(result[0]!.suggestedAction).toBe("archive");
+  });
+
+  it("overrides for whereby.com", () => {
+    const windows = [meetWindow("w1", "whereby.com")];
+    const result = applyMeetingDomainOverrides([makeCluster("w1", "Research", "ignore")], windows);
+    expect(result[0]!.label).toBe("Meeting");
+    expect(result[0]!.suggestedAction).toBe("archive");
+  });
+
+  it("leaves non-meeting cluster unchanged", () => {
+    const windows = [meetWindow("w1", "github.com")];
+    const result = applyMeetingDomainOverrides([makeCluster("w1", "Engineering", "resume")], windows);
+    expect(result[0]!.label).toBe("Engineering");
+    expect(result[0]!.suggestedAction).toBe("resume");
+  });
+
+  it("already-Meeting cluster is passed through unchanged", () => {
+    const windows = [meetWindow("w1", "zoom.us")];
+    const result = applyMeetingDomainOverrides([makeCluster("w1", "Meeting", "archive")], windows);
+    expect(result[0]!.label).toBe("Meeting");
+    expect(result[0]!.suggestedAction).toBe("archive");
+  });
+
+  it("preserves other cluster fields when overriding", () => {
+    const windows = [meetWindow("w1", "meet.google.com")];
+    const cluster = makeCluster("w1", "Research", "ignore");
+    const result = applyMeetingDomainOverrides([cluster], windows);
+    expect(result[0]!.clusterId).toBe("cls_1");
+    expect(result[0]!.confidence).toBe(0.8);
+    expect(result[0]!.intentWindowIds).toEqual(["w1"]);
   });
 });
