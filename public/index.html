@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concierge API Test Harness</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1200px;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #1a1a1a;
+      margin-bottom: 30px;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .panel {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .panel h2 {
+      margin-top: 0;
+      font-size: 1.2em;
+      color: #222;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      font-size: 0.95em;
+    }
+    input[type="text"],
+    input[type="url"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.95em;
+      font-family: inherit;
+    }
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+      font-family: monospace;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.95em;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+    button.secondary {
+      background: #6c757d;
+      margin-left: 10px;
+    }
+    button.secondary:hover {
+      background: #5a6268;
+    }
+    .tab-item {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .tab-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .tab-item-title {
+      font-weight: 600;
+      color: #222;
+    }
+    .tab-item-url {
+      font-size: 0.85em;
+      color: #666;
+      word-break: break-all;
+    }
+    .tab-remove {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.8em;
+    }
+    .tab-remove:hover {
+      background: #c82333;
+    }
+    .response-panel {
+      grid-column: 1 / -1;
+    }
+    .response-status {
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    .response-status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .response-status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .response-status.pending {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+    .response-content {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      overflow-x: auto;
+    }
+    .response-json {
+      font-family: "Monaco", "Courier New", monospace;
+      font-size: 0.85em;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .loading {
+      text-align: center;
+      color: #666;
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .demo-tabs {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+    }
+    .demo-tabs button {
+      font-size: 0.85em;
+      padding: 6px 12px;
+    }
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+      .response-panel {
+        grid-column: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🤖 Concierge API Test Harness</h1>
+
+  <div class="container">
+    <div class="panel">
+      <h2>Configuration</h2>
+      <div class="form-group">
+        <label for="apiUrl">API Endpoint</label>
+        <input type="url" id="apiUrl" placeholder="http://localhost:3000/v1/ai/action" value="http://localhost:3000/v1/ai/action">
+      </div>
+      <div class="form-group">
+        <label for="authToken">Bearer Token (optional)</label>
+        <input type="text" id="authToken" placeholder="Leave blank for no auth">
+      </div>
+      <div class="form-group">
+        <label for="userId">User ID</label>
+        <input type="text" id="userId" placeholder="e.g., user@example.com" value="test-user">
+      </div>
+      <div class="form-group">
+        <label for="actionId">Action</label>
+        <select id="actionId">
+          <option value="">-- Select an action --</option>
+          <option value="summarize_email">Summarize Email</option>
+          <option value="outline_doc">Outline Document</option>
+          <option value="bullet_slides">Bullet Slides</option>
+          <option value="compare_tabs">Compare Tabs (requires 2+ tabs)</option>
+          <option value="research_brief">Research Brief</option>
+          <option value="regroup_windows">Regroup Windows</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="contextHint">Context Hint (optional, max 250 chars)</label>
+        <textarea id="contextHint" placeholder="Additional context for the action..."></textarea>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Tabs</h2>
+      <div id="tabsList"></div>
+      <div class="form-group">
+        <label for="newTabTitle">Tab Title</label>
+        <input type="text" id="newTabTitle" placeholder="e.g., Email from Sarah">
+      </div>
+      <div class="form-group">
+        <label for="newTabUrl">Tab URL</label>
+        <input type="url" id="newTabUrl" placeholder="https://example.com/page">
+      </div>
+      <div class="form-group">
+        <label for="newTabDomain">Domain (auto-filled if URL provided)</label>
+        <input type="text" id="newTabDomain" placeholder="example.com">
+      </div>
+      <button onclick="addTab()">+ Add Tab</button>
+      <div class="demo-tabs">
+        <strong>Quick Start:</strong>
+        <button class="secondary" onclick="loadDemoTabs()">Load Demo Tabs</button>
+      </div>
+    </div>
+
+    <div class="panel response-panel">
+      <h2>Response</h2>
+      <div id="responseArea">
+        <p style="color: #999;">No request sent yet. Fill out the form and click "Send Request".</p>
+      </div>
+      <button onclick="sendRequest()" style="margin-top: 20px;">📤 Send Request</button>
+    </div>
+  </div>
+
+  <script>
+    const tabsData = [];
+
+    function extractDomain(url) {
+      try {
+        return new URL(url).hostname || '';
+      } catch {
+        return '';
+      }
+    }
+
+    function renderTabs() {
+      const container = document.getElementById('tabsList');
+      if (tabsData.length === 0) {
+        container.innerHTML = '<p style="color: #999;">No tabs added yet.</p>';
+        return;
+      }
+      container.innerHTML = tabsData.map((tab, idx) => `
+        <div class="tab-item">
+          <div class="tab-item-header">
+            <div class="tab-item-title">${escapeHtml(tab.title)}</div>
+            <button class="tab-remove" onclick="removeTab(${idx})">Remove</button>
+          </div>
+          <div class="tab-item-url">${escapeHtml(tab.url)}</div>
+        </div>
+      `).join('');
+    }
+
+    function addTab() {
+      const title = document.getElementById('newTabTitle').value.trim();
+      const url = document.getElementById('newTabUrl').value.trim();
+      let domain = document.getElementById('newTabDomain').value.trim();
+
+      if (!title || !url) {
+        alert('Title and URL are required.');
+        return;
+      }
+
+      if (!domain) {
+        domain = extractDomain(url);
+      }
+
+      if (!domain) {
+        alert('Invalid URL or domain.');
+        return;
+      }
+
+      tabsData.push({
+        tabId: Math.random().toString(36).substr(2, 9),
+        title,
+        url,
+        domain
+      });
+
+      document.getElementById('newTabTitle').value = '';
+      document.getElementById('newTabUrl').value = '';
+      document.getElementById('newTabDomain').value = '';
+      renderTabs();
+    }
+
+    function removeTab(idx) {
+      tabsData.splice(idx, 1);
+      renderTabs();
+    }
+
+    function loadDemoTabs() {
+      tabsData.length = 0;
+      tabsData.push({
+        tabId: 'demo-1',
+        title: 'Email from Product Team',
+        url: 'https://mail.google.com/mail/u/0/#inbox/email-subject',
+        domain: 'mail.google.com'
+      });
+      tabsData.push({
+        tabId: 'demo-2',
+        title: 'Q2 Product Roadmap',
+        url: 'https://docs.google.com/document/d/1example',
+        domain: 'docs.google.com'
+      });
+      tabsData.push({
+        tabId: 'demo-3',
+        title: 'Engineering Blog Post',
+        url: 'https://engineering.example.com/blog/feature-launch',
+        domain: 'engineering.example.com'
+      });
+      renderTabs();
+    }
+
+    function showResponse(status, content) {
+      const area = document.getElementById('responseArea');
+      const statusClass = status === 'loading' ? 'pending' : (status === 'success' ? 'success' : 'error');
+      const statusText = status === 'loading' ? 'Sending request...' : (status === 'success' ? '✓ Success' : '✗ Error');
+
+      if (status === 'loading') {
+        area.innerHTML = `<div class="response-status ${statusClass}"><div class="spinner"></div> ${statusText}</div>`;
+      } else {
+        const jsonStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+        area.innerHTML = `
+          <div class="response-status ${statusClass}">${statusText}</div>
+          <div class="response-content">
+            <div class="response-json">${escapeHtml(jsonStr)}</div>
+          </div>
+        `;
+      }
+    }
+
+    async function sendRequest() {
+      const apiUrl = document.getElementById('apiUrl').value.trim();
+      const authToken = document.getElementById('authToken').value.trim();
+      const userId = document.getElementById('userId').value.trim();
+      const actionId = document.getElementById('actionId').value.trim();
+      const contextHint = document.getElementById('contextHint').value.trim();
+
+      if (!apiUrl) {
+        showResponse('error', 'API Endpoint is required.');
+        return;
+      }
+
+      if (!userId) {
+        showResponse('error', 'User ID is required.');
+        return;
+      }
+
+      if (!actionId) {
+        showResponse('error', 'Action is required.');
+        return;
+      }
+
+      if (tabsData.length === 0) {
+        showResponse('error', 'At least one tab is required.');
+        return;
+      }
+
+      const payload = {
+        userId,
+        actionId,
+        tabs: tabsData,
+        ...(contextHint ? { contextHint } : {})
+      };
+
+      showResponse('loading');
+
+      try {
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+
+        if (authToken) {
+          headers['Authorization'] = `Bearer ${authToken}`;
+        }
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showResponse('success', data);
+        } else {
+          showResponse('error', data);
+        }
+      } catch (err) {
+        showResponse('error', `Request failed: ${err.message}`);
+      }
+    }
+
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Initialize
+    document.getElementById('newTabUrl').addEventListener('change', (e) => {
+      const domain = extractDomain(e.target.value);
+      if (domain) {
+        document.getElementById('newTabDomain').value = domain;
+      }
+    });
+
+    renderTabs();
+  </script>
+</body>
+</html>
