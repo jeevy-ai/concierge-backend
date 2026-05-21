@@ -141,13 +141,7 @@ export function ApplyShell() {
         throw new Error(`Submission failed: ${res.status}`);
       }
 
-      // Track signup_completed on successful intake submission
-      track(AnalyticsEventName.SIGNUP_COMPLETED, {
-        method: "email",
-        plan_intent: "founder",
-        // Note: userId would only be available after actual account creation in auth flow
-      });
-
+      // Note: signup_completed fires server-side after account creation in auth flow
       router.push("/apply/thank-you");
     } catch (error) {
       // Track error if not already tracked
