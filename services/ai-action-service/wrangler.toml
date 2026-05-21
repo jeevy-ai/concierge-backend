@@ -77,11 +77,11 @@ id = "9e12aea1abcb4e668633abffee66b56c"
 
 [[env.staging.kv_namespaces]]
 binding = "POLICY_KV"
-id = "00000000000000000000000000000002"
+id = "d23c5574b5f446e6a751f810d6c210f2"
 
 [[env.staging.kv_namespaces]]
 binding = "CONCIERGE_KV"
-id = "00000000000000000000000000000005"
+id = "3869105e18f240029c504a3762814531"
 
 [env.production]
 name = "ai-action-service-production"
@@ -101,8 +101,8 @@ id = "68e68d7db26c4bda8c97bb222c3d9018"
 
 [[env.production.kv_namespaces]]
 binding = "POLICY_KV"
-id = "00000000000000000000000000000003"
+id = "db65c7a86c4f4df5b3ec968a83a427d0"
 
 [[env.production.kv_namespaces]]
 binding = "CONCIERGE_KV"
-id = "00000000000000000000000000000006"
+id = "4c911a21b40c49408a1c81565ff774b0"
