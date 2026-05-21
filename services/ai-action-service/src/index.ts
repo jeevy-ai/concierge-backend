@@ -284,6 +284,12 @@ function buildResponse(
   // validated is non-null here: callers only invoke after a null-check
   const v = validated!;
   const envelope = action.toEnvelopeFields(v);
+  const warnings = [...envelope.warnings, ...extraWarnings];
+  if (envelope.confidence < action.defaultConfidenceThreshold) {
+    warnings.push(
+      `My confidence in this result is below the reliability threshold (${Math.round(envelope.confidence * 100)}% vs. ${Math.round(action.defaultConfidenceThreshold * 100)}% needed) — treat it as a starting point and verify before acting on it.`,
+    );
+  }
   return {
     contractVersion: CONTRACT_VERSION,
     actionId: action.id,
@@ -292,7 +298,7 @@ function buildResponse(
     confidenceThreshold: action.defaultConfidenceThreshold,
     confidence: envelope.confidence,
     result: { kind: action.resultKind, payload: action.toResultPayload(v) },
-    warnings: [...envelope.warnings, ...extraWarnings],
+    warnings,
   };
 }
 
@@ -327,7 +333,7 @@ async function runAction(
     warnings.push("ACTION_USE_LLM is set but ANTHROPIC_API_KEY is missing; using deterministic fallback.");
   }
 
-  const fallback = action.deterministic(minimizedTabs);
+  const fallback = action.deterministic(minimizedTabs, contextHint);
   const validated = action.validate(fallback, validatorContext);
   if (!validated) throw new Error(`deterministic fallback failed validation for ${action.id}`);
   return buildResponse(action, validated, "deterministic", warnings, new Date().toISOString());
@@ -348,42 +354,51 @@ app.get("/internal/healthz", (c) => {
 });
 
 app.post("/v1/ai/action", async (c) => {
+  const requestId = crypto.randomUUID();
   const env = c.env;
   const authMode = env.AUTH_MODE || "none";
   const authToken = env.AUTH_BEARER_TOKEN || "";
 
   if (!isAuthorized(c.req.header("authorization"), authMode, authToken)) {
-    return c.json(unauthorized(null), 401);
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...unauthorized(null) }, 401);
   }
 
   let payload: unknown;
   try {
     payload = await c.req.json();
   } catch {
-    return c.json(badRequest(null, "Request body must be valid JSON."), 400);
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...badRequest(null, "Request body must be valid JSON.") }, 400);
   }
 
   const validation = validateRequest(payload);
   if (!validation.ok) {
     const code = validation.error.error.code;
     const status = code === "PAYLOAD_TOO_LARGE" ? 413 : 400;
-    return c.json(validation.error, status);
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...validation.error }, status);
   }
 
   const { userId, actionId, tabs, contextHint } = validation.data;
   const action = ACTIONS[actionId]!;
   const idemKey = `${userId}:${actionId}:${idempotencyKey(validation.data)}`;
   const cached = checkIdempotent(idemKey);
-  if (cached) return c.json(cached, 200);
+  if (cached) {
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...cached }, 200);
+  }
 
   try {
     const response = await runAction(action, tabs, contextHint, env);
     rememberIdempotent(idemKey, response);
     await emitFirstValue(userId, actionId, response.source, response.confidence, env).catch(() => {});
-    return c.json(response, 200);
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...response }, 200);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "action generation failed";
-    return c.json(upstreamError(actionId, msg), 502);
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...upstreamError(actionId, msg) }, 502);
   }
 });
 

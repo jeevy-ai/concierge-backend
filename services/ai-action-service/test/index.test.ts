@@ -53,6 +53,27 @@ describe("ai-action-service", () => {
   });
 });
 
+describe("low-confidence warning (YOU-516)", () => {
+  it("populates warnings when confidence < confidenceThreshold", async () => {
+    // regroup_windows deterministic returns confidence=0.4, threshold=0.6
+    const res = await app.request(
+      "/v1/ai/action",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...VALID_BODY, userId: "you516-test" }),
+      },
+      BASE_ENV,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { confidence: number; confidenceThreshold: number; warnings: string[] };
+    expect(body.confidence).toBeLessThan(body.confidenceThreshold);
+    expect(body.warnings.length).toBeGreaterThan(0);
+    expect(body.warnings.some((w) => /confidence/i.test(w))).toBe(true);
+    expect(body.warnings.some((w) => /threshold/i.test(w))).toBe(true);
+  });
+});
+
 describe("compare_tabs input validation", () => {
   const ONE_TAB = { tabId: 1, title: "Only one tab", url: "https://example.com", domain: "example.com" };
 
