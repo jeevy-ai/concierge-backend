@@ -274,7 +274,10 @@ function rememberIdempotent(key: string, response: RecapResponse): void {
   }
 }
 
+const MEETING_DOMAINS = /meet\.google|zoom\.us|teams\.microsoft|whereby\.com|webex\.com|gotomeeting\.com/i;
+
 function clusterLabelForDomain(domain: string): string {
+  if (MEETING_DOMAINS.test(domain)) return "Meeting";
   if (/mail|outlook|inbox|calendar|slack|discord/i.test(domain)) return "Communication";
   if (/docs|notion|confluence|drive|figma/i.test(domain)) return "Docs & design";
   if (/github|gitlab|linear|jira|sentry|circleci/i.test(domain)) return "Engineering";
@@ -320,7 +323,7 @@ function deterministicCluster(intentWindows: IntentWindow[]): RecapCluster[] {
       summary,
       confidence: 0.5,
       intentWindowIds: [windowId],
-      suggestedAction: tabs.length >= 2 ? "resume" : "ignore",
+      suggestedAction: label === "Meeting" ? "archive" : tabs.length >= 2 ? "resume" : "ignore",
     });
   }
   return clusters;
@@ -336,6 +339,7 @@ const SYSTEM_PROMPT = [
   "headline and summary must be non-empty strings.",
   "Every value in intentWindowIds MUST come from the input windowId set. Do not invent new ids; if a cluster spans windows, list each input windowId separately.",
   "confidence is a number in [0,1]; set suggestedAction=resume when the cluster represents an in-progress task.",
+  "Video conferencing tabs (meet.google.com, zoom.us, teams.microsoft.com, whereby.com, webex.com) MUST use label=Meeting and suggestedAction=archive. Never classify them as Research.",
 ].join("\n");
 
 function buildUserMessage(intentWindows: IntentWindow[]): string {
@@ -445,39 +449,48 @@ app.get("/internal/healthz", (c) => {
 });
 
 app.post("/v1/ai/recap", async (c) => {
+  const requestId = crypto.randomUUID();
   const env = c.env;
   const authMode = env.AUTH_MODE || "none";
   const authToken = env.AUTH_BEARER_TOKEN || "";
 
   if (!isAuthorized(c.req.header("authorization"), authMode, authToken)) {
-    return c.json(unauthorized("Missing or invalid bearer token."), 401);
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...unauthorized("Missing or invalid bearer token.") }, 401);
   }
 
   let payload: unknown;
   try {
     payload = await c.req.json();
   } catch {
-    return c.json(badRequest("Request body must be valid JSON."), 400);
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...badRequest("Request body must be valid JSON.") }, 400);
   }
 
   const validation = validateRequest(payload);
   if (!validation.ok) {
     const code = validation.error.error.code;
     const status = code === "PAYLOAD_TOO_LARGE" ? 413 : 400;
-    return c.json(validation.error, status);
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...validation.error }, status);
   }
 
   const idemKey = idempotencyKey(validation.data.userId, validation.data.intentWindows);
   const cached = checkIdempotent(idemKey);
-  if (cached) return c.json(cached, 200);
+  if (cached) {
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...cached }, 200);
+  }
 
   try {
     const recap = await buildRecap(validation.data, env);
     rememberIdempotent(idemKey, recap);
-    return c.json(recap, 200);
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...recap }, 200);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "recap generation failed";
-    return c.json(upstreamError(msg), 502);
+    c.header("X-Request-Id", requestId);
+    return c.json({ requestId, ...upstreamError(msg) }, 502);
   }
 });
 

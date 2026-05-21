@@ -72,3 +72,69 @@ describe("ai-recap-service", () => {
     expect(body.error.code).toBe("INVALID_INPUT");
   });
 });
+
+describe("meeting domain classification (YOU-519)", () => {
+  const meetingCases = [
+    { domain: "meet.google.com", title: "Q2 Planning Kickoff", url: "https://meet.google.com/abc-defg-hij" },
+    { domain: "zoom.us", title: "Weekly Sync", url: "https://zoom.us/j/1234567890" },
+    { domain: "teams.microsoft.com", title: "Sprint Review", url: "https://teams.microsoft.com/meet/123" },
+    { domain: "whereby.com", title: "Design Review", url: "https://whereby.com/myroom" },
+  ];
+
+  for (const { domain, title, url } of meetingCases) {
+    it(`${domain} → label=Meeting, suggestedAction=archive`, async () => {
+      const res = await app.request(
+        "/v1/ai/recap",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: "test-user",
+            intentWindows: [
+              {
+                windowId: "win-meeting",
+                startedAt: "2026-05-01T10:00:00Z",
+                endedAt: "2026-05-01T11:00:00Z",
+                tabs: [{ title, url, domain }],
+              },
+            ],
+          }),
+        },
+        testEnv,
+      );
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { clusters: Array<{ label: string; suggestedAction: string }> };
+      expect(body.clusters.length).toBeGreaterThan(0);
+      const cluster = body.clusters[0]!;
+      expect(cluster.label).toBe("Meeting");
+      expect(cluster.suggestedAction).toBe("archive");
+    });
+  }
+
+  it("single Google Meet tab is not Research and not ignore", async () => {
+    const res = await app.request(
+      "/v1/ai/recap",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "test-user",
+          intentWindows: [
+            {
+              windowId: "win-meet-single",
+              startedAt: "2026-05-01T10:00:00Z",
+              endedAt: "2026-05-01T11:00:00Z",
+              tabs: [{ title: "Google Meet - Q2 Planning Kickoff", url: "https://meet.google.com/abc-defg-hij", domain: "meet.google.com" }],
+            },
+          ],
+        }),
+      },
+      testEnv,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { clusters: Array<{ label: string; suggestedAction: string }> };
+    const cluster = body.clusters[0]!;
+    expect(cluster.label).not.toBe("Research");
+    expect(cluster.suggestedAction).not.toBe("ignore");
+  });
+});
