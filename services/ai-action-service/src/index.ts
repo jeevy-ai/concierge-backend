@@ -13,6 +13,9 @@ export type Env = {
   ANTHROPIC_TIMEOUT_MS: string;
   ANTHROPIC_SONNET_MODEL: string;
   ANTHROPIC_HAIKU_MODEL: string;
+  // Optional: first_value_delivered instrumentation (absent in dev without CF bindings)
+  FIRST_VALUE_KV?: KVNamespace;
+  CONCIERGE_ANALYTICS?: AnalyticsEngineDataset;
 };
 
 const CONTRACT_VERSION = "2026-05-03";
@@ -133,6 +136,9 @@ function validateRequest(payload: unknown): { ok: true; data: ActionPayload } | 
       return { ok: false, error: badRequest(actionId, "Each tab must include a tabId.") };
     }
   }
+  if (actionId === "compare_tabs" && tabsRaw.length < 2) {
+    return { ok: false, error: badRequest(actionId, "compare_tabs requires at least 2 tabs to compare.") };
+  }
   const contextHint = p["contextHint"];
   if (contextHint != null && typeof contextHint !== "string") {
     return { ok: false, error: badRequest(actionId, "contextHint must be a string.") };
@@ -230,6 +236,41 @@ async function callAnthropic(
     }
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+// Emits `first_value_delivered` to Analytics Engine the first time a given user
+// receives a successful concierge action. KV guards against duplicate emission;
+// both bindings are optional so this is a no-op in dev without CF bindings.
+async function emitFirstValue(
+  userId: string,
+  actionId: string,
+  source: "llm" | "deterministic",
+  confidence: number,
+  env: Env,
+): Promise<void> {
+  const kv = env.FIRST_VALUE_KV;
+  const ae = env.CONCIERGE_ANALYTICS;
+  if (!kv && !ae) return;
+
+  const kvKey = `fv:${userId}`;
+  if (kv) {
+    const existing = await kv.get(kvKey);
+    if (existing !== null) return;
+  }
+
+  if (ae) {
+    ae.writeDataPoint({
+      // blob1=userId, blob2=actionId, blob3=source — queryable via Workers Analytics Engine SQL
+      blobs: [userId, actionId, source],
+      doubles: [confidence],
+      indexes: [userId],
+    });
+  }
+
+  if (kv) {
+    // Best-effort: rare concurrent races may produce a harmless duplicate data point
+    await kv.put(kvKey, "1");
   }
 }
 
@@ -338,6 +379,7 @@ app.post("/v1/ai/action", async (c) => {
   try {
     const response = await runAction(action, tabs, contextHint, env);
     rememberIdempotent(idemKey, response);
+    await emitFirstValue(userId, actionId, response.source, response.confidence, env).catch(() => {});
     return c.json(response, 200);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "action generation failed";
