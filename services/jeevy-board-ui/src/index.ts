@@ -13,7 +13,7 @@
 
 export interface Env {
   INTERNAL_API_SECRET: string;
-  AI_ACTION_SERVICE_URL: string;
+  AI_ACTION_SERVICE: Fetcher;
 }
 
 const CORS_HEADERS = {
@@ -30,12 +30,13 @@ function json(body: unknown, status = 200): Response {
 }
 
 async function proxyPost(
-  url: string,
+  service: Fetcher,
+  path: string,
   secret: string,
   body: unknown,
   correlationId: string,
 ): Promise<Response> {
-  const upstream = await fetch(url, {
+  const upstream = await service.fetch(`https://ai-action-service-staging${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -74,7 +75,8 @@ export default {
       if (url.pathname === "/api/calendar/reschedule") {
         const body = await request.json();
         return proxyPost(
-          `${env.AI_ACTION_SERVICE_URL}/internal/workflow/calendar/reschedule`,
+          env.AI_ACTION_SERVICE,
+          "/internal/workflow/calendar/reschedule",
           env.INTERNAL_API_SECRET,
           body,
           correlationId,
@@ -84,7 +86,8 @@ export default {
       if (url.pathname === "/api/outreach/send") {
         const body = (await request.json()) as Record<string, unknown>;
         return proxyPost(
-          `${env.AI_ACTION_SERVICE_URL}/api/internal/outreach/send`,
+          env.AI_ACTION_SERVICE,
+          "/api/internal/outreach/send",
           env.INTERNAL_API_SECRET,
           { ...body, correlationId },
           correlationId,
@@ -94,7 +97,8 @@ export default {
       if (url.pathname === "/api/interview/trigger") {
         const body = await request.json();
         return proxyPost(
-          `${env.AI_ACTION_SERVICE_URL}/internal/save-interview/trigger`,
+          env.AI_ACTION_SERVICE,
+          "/internal/save-interview/trigger",
           env.INTERNAL_API_SECRET,
           body,
           correlationId,
