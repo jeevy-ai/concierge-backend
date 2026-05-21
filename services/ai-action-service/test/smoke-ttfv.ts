@@ -48,39 +48,50 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// Seed synthetic user into CONCIERGE_KV staging with status=active (paid user gate)
+// Seed synthetic user into CONCIERGE_KV staging with status=active (paid user gate).
+// Prefers CF API if credentials available, falls back to Worker demo endpoint (non-prod only).
 async function seedEntitlement(): Promise<void> {
-  if (process.env["SMOKE_FIXED_USER_ID"]) {
-    console.log(`  Using pre-seeded user: ${SYNTHETIC_USER_ID} (skipping CF KV write)`);
+  const cfEmail = process.env["CLOUDFLARE_EMAIL"];
+  const cfKey = process.env["CLOUDFLARE_API_KEY"];
+
+  if (cfEmail && cfKey) {
+    const kvKey = `entitlement:${SYNTHETIC_USER_ID}`;
+    const record = JSON.stringify({
+      stripeCustomerId: "cus_smoke_ttfv",
+      stripeSubscriptionId: "sub_smoke_ttfv",
+      status: "active",
+      plan: "pro",
+      periodEnd: 9999999999,
+      updatedAt: new Date().toISOString(),
+    });
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_CONCIERGE_KV_NS}/values/${encodeURIComponent(kvKey)}`,
+      {
+        method: "PUT",
+        headers: { "X-Auth-Email": cfEmail, "X-Auth-Key": cfKey, "Content-Type": "text/plain" },
+        body: record,
+      },
+    );
+    const json = await res.json() as { success: boolean; errors?: Array<{ message: string }> };
+    if (!json.success) {
+      throw new Error(`CF KV seed failed: ${JSON.stringify(json.errors)}`);
+    }
     return;
   }
-  const cfEmail = requireEnv("CLOUDFLARE_EMAIL");
-  const cfKey = requireEnv("CLOUDFLARE_API_KEY");
-  const kvKey = `entitlement:${SYNTHETIC_USER_ID}`;
-  const record = JSON.stringify({
-    stripeCustomerId: "cus_smoke_ttfv",
-    stripeSubscriptionId: "sub_smoke_ttfv",
-    status: "active",
-    plan: "pro",
-    periodEnd: 9999999999,
-    updatedAt: new Date().toISOString(),
-  });
 
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_CONCIERGE_KV_NS}/values/${encodeURIComponent(kvKey)}`,
-    {
-      method: "PUT",
-      headers: {
-        "X-Auth-Email": cfEmail,
-        "X-Auth-Key": cfKey,
-        "Content-Type": "text/plain",
-      },
-      body: record,
-    },
-  );
-  const json = await res.json() as { success: boolean; errors?: Array<{ message: string }> };
-  if (!json.success) {
-    throw new Error(`CF KV seed failed: ${JSON.stringify(json.errors)}`);
+  // Fallback: use Worker's demo seed endpoint (blocked in production by design)
+  console.log(`  No CF creds — seeding via ${ENDPOINT}/api/demo/seed-entitlement`);
+  const res = await fetch(`${ENDPOINT}/api/demo/seed-entitlement`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: SYNTHETIC_USER_ID }),
+  });
+  if (!res.ok) {
+    throw new Error(`Demo seed-entitlement failed ${res.status}: ${await res.text()}`);
+  }
+  const json = await res.json() as { ok: boolean; key?: string };
+  if (!json.ok) {
+    throw new Error(`Demo seed-entitlement returned ok=false`);
   }
 }
 

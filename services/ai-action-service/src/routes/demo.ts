@@ -156,6 +156,33 @@ export function registerDemoRoutes(app: App): void {
     return c.json({ ok: true, seeded: true, userId: body.userId, npsScore: score });
   });
 
+  // Seed a synthetic paid user into CONCIERGE_KV — used by §9 smoke test (non-prod only).
+  // Body: { userId: string }
+  app.post("/api/demo/seed-entitlement", async (c) => {
+    let body: { userId: string };
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON" }, 400);
+    }
+    if (!body.userId) {
+      return c.json({ error: "userId required" }, 400);
+    }
+
+    const record = JSON.stringify({
+      stripeCustomerId: "cus_smoke_ttfv",
+      stripeSubscriptionId: "sub_smoke_ttfv",
+      status: "active",
+      plan: "pro",
+      periodEnd: 9999999999,
+      updatedAt: new Date().toISOString(),
+    });
+
+    await c.env.CONCIERGE_KV.put(`entitlement:${body.userId}`, record);
+
+    return c.json({ ok: true, seeded: true, userId: body.userId, key: `entitlement:${body.userId}` });
+  });
+
   // Send a branded interview invite email directly via Resend — no dedup, no KV tracking.
   // Intended for board demo: lets the tester see the real HTML email arrive.
   // Body: { email: string; firstName?: string }
