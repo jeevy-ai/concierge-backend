@@ -1,3 +1,5 @@
+import type { AnalyticsEventName, AnalyticsEventPropsMap } from "@jeevy/contracts";
+
 type Props = Record<string, unknown>;
 
 declare global {
@@ -12,6 +14,13 @@ export function track(event: string, props: Props = {}): void {
   } catch (_) {
     // vendor not loaded — silent
   }
+}
+
+export function trackEvent<K extends AnalyticsEventName>(
+  event: K,
+  props: AnalyticsEventPropsMap[K],
+): void {
+  track(event, props as Props);
 }
 
 export function trackPageView(): void {
