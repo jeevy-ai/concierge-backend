@@ -8,6 +8,7 @@
  *   GET  /api/demo/events              — list available fixture events
  *   POST /api/demo/calendar/reschedule — calendar reschedule in sandbox mode
  *   POST /api/demo/outreach/validate   — policy dry-run (no actual send)
+ *   POST /api/demo/seed-nps-user       — seed test user with NPS detractor score + clear dedup
  */
 
 import type { Hono } from "hono";
@@ -120,5 +121,36 @@ export function registerDemoRoutes(app: App): void {
     );
 
     return c.json({ correlationId, decision });
+  });
+
+  // Seed a test user with a low NPS score and clear dedup so the interview trigger fires.
+  // Body: { userId: string; email: string; firstName?: string; score?: number }
+  app.post("/api/demo/seed-nps-user", async (c) => {
+    let body: { userId: string; email: string; firstName?: string; score?: number };
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON" }, 400);
+    }
+    if (!body.userId || !body.email) {
+      return c.json({ error: "userId and email required" }, 400);
+    }
+    const score = typeof body.score === "number" ? body.score : 3;
+
+    await c.env.INTERVIEWS_KV.put(
+      `user:${body.userId}:nps`,
+      JSON.stringify({ score, recordedAt: new Date().toISOString() }),
+    );
+    await c.env.INTERVIEWS_KV.delete(`user:${body.userId}:save_invite`);
+    await c.env.INTERVIEWS_KV.delete(`user:${body.userId}:last_value_event`);
+
+    const raw = await c.env.INTERVIEWS_KV.get("tracked_users");
+    const users: string[] = raw ? (JSON.parse(raw) as string[]) : [];
+    if (!users.includes(body.userId)) {
+      users.push(body.userId);
+      await c.env.INTERVIEWS_KV.put("tracked_users", JSON.stringify(users));
+    }
+
+    return c.json({ ok: true, seeded: true, userId: body.userId, npsScore: score });
   });
 }

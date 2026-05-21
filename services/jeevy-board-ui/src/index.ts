@@ -104,6 +104,17 @@ export default {
           correlationId,
         );
       }
+
+      if (url.pathname === "/api/seed") {
+        const body = await request.json();
+        return proxyPost(
+          env.AI_ACTION_SERVICE,
+          "/api/demo/seed-nps-user",
+          env.INTERNAL_API_SECRET,
+          body,
+          correlationId,
+        );
+      }
     }
 
     return json({ error: "Not found" }, 404);
@@ -184,13 +195,14 @@ const HTML = `<!DOCTYPE html>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('calendar')">Calendar Reschedule</div>
+  <div class="tab" onclick="switchTab('calendar')">Calendar Reschedule</div>
   <div class="tab" onclick="switchTab('outreach')">Outreach Send</div>
   <div class="tab" onclick="switchTab('interview')">Interview Trigger</div>
+  <div class="tab active" onclick="switchTab('demo')">🎬 Demo Flow</div>
 </div>
 
 <!-- CALENDAR RESCHEDULE -->
-<div id="panel-calendar" class="panel active">
+<div id="panel-calendar" class="panel">
   <div class="section-title">Calendar Reschedule</div>
   <div class="section-desc">
     POST /internal/workflow/calendar/reschedule via staging proxy.<br>
@@ -297,16 +309,63 @@ const HTML = `<!DOCTYPE html>
   <div id="int-result"></div>
 </div>
 
+<!-- DEMO FLOW -->
+<div id="panel-demo" class="panel active">
+  <div class="section-title">NPS-Seed → Interview Trigger Demo</div>
+  <div class="section-desc">
+    End-to-end board demo: seed a test user with a low NPS score, then fire the interview invite.<br>
+    Step 1 sets NPS=3 (detractor) and clears dedup. Step 2 sends the real invite email.
+  </div>
+  <div class="info-box">⚡ Staging only. Step 2 sends a <strong>real email</strong> via Resend. Use your own address.</div>
+
+  <div class="form-group">
+    <label>userId (unique per run to avoid dedup collisions)</label>
+    <input id="demo-uid" value="" />
+  </div>
+  <div class="form-group">
+    <label>email — where to receive the invite</label>
+    <input id="demo-email" placeholder="you@example.com" />
+  </div>
+  <div class="form-group">
+    <label>firstName (optional)</label>
+    <input id="demo-name" placeholder="Noah" />
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Step 1</div>
+    <div class="btn-row">
+      <button class="btn" id="btn-seed" onclick="runSeed()">Seed test user</button>
+      <span class="status" id="seed-status"></span>
+    </div>
+    <div id="seed-result"></div>
+  </div>
+
+  <div id="step2-section" style="opacity:.35;pointer-events:none;">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Step 2</div>
+    <div class="btn-row">
+      <button class="btn" id="btn-trigger" onclick="runTrigger()">Trigger interview invite</button>
+      <span class="status" id="trigger-status"></span>
+    </div>
+    <div id="trigger-result"></div>
+  </div>
+</div>
+
 <script>
 function switchTab(id) {
   document.querySelectorAll('.tab').forEach((t, i) => {
-    const ids = ['calendar', 'outreach', 'interview'];
+    const ids = ['calendar', 'outreach', 'interview', 'demo'];
     t.classList.toggle('active', ids[i] === id);
   });
   document.querySelectorAll('.panel').forEach(p => {
     p.classList.toggle('active', p.id === 'panel-' + id);
   });
 }
+
+// Generate a default unique userId for the demo
+(function() {
+  const el = document.getElementById('demo-uid');
+  if (el && !el.value) el.value = 'demo-' + Date.now().toString(36);
+})();
 
 function showResult(containerId, status, data) {
   const el = document.getElementById(containerId);
@@ -381,6 +440,40 @@ async function submitInterview() {
 
   const r = await callApi('/api/interview/trigger', body, 'int-status');
   if (r) showResult('int-result', r.status, r.data);
+}
+
+async function runSeed() {
+  const userId = document.getElementById('demo-uid').value;
+  const email = document.getElementById('demo-email').value;
+  if (!userId) { alert('Enter a userId'); return; }
+  if (!email) { alert('Enter an email'); return; }
+  const body = { userId, email };
+  const firstName = document.getElementById('demo-name').value;
+  if (firstName) body.firstName = firstName;
+
+  document.getElementById('btn-seed').disabled = true;
+  const r = await callApi('/api/seed', body, 'seed-status');
+  document.getElementById('btn-seed').disabled = false;
+  if (!r) return;
+  showResult('seed-result', r.status, r.data);
+  if (r.status >= 200 && r.status < 300) {
+    const step2 = document.getElementById('step2-section');
+    step2.style.opacity = '1';
+    step2.style.pointerEvents = 'auto';
+  }
+}
+
+async function runTrigger() {
+  const userId = document.getElementById('demo-uid').value;
+  const email = document.getElementById('demo-email').value;
+  const body = { userId, email };
+  const firstName = document.getElementById('demo-name').value;
+  if (firstName) body.firstName = firstName;
+
+  document.getElementById('btn-trigger').disabled = true;
+  const r = await callApi('/api/interview/trigger', body, 'trigger-status');
+  document.getElementById('btn-trigger').disabled = false;
+  if (r) showResult('trigger-result', r.status, r.data);
 }
 </script>
 </body>
