@@ -192,44 +192,44 @@ type ValidatedRequest = { userId: string; intentWindows: IntentWindow[]; totalTa
 
 function validateRequest(payload: unknown): { ok: true; data: ValidatedRequest } | { ok: false; error: ErrorBody } {
   if (!payload || typeof payload !== "object") {
-    return { ok: false, error: badRequest("Body must be a JSON object.") };
+    return { ok: false, error: badRequest("I couldn't read that request — the body needs to be a JSON object.") };
   }
   const p = payload as Record<string, unknown>;
   if (typeof p["userId"] !== "string" || p["userId"].length === 0) {
-    return { ok: false, error: badRequest("Body must include userId.") };
+    return { ok: false, error: badRequest("I'll need a userId to continue — please include one in the request body.") };
   }
   const windows = p["intentWindows"];
   if (!Array.isArray(windows) || windows.length === 0) {
-    return { ok: false, error: badRequest("Body must include non-empty intentWindows array.") };
+    return { ok: false, error: badRequest("I'll need at least one intent window to recap — please include a non-empty intentWindows array.") };
   }
   if (windows.length > MAX_WINDOWS) {
-    return { ok: false, error: payloadTooLarge(`intentWindows length ${windows.length} exceeds limit ${MAX_WINDOWS}.`) };
+    return { ok: false, error: payloadTooLarge(`That's more intent windows than I can handle at once — the request includes ${windows.length} but I can process at most ${MAX_WINDOWS} at a time.`) };
   }
 
   let totalTabs = 0;
   for (const w of windows as unknown[]) {
-    if (!w || typeof w !== "object") return { ok: false, error: badRequest("Each intentWindow must be an object.") };
+    if (!w || typeof w !== "object") return { ok: false, error: badRequest("I found an intent window that isn't in the right shape — each intentWindow must be a JSON object.") };
     const win = w as Record<string, unknown>;
     if (typeof win["windowId"] !== "string" || win["windowId"].length === 0) {
-      return { ok: false, error: badRequest("Each intentWindow must include windowId.") };
+      return { ok: false, error: badRequest("One of the intent windows is missing a windowId — please include one for each window.") };
     }
     if (typeof win["startedAt"] !== "string" || typeof win["endedAt"] !== "string") {
-      return { ok: false, error: badRequest(`Window ${win["windowId"]} must include ISO startedAt and endedAt.`) };
+      return { ok: false, error: badRequest(`Window ${win["windowId"]} is missing time boundaries — please include ISO 8601 startedAt and endedAt values.`) };
     }
     if (Number.isNaN(Date.parse(win["startedAt"] as string)) || Number.isNaN(Date.parse(win["endedAt"] as string))) {
-      return { ok: false, error: badRequest(`Window ${win["windowId"]} has invalid ISO timestamps.`) };
+      return { ok: false, error: badRequest(`Window ${win["windowId"]} has timestamps I couldn't parse — please use ISO 8601 format (e.g. 2026-05-21T10:00:00Z).`) };
     }
     const tabs = win["tabs"];
     if (!Array.isArray(tabs) || tabs.length === 0) {
-      return { ok: false, error: badRequest(`Window ${win["windowId"]} must include non-empty tabs array.`) };
+      return { ok: false, error: badRequest(`Window ${win["windowId"]} has no tabs — please include at least one tab per intent window.`) };
     }
     for (const t of tabs as unknown[]) {
       if (!t || typeof t !== "object") {
-        return { ok: false, error: badRequest(`Window ${win["windowId"]} has invalid tab.`) };
+        return { ok: false, error: badRequest(`Window ${win["windowId"]} contains a tab that isn't in the right shape — each tab must be a JSON object.`) };
       }
       const tab = t as Record<string, unknown>;
       if (typeof tab["title"] !== "string" || typeof tab["url"] !== "string" || typeof tab["domain"] !== "string") {
-        return { ok: false, error: badRequest(`Window ${win["windowId"]} has tab missing title/url/domain.`) };
+        return { ok: false, error: badRequest(`Window ${win["windowId"]} has a tab that's missing some details — each tab needs a title, url, and domain.`) };
       }
     }
     totalTabs += (tabs as unknown[]).length;
@@ -238,7 +238,7 @@ function validateRequest(payload: unknown): { ok: true; data: ValidatedRequest }
   if (totalTabs > MAX_TABS_TOTAL) {
     return {
       ok: false,
-      error: payloadTooLarge(`Total tabs ${totalTabs} exceeds limit ${MAX_TABS_TOTAL} across all windows.`),
+      error: payloadTooLarge(`That's more tabs than I can recap at once — the request includes ${totalTabs} but I can handle at most ${MAX_TABS_TOTAL} across all windows.`),
     };
   }
 
@@ -480,7 +480,7 @@ app.post("/v1/ai/recap", async (c) => {
 
   if (!isAuthorized(c.req.header("authorization"), authMode, authToken)) {
     c.header("X-Request-Id", requestId);
-    return c.json({ requestId, ...unauthorized("Missing or invalid bearer token.") }, 401);
+    return c.json({ requestId, ...unauthorized("I'm unable to authenticate this request — the bearer token is missing or doesn't match what I have on file.") }, 401);
   }
 
   let payload: unknown;
@@ -488,7 +488,7 @@ app.post("/v1/ai/recap", async (c) => {
     payload = await c.req.json();
   } catch {
     c.header("X-Request-Id", requestId);
-    return c.json({ requestId, ...badRequest("Request body must be valid JSON.") }, 400);
+    return c.json({ requestId, ...badRequest("I couldn't parse that request — the body must be valid JSON.") }, 400);
   }
 
   const validation = validateRequest(payload);

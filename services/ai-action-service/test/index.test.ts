@@ -70,8 +70,8 @@ describe("low-confidence warning (YOU-516)", () => {
       BASE_ENV,
     );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { confidence: number; confidenceThreshold: number; warnings: { code: string; message: string }[] };
-    expect(body.confidence).toBeLessThan(body.confidenceThreshold);
+    const body = (await res.json()) as { isConfident: boolean; confidence: number; warnings: { code: string; message: string }[] };
+    expect(body.isConfident).toBe(false);
     expect(body.warnings.length).toBeGreaterThan(0);
     expect(body.warnings.some((w) => /confidence/i.test(w.message))).toBe(true);
     expect(body.warnings.some((w) => /threshold/i.test(w.message))).toBe(true);
@@ -99,8 +99,8 @@ describe("butler-voiced LOW_CONFIDENCE warning (YOU-521)", () => {
       BASE_ENV,
     );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { confidence: number; confidenceThreshold: number; warnings: { code: string; message: string }[] };
-    expect(body.confidence).toBeLessThan(body.confidenceThreshold);
+    const body = (await res.json()) as { isConfident: boolean; confidence: number; warnings: { code: string; message: string }[] };
+    expect(body.isConfident).toBe(false);
     const lowConf = body.warnings.find((w) => w.code === "LOW_CONFIDENCE");
     expect(lowConf, `${actionId} must emit LOW_CONFIDENCE warning`).toBeDefined();
     expect(lowConf?.message).toMatch(/my confidence/i);
@@ -124,7 +124,7 @@ describe("compare_tabs input validation", () => {
     expect(res.status).toBe(400);
     const body = (await res.json()) as { error: { code: string; message: string; retryable: boolean } };
     expect(body.error.code).toBe("INVALID_INPUT");
-    expect(body.error.message).toBe("compare_tabs requires at least 2 tabs to compare.");
+    expect(body.error.message).toBe("I need at least two tabs to compare — please send two or more.");
     expect(body.error.retryable).toBe(false);
   });
 

@@ -40,7 +40,7 @@ type ActionResponse = {
   actionId: string;
   generatedAt: string;
   source: "llm" | "deterministic";
-  confidenceThreshold: number;
+  isConfident: boolean;
   confidence: number;
   result: { kind: string; payload: Record<string, unknown> };
   warnings: Warning[];
@@ -103,50 +103,50 @@ type ActionPayload = {
 
 function validateRequest(payload: unknown): { ok: true; data: ActionPayload } | { ok: false; error: ErrorEnvelope } {
   if (!payload || typeof payload !== "object") {
-    return { ok: false, error: badRequest(null, "Body must be a JSON object.") };
+    return { ok: false, error: badRequest(null, "I couldn't read that request — the body needs to be a JSON object.") };
   }
   const p = payload as Record<string, unknown>;
   if (typeof p["userId"] !== "string" || p["userId"].length === 0) {
-    return { ok: false, error: badRequest(p["actionId"] as string | null ?? null, "Body must include userId.") };
+    return { ok: false, error: badRequest(p["actionId"] as string | null ?? null, "I'll need a userId to continue — please include one in the request body.") };
   }
   const actionId = p["actionId"];
   if (typeof actionId !== "string" || !ACTION_IDS.includes(actionId)) {
     return {
       ok: false,
-      error: badRequest(typeof actionId === "string" ? actionId : null, `actionId must be one of: ${ACTION_IDS.join(", ")}.`),
+      error: badRequest(typeof actionId === "string" ? actionId : null, `I don't recognise that request type. I can help with: ${ACTION_IDS.join(", ")}. Which would be most useful?`),
     };
   }
   if (!Array.isArray(p["tabs"]) || p["tabs"].length === 0) {
-    return { ok: false, error: badRequest(actionId, "Body must include a non-empty tabs array.") };
+    return { ok: false, error: badRequest(actionId, "I'll need at least one tab to work with — please include a non-empty tabs array.") };
   }
   if ((p["tabs"] as unknown[]).length > MAX_TABS) {
     return {
       ok: false,
-      error: payloadTooLarge(actionId, `tabs length ${(p["tabs"] as unknown[]).length} exceeds limit ${MAX_TABS}.`),
+      error: payloadTooLarge(actionId, `That's more tabs than I can handle at once — the request includes ${(p["tabs"] as unknown[]).length} but I can process at most ${MAX_TABS} at a time.`),
     };
   }
   const tabsRaw = p["tabs"] as unknown[];
   for (const t of tabsRaw) {
     if (!t || typeof t !== "object") {
-      return { ok: false, error: badRequest(actionId, "Each tab must be an object.") };
+      return { ok: false, error: badRequest(actionId, "I found a tab entry that isn't in the right shape — each tab must be a JSON object.") };
     }
     const tab = t as Record<string, unknown>;
     if (typeof tab["title"] !== "string" || typeof tab["url"] !== "string" || typeof tab["domain"] !== "string") {
-      return { ok: false, error: badRequest(actionId, "Each tab must include title, url, and domain.") };
+      return { ok: false, error: badRequest(actionId, "One of the tabs is missing some details — each tab needs a title, url, and domain.") };
     }
     if (tab["tabId"] == null || (typeof tab["tabId"] !== "string" && typeof tab["tabId"] !== "number")) {
-      return { ok: false, error: badRequest(actionId, "Each tab must include a tabId.") };
+      return { ok: false, error: badRequest(actionId, "One of the tabs is missing a tabId — please include one for each tab.") };
     }
   }
   if (actionId === "compare_tabs" && tabsRaw.length < 2) {
-    return { ok: false, error: badRequest(actionId, "compare_tabs requires at least 2 tabs to compare.") };
+    return { ok: false, error: badRequest(actionId, "I need at least two tabs to compare — please send two or more.") };
   }
   const contextHint = p["contextHint"];
   if (contextHint != null && typeof contextHint !== "string") {
-    return { ok: false, error: badRequest(actionId, "contextHint must be a string.") };
+    return { ok: false, error: badRequest(actionId, "The contextHint I received isn't a string — please send it as plain text.") };
   }
   if (typeof contextHint === "string" && contextHint.length > 250) {
-    return { ok: false, error: badRequest(actionId, "contextHint must be <= 200 characters.") };
+    return { ok: false, error: badRequest(actionId, "The contextHint is a bit long — please keep it to 250 characters or fewer.") };
   }
   return {
     ok: true,
@@ -301,7 +301,7 @@ function buildResponse(
     actionId: action.id,
     generatedAt,
     source,
-    confidenceThreshold: action.defaultConfidenceThreshold,
+    isConfident: envelope.confidence >= action.defaultConfidenceThreshold,
     confidence: envelope.confidence,
     result: { kind: action.resultKind, payload: action.toResultPayload(v) },
     warnings,
@@ -375,7 +375,7 @@ app.post("/v1/ai/action", async (c) => {
     payload = await c.req.json();
   } catch {
     c.header("X-Request-Id", requestId);
-    return c.json({ requestId, ...badRequest(null, "Request body must be valid JSON.") }, 400);
+    return c.json({ requestId, ...badRequest(null, "I couldn't parse that request — the body must be valid JSON.") }, 400);
   }
 
   const validation = validateRequest(payload);
