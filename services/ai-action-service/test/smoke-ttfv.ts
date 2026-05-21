@@ -9,10 +9,15 @@
  *   INTAKE_SHEET_ID        — Google Sheets spreadsheet ID
  *   SMOKE_ENDPOINT         — base URL of running service (default: http://localhost:8787)
  *   INTERNAL_API_SECRET    — value of INTERNAL_API_SECRET on running service
- *   CLOUDFLARE_EMAIL       — CF account email (seeds entitlement into CONCIERGE_KV staging)
- *   CLOUDFLARE_API_KEY     — CF Global API Key (same purpose)
- *   CF_ACCOUNT_ID          — CF account ID (default: 4bad758433de05f8b1b18c44be5a534c)
- *   CF_CONCIERGE_KV_NS     — CONCIERGE_KV staging namespace ID (default: 3869105e18f240029c504a3762814531)
+ *
+ * KV seeding — one of:
+ *   Option A (dynamic, CF creds required):
+ *     CLOUDFLARE_EMAIL       — CF account email
+ *     CLOUDFLARE_API_KEY     — CF Global API Key
+ *     CF_ACCOUNT_ID          — CF account ID (default: 4bad758433de05f8b1b18c44be5a534c)
+ *     CF_CONCIERGE_KV_NS     — CONCIERGE_KV staging namespace (default: 3869105e18f240029c504a3762814531)
+ *   Option B (pre-seeded, no CF creds needed):
+ *     SMOKE_FIXED_USER_ID    — pre-seeded user ID in CONCIERGE_KV (e.g. "smoke-ttfv-fixed-001")
  *
  * Run with:
  *   pnpm exec tsx test/smoke-ttfv.ts
@@ -21,26 +26,17 @@
 import { google } from "googleapis";
 
 const ENDPOINT = process.env["SMOKE_ENDPOINT"] ?? "http://localhost:8787";
-const INTERNAL_SECRET = process.env["INTERNAL_API_SECRET"];
-const SENTRY_AUTH_TOKEN = process.env["SENTRY_AUTH_TOKEN"];
-const SENTRY_ORG = process.env["SENTRY_ORG"];
-const SENTRY_PROJECT = process.env["SENTRY_PROJECT"];
-const GOOGLE_SA_JSON = process.env["GOOGLE_SERVICE_ACCOUNT_JSON"];
-const INTAKE_SHEET_ID = process.env["INTAKE_SHEET_ID"];
-
-// CF credentials for KV seeding — required to provision synthetic user's entitlement
 const CF_ACCOUNT_ID = process.env["CF_ACCOUNT_ID"] ?? "4bad758433de05f8b1b18c44be5a534c";
 const CF_CONCIERGE_KV_NS = process.env["CF_CONCIERGE_KV_NS"] ?? "3869105e18f240029c504a3762814531";
-const CF_EMAIL = process.env["CLOUDFLARE_EMAIL"];
-const CF_API_KEY = process.env["CLOUDFLARE_API_KEY"];
 
-// Synthetic paid user — seeded into CONCIERGE_KV staging before test run
-const SYNTHETIC_USER_ID = `smoke-ttfv-${Date.now()}`;
-const SYNTHETIC_USER_EMAIL = `smoke-ttfv-${Date.now()}@jeevy-test.internal`;
+// User identity — dynamic unless SMOKE_FIXED_USER_ID is set
+const ts = Date.now();
+const SYNTHETIC_USER_ID = process.env["SMOKE_FIXED_USER_ID"] ?? `smoke-ttfv-${ts}`;
+const SYNTHETIC_USER_EMAIL = `${SYNTHETIC_USER_ID}@jeevy-test.internal`;
 
-// Sandbox-only fixture event IDs (see src/adapters/google-calendar.ts SANDBOX_EVENTS)
+// Sandbox-only fixture event ID (see src/adapters/google-calendar.ts SANDBOX_EVENTS)
 const SANDBOX_EVENT_ID = "CAL-01";
-const INTAKE_SUBMITTED_AT = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(); // 2h ago
+const INTAKE_SUBMITTED_AT = new Date(ts - 2 * 60 * 60 * 1000).toISOString(); // 2h ago
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -54,6 +50,10 @@ async function sleep(ms: number): Promise<void> {
 
 // Seed synthetic user into CONCIERGE_KV staging with status=active (paid user gate)
 async function seedEntitlement(): Promise<void> {
+  if (process.env["SMOKE_FIXED_USER_ID"]) {
+    console.log(`  Using pre-seeded user: ${SYNTHETIC_USER_ID} (skipping CF KV write)`);
+    return;
+  }
   const cfEmail = requireEnv("CLOUDFLARE_EMAIL");
   const cfKey = requireEnv("CLOUDFLARE_API_KEY");
   const kvKey = `entitlement:${SYNTHETIC_USER_ID}`;
@@ -84,6 +84,34 @@ async function seedEntitlement(): Promise<void> {
   }
 }
 
+// Pre-populate CRM-lite sheet with synthetic user's email (col D) — required for writeTTFV to find row
+async function seedCRMLiteRow(): Promise<void> {
+  const saJson = Buffer.from(requireEnv("GOOGLE_SERVICE_ACCOUNT_JSON"), "base64").toString("utf-8");
+  const credentials = JSON.parse(saJson);
+  const auth = new google.auth.GoogleAuth({ credentials, scopes: ["https://www.googleapis.com/auth/spreadsheets"] });
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = requireEnv("INTAKE_SHEET_ID");
+
+  // Check if user already in sheet
+  const existing = await sheets.spreadsheets.values.get({ spreadsheetId, range: "Tracker!A:D" });
+  const rows = existing.data.values ?? [];
+  const alreadyExists = rows.some((r) => r[3]?.toLowerCase() === SYNTHETIC_USER_EMAIL.toLowerCase());
+  if (alreadyExists) {
+    console.log(`  Row already exists for ${SYNTHETIC_USER_EMAIL}`);
+    return;
+  }
+
+  // Append new row with email in col D (cols A-C = stub data)
+  const nextRow = rows.length + 1;
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `Tracker!A${nextRow}:D${nextRow}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [["smoke-ttfv", "Smoke Test User", "jeevy-test.internal", SYNTHETIC_USER_EMAIL]] },
+  });
+  console.log(`  Seeded CRM-lite row ${nextRow}: email=${SYNTHETIC_USER_EMAIL}`);
+}
+
 // §9.1 — Trigger calendar.event_created action via orchestrator
 async function triggerAction(opts: { isTest: boolean; correlationId: string }): Promise<unknown> {
   const res = await fetch(`${ENDPOINT}/internal/workflow/calendar/reschedule`, {
@@ -96,8 +124,8 @@ async function triggerAction(opts: { isTest: boolean; correlationId: string }): 
     body: JSON.stringify({
       operatorId: SYNTHETIC_USER_ID,
       eventId: SANDBOX_EVENT_ID, // Must be a known fixture ID — sandbox rejects unknown IDs
-      newStartIso: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      newEndIso: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+      newStartIso: new Date(ts + 60 * 60 * 1000).toISOString(),
+      newEndIso: new Date(ts + 2 * 60 * 60 * 1000).toISOString(),
       reason: "TTFV smoke test",
       userEmail: SYNTHETIC_USER_EMAIL,
       intakeSubmittedAt: INTAKE_SUBMITTED_AT,
@@ -140,16 +168,8 @@ async function assertSentryEvent(correlationId: string): Promise<unknown> {
   const ctx = (event["contexts"] as Record<string, unknown>)?.["action_delivered"] as Record<string, unknown>;
   const tags = event["tags"] as Array<{ key: string; value: string }>;
 
-  const requiredFields: Array<[string, unknown]> = [
-    ["user_id", SYNTHETIC_USER_ID],
-    ["action_type", "calendar.event_created"],
-    ["correlation_id", correlationId],
-    ["triggered_by", expect_triggered_by],
-    ["success", true],
-    ["is_test", true],
-  ];
-
-  for (const [field] of requiredFields) {
+  const requiredFields = ["user_id", "action_type", "correlation_id", "triggered_by", "success", "is_test"];
+  for (const field of requiredFields) {
     if (ctx?.[field] === undefined) {
       throw new Error(`Sentry event missing required field: contexts.action_delivered.${field}`);
     }
@@ -198,8 +218,6 @@ async function getCRMLiteRow(): Promise<{
   };
 }
 
-const expect_triggered_by = "orchestrator";
-
 async function runSmokeTest(): Promise<void> {
   console.log("=== TTFV Spec §9 Smoke Test ===\n");
   console.log(`Endpoint: ${ENDPOINT}`);
@@ -207,14 +225,19 @@ async function runSmokeTest(): Promise<void> {
   console.log(`Synthetic user email: ${SYNTHETIC_USER_EMAIL}`);
   console.log(`Intake submitted at: ${INTAKE_SUBMITTED_AT}\n`);
 
-  // §9.0 — Seed synthetic paid user into CONCIERGE_KV staging
-  console.log("Step 0: Seeding synthetic paid user into CONCIERGE_KV...");
+  // §9.0a — Seed synthetic paid user into CONCIERGE_KV staging (or use pre-seeded)
+  console.log("Step 0a: Seeding synthetic paid user into CONCIERGE_KV...");
   await seedEntitlement();
-  console.log(`  ✓ Entitlement seeded: entitlement:${SYNTHETIC_USER_ID} → status=active\n`);
+  console.log(`  ✓ Entitlement ready: entitlement:${SYNTHETIC_USER_ID} → status=active\n`);
+
+  // §9.0b — Pre-populate CRM-lite sheet row so writeTTFV can find the user
+  console.log("Step 0b: Pre-populating CRM-lite sheet row...");
+  await seedCRMLiteRow();
+  console.log(`  ✓ CRM-lite sheet row ready\n`);
 
   // §9.1 + §9.2 — Trigger first action (is_test=true to avoid polluting TTFV cohort)
   console.log("Step 1: Triggering first calendar.event_created action (is_test=true)...");
-  const corrId1 = `smoke-corr-${Date.now()}-1`;
+  const corrId1 = `smoke-corr-${ts}-1`;
   const result1 = await triggerAction({ isTest: true, correlationId: corrId1 });
   console.log(`  ✓ Orchestrator completed. correlation_id=${corrId1}`);
   console.log(`  Session: ${JSON.stringify((result1 as Record<string, unknown>)["session"] ?? result1, null, 2)}\n`);
@@ -240,14 +263,13 @@ async function runSmokeTest(): Promise<void> {
   console.log(`    ttfv_hours: ${rowBefore.ttfvHours}\n`);
 
   // §9.5 — Cohort query: synthetic user should appear with ttfv_hours > 0
-  // Note: CRM-lite uses Google Sheets, not SQL. Direct row verification above proves §9.5.
   console.log("Step 4: Cohort query (Google Sheets direct verification)...");
   console.log(`  ✓ User appears in CRM-lite with ttfv_hours=${rowBefore.ttfvHours} > 0`);
   console.log(`  (Spec §8 SQL cohort query maps to Sheets row check since CRM-lite = Google Sheets)\n`);
 
   // §9.6 — Re-trigger → first-write-wins
   console.log("Step 5: Re-triggering action to verify first-write-wins...");
-  const corrId2 = `smoke-corr-${Date.now()}-2`;
+  const corrId2 = `smoke-corr-${ts}-2`;
   await sleep(500); // ensure different timestamp
   await triggerAction({ isTest: true, correlationId: corrId2 });
   console.log(`  Triggered second action. correlation_id=${corrId2}`);
