@@ -34,17 +34,10 @@ function bulletForTab(tab: MinimizedTab): string {
 }
 
 function deterministic(tabs: MinimizedTab[]): ValidatedDoc {
-  const byDomain = new Map<string, MinimizedTab[]>();
-  for (const t of tabs) {
-    const key = t.domain || "Other";
-    if (!byDomain.has(key)) byDomain.set(key, []);
-    byDomain.get(key)!.push(t);
-  }
-  const sections: DocSection[] = [];
-  for (const [domain, list] of byDomain.entries()) {
-    sections.push({ heading: truncate(domain, 80), bullets: list.slice(0, 6).map(bulletForTab) });
-    if (sections.length >= 6) break;
-  }
+  const sections: DocSection[] = tabs.slice(0, 6).map((tab) => ({
+    heading: truncate(tab.title || tab.domain, 80),
+    bullets: [bulletForTab(tab)],
+  }));
   if (sections.length < 2) {
     sections.push({ heading: "Open questions", bullets: ["What is the next concrete step?"] });
   }

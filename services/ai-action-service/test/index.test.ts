@@ -175,3 +175,47 @@ describe("first_value_delivered instrumentation", () => {
     expect(dataPoints).toHaveLength(0);
   });
 });
+
+describe("outline_doc deterministic fallback", () => {
+  const OUTLINE_TABS = [
+    { tabId: 1, title: "Google Docs - Q2 Strategy Draft", url: "https://docs.google.com/doc/1", domain: "docs.google.com" },
+    { tabId: 2, title: "Competitor landscape", url: "https://notion.so/competitor", domain: "notion.so" },
+    { tabId: 3, title: "Product roadmap Q2", url: "https://figma.com/file/abc", domain: "figma.com" },
+  ];
+
+  it("uses tab titles as section headings, not domain names", async () => {
+    const body = { userId: "user_outline_1", actionId: "outline_doc", tabs: OUTLINE_TABS };
+    const res = await app.request(
+      "/v1/ai/action",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+      BASE_ENV,
+    );
+
+    expect(res.status).toBe(200);
+    const envelope = (await res.json()) as { result: { payload: { sections: { heading: string }[] } } };
+    const headings = envelope.result.payload.sections.map((s) => s.heading);
+
+    // Headings must be title-derived, not raw domain names
+    expect(headings).not.toContain("docs.google.com");
+    expect(headings).not.toContain("notion.so");
+    expect(headings).not.toContain("figma.com");
+
+    // Each heading should contain meaningful words from the corresponding tab title
+    expect(headings.some((h) => /q2 strategy/i.test(h))).toBe(true);
+    expect(headings.some((h) => /competitor/i.test(h))).toBe(true);
+    expect(headings.some((h) => /roadmap/i.test(h))).toBe(true);
+  });
+
+  it("produces one section per tab when tabs have distinct titles", async () => {
+    const body = { userId: "user_outline_2", actionId: "outline_doc", tabs: OUTLINE_TABS };
+    const res = await app.request(
+      "/v1/ai/action",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+      BASE_ENV,
+    );
+
+    expect(res.status).toBe(200);
+    const envelope = (await res.json()) as { result: { payload: { sections: unknown[] } } };
+    expect(envelope.result.payload.sections).toHaveLength(3);
+  });
+});
