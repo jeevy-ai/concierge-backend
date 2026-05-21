@@ -185,6 +185,19 @@ const HTML = `<!DOCTYPE html>
   .warn-box { background: #2d1f00; border: 1px solid #78350f; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: var(--warn); margin-bottom: 16px; }
   .info-box { background: #0d1f2d; border: 1px solid #1e3a4f; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: #7dd3fc; margin-bottom: 16px; }
   select option { background: var(--surface); }
+  /* loading spinner */
+  .btn { display:flex;align-items:center;justify-content:center;gap:8px; }
+  .spinner { display:none;width:13px;height:13px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;flex-shrink:0; }
+  .btn.loading .spinner { display:inline-block; }
+  .btn.loading .btn-label { opacity:.75; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  /* toasts */
+  #toast-rack { position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none; }
+  .toast { pointer-events:auto;background:#1e2130;border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;min-width:240px;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:toastIn .18s ease-out; }
+  .toast.ok { border-left:3px solid var(--ok); }
+  .toast.err { border-left:3px solid var(--err); }
+  @keyframes toastIn { from { transform:translateX(16px);opacity:0; } to { transform:none;opacity:1; } }
+  @keyframes toastOut { to { transform:translateX(16px);opacity:0; } }
 </style>
 </head>
 <body>
@@ -233,7 +246,7 @@ const HTML = `<!DOCTYPE html>
     <input id="cal-reason" placeholder="Board test reschedule" />
   </div>
   <div class="btn-row">
-    <button class="btn" onclick="submitCalendar()">Run Reschedule</button>
+    <button class="btn" id="btn-calendar" onclick="submitCalendar()"><span class="btn-label">Run Reschedule</span><span class="spinner"></span></button>
     <span class="status" id="cal-status"></span>
   </div>
   <div id="cal-result"></div>
@@ -275,7 +288,7 @@ const HTML = `<!DOCTYPE html>
     </div>
   </div>
   <div class="btn-row">
-    <button class="btn" onclick="submitOutreach()">Send Outreach</button>
+    <button class="btn" id="btn-outreach" onclick="submitOutreach()"><span class="btn-label">Send Outreach</span><span class="spinner"></span></button>
     <span class="status" id="out-status"></span>
   </div>
   <div id="out-result"></div>
@@ -303,7 +316,7 @@ const HTML = `<!DOCTYPE html>
     <input id="int-name" placeholder="Noah" />
   </div>
   <div class="btn-row">
-    <button class="btn" onclick="submitInterview()">Trigger Interview Invite</button>
+    <button class="btn" id="btn-interview" onclick="submitInterview()"><span class="btn-label">Trigger Interview Invite</span><span class="spinner"></span></button>
     <span class="status" id="int-status"></span>
   </div>
   <div id="int-result"></div>
@@ -334,7 +347,7 @@ const HTML = `<!DOCTYPE html>
   <div style="margin-bottom:12px;">
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Step 1</div>
     <div class="btn-row">
-      <button class="btn" id="btn-seed" onclick="runSeed()">Seed test user</button>
+      <button class="btn" id="btn-seed" onclick="runSeed()"><span class="btn-label">Seed test user</span><span class="spinner"></span></button>
       <span class="status" id="seed-status"></span>
     </div>
     <div id="seed-result"></div>
@@ -343,14 +356,55 @@ const HTML = `<!DOCTYPE html>
   <div id="step2-section" style="opacity:.35;pointer-events:none;">
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Step 2</div>
     <div class="btn-row">
-      <button class="btn" id="btn-trigger" onclick="runTrigger()">Trigger interview invite</button>
+      <button class="btn" id="btn-trigger" onclick="runTrigger()"><span class="btn-label">Trigger interview invite</span><span class="spinner"></span></button>
       <span class="status" id="trigger-status"></span>
     </div>
     <div id="trigger-result"></div>
   </div>
 </div>
 
+<div id="toast-rack"></div>
+
 <script>
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.classList.toggle('loading', loading);
+}
+
+function showToast(msg, type) {
+  const rack = document.getElementById('toast-rack');
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type || 'ok');
+  t.textContent = msg;
+  rack.appendChild(t);
+  const remove = () => { t.style.animation = 'toastOut .18s ease-in forwards'; setTimeout(() => t.remove(), 180); };
+  setTimeout(remove, 4000);
+}
+
+function friendlyError(status, data) {
+  if (data && typeof data === 'object') {
+    const e = String(data.error || data.message || '');
+    if (e.includes('adapter') || e.includes('send_failed') || e.includes('Resend')) return 'Email delivery failed. Check the address and try again.';
+    if (e.includes('policy') || e.includes('PolicyBlocked') || e.includes('approval')) return 'Action blocked by policy. Check your approval token.';
+    if (e.includes('dedup') || e.includes('already sent')) return 'Invite already sent recently — dedup window active.';
+    if (e.length > 0 && e.length < 200) return e;
+  }
+  if (status === 502 || status === 503) return 'Service temporarily unavailable. Try again in a moment.';
+  if (status === 403) return 'Not authorised — policy may have blocked this action.';
+  if (status === 400 || status === 422) return 'Invalid request. Check your inputs.';
+  return 'Something went wrong (HTTP ' + status + '). See raw response below.';
+}
+
+const SUCCESS_MSGS = {
+  'cal-result': 'Calendar reschedule queued',
+  'out-result': 'Outreach email sent',
+  'int-result': 'Interview invite triggered',
+  'seed-result': 'Test user seeded',
+  'trigger-result': 'Interview invite sent',
+};
+
 function switchTab(id) {
   document.querySelectorAll('.tab').forEach((t, i) => {
     const ids = ['calendar', 'outreach', 'interview', 'demo'];
@@ -370,14 +424,16 @@ function switchTab(id) {
 function showResult(containerId, status, data) {
   const el = document.getElementById(containerId);
   const ok = status >= 200 && status < 300;
+  const msg = ok ? (SUCCESS_MSGS[containerId] || 'Done') : friendlyError(status, data);
   el.innerHTML = \`
     <div class="result">
       <div class="result-header \${ok ? 'ok' : 'err'}">
-        \${ok ? '✓' : '✗'} HTTP \${status}
+        \${ok ? '✓' : '✗'} HTTP \${status} — \${msg}
       </div>
       <pre>\${JSON.stringify(data, null, 2)}</pre>
     </div>
   \`;
+  showToast(msg, ok ? 'ok' : 'err');
 }
 
 async function callApi(path, body, statusEl) {
@@ -409,13 +465,15 @@ async function submitCalendar() {
   const reason = document.getElementById('cal-reason').value;
   if (reason) body.reason = reason;
 
+  setLoading('btn-calendar', true);
   const r = await callApi('/api/calendar/reschedule', body, 'cal-status');
+  setLoading('btn-calendar', false);
   if (r) showResult('cal-result', r.status, r.data);
 }
 
 async function submitOutreach() {
   const to = document.getElementById('out-to').value;
-  if (!to) { alert('Enter a recipient email'); return; }
+  if (!to) { showToast('Enter a recipient email', 'err'); return; }
   const body = {
     actionClass: document.getElementById('out-class').value,
     channel: 'email',
@@ -424,13 +482,15 @@ async function submitOutreach() {
     body: document.getElementById('out-body').value,
     approvalToken: document.getElementById('out-token').value,
   };
+  setLoading('btn-outreach', true);
   const r = await callApi('/api/outreach/send', body, 'out-status');
+  setLoading('btn-outreach', false);
   if (r) showResult('out-result', r.status, r.data);
 }
 
 async function submitInterview() {
   const email = document.getElementById('int-email').value;
-  if (!email) { alert('Enter an email'); return; }
+  if (!email) { showToast('Enter an email address', 'err'); return; }
   const body = {
     userId: document.getElementById('int-uid').value,
     email,
@@ -438,22 +498,24 @@ async function submitInterview() {
   const firstName = document.getElementById('int-name').value;
   if (firstName) body.firstName = firstName;
 
+  setLoading('btn-interview', true);
   const r = await callApi('/api/interview/trigger', body, 'int-status');
+  setLoading('btn-interview', false);
   if (r) showResult('int-result', r.status, r.data);
 }
 
 async function runSeed() {
   const userId = document.getElementById('demo-uid').value;
   const email = document.getElementById('demo-email').value;
-  if (!userId) { alert('Enter a userId'); return; }
-  if (!email) { alert('Enter an email'); return; }
+  if (!userId) { showToast('Enter a userId', 'err'); return; }
+  if (!email) { showToast('Enter an email address', 'err'); return; }
   const body = { userId, email };
   const firstName = document.getElementById('demo-name').value;
   if (firstName) body.firstName = firstName;
 
-  document.getElementById('btn-seed').disabled = true;
+  setLoading('btn-seed', true);
   const r = await callApi('/api/seed', body, 'seed-status');
-  document.getElementById('btn-seed').disabled = false;
+  setLoading('btn-seed', false);
   if (!r) return;
   showResult('seed-result', r.status, r.data);
   if (r.status >= 200 && r.status < 300) {
@@ -470,9 +532,9 @@ async function runTrigger() {
   const firstName = document.getElementById('demo-name').value;
   if (firstName) body.firstName = firstName;
 
-  document.getElementById('btn-trigger').disabled = true;
+  setLoading('btn-trigger', true);
   const r = await callApi('/api/interview/trigger', body, 'trigger-status');
-  document.getElementById('btn-trigger').disabled = false;
+  setLoading('btn-trigger', false);
   if (r) showResult('trigger-result', r.status, r.data);
 }
 </script>
