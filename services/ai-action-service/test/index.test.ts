@@ -57,6 +57,25 @@ describe("ai-action-service", () => {
   });
 });
 
+describe("YOU-533: structured JSON 404 on unknown routes", () => {
+  it("GET on POST-only /v1/ai/action returns JSON 404 with error.code NOT_FOUND", async () => {
+    const res = await app.request("/v1/ai/action", { method: "GET" }, BASE_ENV);
+    expect(res.status).toBe(404);
+    expect(res.headers.get("content-type")).toMatch(/application\/json/);
+    const body = (await res.json()) as { error: { code: string; message: string } };
+    expect(body.error.code).toBe("NOT_FOUND");
+    expect(typeof body.error.message).toBe("string");
+  });
+
+  it("GET on unknown path returns JSON 404 with error.code NOT_FOUND", async () => {
+    const res = await app.request("/v1/not-a-route", { method: "GET" }, BASE_ENV);
+    expect(res.status).toBe(404);
+    expect(res.headers.get("content-type")).toMatch(/application\/json/);
+    const body = (await res.json()) as { error: { code: string; message: string } };
+    expect(body.error.code).toBe("NOT_FOUND");
+  });
+});
+
 describe("low-confidence warning (YOU-516)", () => {
   it("populates warnings when confidence < confidenceThreshold", async () => {
     // regroup_windows deterministic returns confidence=0.4, threshold=0.6
