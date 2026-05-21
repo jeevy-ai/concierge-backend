@@ -109,6 +109,59 @@ export async function shouldSendInvite(
   return { trigger: false };
 }
 
+export function buildInterviewEmailHtml(firstName: string, schedulingLink: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>We&rsquo;d love 20 minutes to help</title>
+</head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:48px 20px">
+    <tr><td align="center">
+      <table role="presentation" width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;max-width:580px">
+        <tr>
+          <td style="background:#4f46e5;padding:24px 32px">
+            <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px">Jeevy</span>
+            <span style="font-size:12px;color:#a5b4fc;margin-left:8px">AI Concierge</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 32px 8px;color:#111827;font-size:15px;line-height:1.6">
+            <p style="margin:0 0 16px">Hi ${firstName},</p>
+            <p style="margin:0 0 16px">We noticed you haven&rsquo;t had a chance to get much use out of Jeevy recently. That&rsquo;s on us &mdash; we want to understand why and see if we can fix it.</p>
+            <p style="margin:0 0 16px">Could you spare 20 minutes for a quick call? I&rsquo;ll listen, take notes, and share anything useful we learn with the team.</p>
+            <p style="margin:0 0 24px">No agenda, no sales pitch &mdash; just an honest conversation.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px 32px;text-align:center">
+            <a href="${schedulingLink}"
+               style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 28px;border-radius:8px">
+              Pick a time that works for you
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px 24px;text-align:center">
+            <p style="margin:0;color:#6b7280;font-size:13px">&mdash; The Jeevy team</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 32px;border-top:1px solid #f3f4f6;background:#f9fafb">
+            <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.5">
+              You received this because you are a registered Jeevy user. To manage your preferences, visit your account settings.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 export async function sendSaveInterviewEmail(
   env: InterviewsEnv,
   user: UserProfile,
@@ -116,7 +169,7 @@ export async function sendSaveInterviewEmail(
 ): Promise<void> {
   const firstName = user.firstName ?? "there";
   const subject = "We'd love 20 minutes to help — can you find a time?";
-  const body = [
+  const text = [
     `Hi ${firstName},`,
     "",
     "We noticed you haven't had a chance to get much use out of Jeevy recently.",
@@ -142,7 +195,8 @@ export async function sendSaveInterviewEmail(
       from: env.FROM_EMAIL,
       to: user.email,
       subject,
-      text: body,
+      text,
+      html: buildInterviewEmailHtml(firstName, env.SCHEDULING_LINK),
     }),
   });
 

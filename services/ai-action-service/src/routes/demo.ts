@@ -9,11 +9,13 @@
  *   POST /api/demo/calendar/reschedule — calendar reschedule in sandbox mode
  *   POST /api/demo/outreach/validate   — policy dry-run (no actual send)
  *   POST /api/demo/seed-nps-user       — seed test user with NPS detractor score + clear dedup
+ *   POST /api/demo/interview/send      — send branded interview invite email (no dedup)
  */
 
 import type { Hono } from "hono";
 import { GoogleCalendarAdapter } from "../adapters/google-calendar.js";
 import { checkExternalActionPolicy } from "../lib/policy-engine.js";
+import { buildInterviewEmailHtml } from "../lib/save-interview.js";
 import {
   approveWorkflow,
   createCalendarRescheduleWorkflow,
@@ -152,5 +154,71 @@ export function registerDemoRoutes(app: App): void {
     }
 
     return c.json({ ok: true, seeded: true, userId: body.userId, npsScore: score });
+  });
+
+  // Send a branded interview invite email directly via Resend — no dedup, no KV tracking.
+  // Intended for board demo: lets the tester see the real HTML email arrive.
+  // Body: { email: string; firstName?: string }
+  app.post("/api/demo/interview/send", async (c) => {
+    const correlationId = crypto.randomUUID();
+
+    let body: { email: string; firstName?: string };
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON" }, 400);
+    }
+    if (!body.email) {
+      return c.json({ error: "email required" }, 400);
+    }
+
+    const firstName = body.firstName ?? "there";
+    const subject = "We'd love 20 minutes to help — can you find a time?";
+    const text = [
+      `Hi ${firstName},`,
+      "",
+      "We noticed you haven't had a chance to get much use out of Jeevy recently.",
+      "That's on us — we want to understand why and see if we can fix it.",
+      "",
+      "Could you spare 20 minutes for a quick call? I'll listen, take notes,",
+      "and share anything useful we learn with the team.",
+      "",
+      `→ Pick a time: ${c.env.SCHEDULING_LINK}`,
+      "",
+      "No agenda, no sales pitch — just an honest conversation.",
+      "",
+      "— The Jeevy team",
+    ].join("\n");
+
+    let res: Response;
+    try {
+      res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${c.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: c.env.FROM_EMAIL,
+          to: body.email,
+          subject,
+          text,
+          html: buildInterviewEmailHtml(firstName, c.env.SCHEDULING_LINK),
+        }),
+      });
+    } catch (err) {
+      return c.json({ ok: false, error: `Network error: ${String(err)}`, correlationId }, 502);
+    }
+
+    if (!res.ok) {
+      const errBody = (await res.json().catch(() => ({}))) as { message?: string };
+      return c.json(
+        { ok: false, error: errBody.message ?? `Resend error ${res.status}`, correlationId },
+        502,
+      );
+    }
+
+    const result = (await res.json()) as { id: string };
+    return c.json({ ok: true, messageId: result.id, correlationId });
   });
 }
