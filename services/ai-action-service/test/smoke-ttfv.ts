@@ -142,48 +142,72 @@ async function triggerAction(opts: { isTest: boolean; correlationId: string }): 
 }
 
 // §9.3 — Assert concierge.action.delivered event in Sentry
+// Looks up by correlation_id tag (event_id is a generated hex UUID, not the correlation_id)
 async function assertSentryEvent(correlationId: string): Promise<unknown> {
   const authToken = requireEnv("SENTRY_AUTH_TOKEN");
   const org = requireEnv("SENTRY_ORG");
   const project = requireEnv("SENTRY_PROJECT");
 
-  // Sentry event propagation can take a few seconds
-  await sleep(3000);
+  // Retry up to 3 times — Sentry event propagation can take several seconds
+  let lastError: Error | null = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await sleep(3000);
 
-  const url = `https://sentry.io/api/0/projects/${org}/${project}/events/${correlationId}/`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${authToken}` },
-  });
+    const url = `https://sentry.io/api/0/projects/${org}/${project}/events/?query=${encodeURIComponent(`correlation_id:${correlationId}`)}&limit=1`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
 
-  if (res.status === 404) {
-    throw new Error(`Sentry event not found for correlationId=${correlationId}. Event may not have been emitted.`);
-  }
-  if (!res.ok) {
-    throw new Error(`Sentry API error ${res.status}: ${await res.text()}`);
-  }
-
-  const event = await res.json() as Record<string, unknown>;
-
-  // Validate all required fields per spec §4
-  const ctx = (event["contexts"] as Record<string, unknown>)?.["action_delivered"] as Record<string, unknown>;
-  const tags = event["tags"] as Array<{ key: string; value: string }>;
-
-  const requiredFields = ["user_id", "action_type", "correlation_id", "triggered_by", "success", "is_test"];
-  for (const field of requiredFields) {
-    if (ctx?.[field] === undefined) {
-      throw new Error(`Sentry event missing required field: contexts.action_delivered.${field}`);
+    if (!res.ok) {
+      throw new Error(
+        `Sentry API error ${res.status}: ${await res.text()}\n` +
+        `(If 403: token may need project:read scope)`
+      );
     }
+
+    type SentryEventsResponse = Array<Record<string, unknown>> | { data: Array<Record<string, unknown>> };
+    const body = await res.json() as SentryEventsResponse;
+    const events = Array.isArray(body) ? body : body.data ?? [];
+
+    if (events.length === 0) {
+      lastError = new Error(`Sentry event not found for correlationId=${correlationId} (attempt ${attempt}/3)`);
+      continue;
+    }
+
+    // Fetch full event object by eventID for context validation
+    const eventId = (events[0] as Record<string, unknown>)["eventID"] as string | undefined
+      ?? (events[0] as Record<string, unknown>)["id"] as string;
+    const fullRes = await fetch(`https://sentry.io/api/0/projects/${org}/${project}/events/${eventId}/`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+    if (!fullRes.ok) {
+      throw new Error(`Sentry full event fetch error ${fullRes.status}: ${await fullRes.text()}`);
+    }
+    const event = await fullRes.json() as Record<string, unknown>;
+
+    // Validate all required fields per spec §4
+    const ctx = (event["contexts"] as Record<string, unknown>)?.["action_delivered"] as Record<string, unknown>;
+    const tags = event["tags"] as Array<{ key: string; value: string }>;
+
+    const requiredFields = ["user_id", "action_type", "correlation_id", "triggered_by", "success", "is_test"];
+    for (const field of requiredFields) {
+      if (ctx?.[field] === undefined) {
+        throw new Error(`Sentry event missing required field: contexts.action_delivered.${field}`);
+      }
+    }
+
+    const tagMap = Object.fromEntries((tags ?? []).map((t) => [t.key, t.value]));
+    if (tagMap["action_type"] !== "calendar.event_created") {
+      throw new Error(`Sentry tag action_type wrong: ${tagMap["action_type"]}`);
+    }
+    if (tagMap["is_test"] !== "true") {
+      throw new Error(`Sentry tag is_test wrong: ${tagMap["is_test"]}`);
+    }
+
+    return event;
   }
 
-  const tagMap = Object.fromEntries((tags ?? []).map((t) => [t.key, t.value]));
-  if (tagMap["action_type"] !== "calendar.event_created") {
-    throw new Error(`Sentry tag action_type wrong: ${tagMap["action_type"]}`);
-  }
-  if (tagMap["is_test"] !== "true") {
-    throw new Error(`Sentry tag is_test wrong: ${tagMap["is_test"]}`);
-  }
-
-  return event;
+  throw lastError ?? new Error(`Sentry event not found for correlationId=${correlationId} after 3 attempts`);
 }
 
 // §9.4 + §9.6 — Verify CRM-lite row first_action_delivered_at + ttfv_hours
@@ -245,7 +269,7 @@ async function runSmokeTest(): Promise<void> {
   // §9.3 — Assert Sentry event
   console.log("Step 2: Asserting concierge.action.delivered event in Sentry...");
   const sentryEvent = await assertSentryEvent(corrId1);
-  console.log(`  ✓ Sentry event found. event_id=${corrId1}`);
+  console.log(`  ✓ Sentry event found. correlation_id=${corrId1} (looked up by tag)`);
   console.log(`  Required fields all present: user_id, action_type, correlation_id, triggered_by, success, is_test`);
   console.log(`  Sentry event JSON:\n${JSON.stringify(sentryEvent, null, 2)}\n`);
 
@@ -288,7 +312,7 @@ async function runSmokeTest(): Promise<void> {
 
   console.log("=== ALL CHECKS PASSED ===");
   console.log("\nEvidence summary:");
-  console.log(`  1. Sentry event: event_id=${corrId1}, all required fields present`);
+  console.log(`  1. Sentry event: correlation_id=${corrId1} (tag), all required fields present`);
   console.log(`  2. CRM-lite: first_action_delivered_at=${rowBefore.firstActionDeliveredAt}, ttfv_hours=${rowBefore.ttfvHours}`);
   console.log(`  3. First-write-wins: re-trigger did not overwrite`);
 }

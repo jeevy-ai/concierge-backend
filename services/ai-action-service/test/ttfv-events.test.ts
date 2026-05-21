@@ -29,7 +29,7 @@ describe("TTFV Event Emission", () => {
     await emitter.emit(event);
 
     expect(Sentry.captureEvent).toHaveBeenCalledWith({
-      event_id: "corr-456",
+      event_id: expect.stringMatching(/^[0-9a-f]{32}$/),
       message: "calendar.event_created delivered for user user-123",
       level: "info",
       tags: {
@@ -37,6 +37,7 @@ describe("TTFV Event Emission", () => {
         user_id: "user-123",
         is_test: "false",
         success: "true",
+        correlation_id: "corr-456",
       },
       contexts: {
         action_delivered: {

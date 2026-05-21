@@ -26,7 +26,7 @@ export interface EventEmitter {
 export class SentryEventEmitter implements EventEmitter {
   async emit(event: ActionDeliveredEvent): Promise<void> {
     Sentry.captureEvent({
-      event_id: event.correlation_id,
+      event_id: crypto.randomUUID().replace(/-/g, ""),
       message: `${event.action_type} delivered for user ${event.user_id}`,
       level: event.success ? "info" : "warning",
       tags: {
@@ -34,6 +34,7 @@ export class SentryEventEmitter implements EventEmitter {
         user_id: event.user_id,
         is_test: String(event.is_test),
         success: String(event.success),
+        correlation_id: event.correlation_id,
       },
       contexts: {
         action_delivered: {
