@@ -506,7 +506,7 @@
       </div>
 
       <div class="btn-row" style="margin-top:16px">
-        <button class="btn btn-ghost" id="conciergeLoadDemoBtn" onclick="loadConciergeDemo()" style="display:none">Load demo</button>
+        <button class="btn btn-ghost" id="conciergeLoadDemoBtn" onclick="loadConciergeDemo()">Load demo</button>
       </div>
     </div>
 
@@ -832,6 +832,121 @@ function onConciergeVerbChange() {
   fieldsSection.style.display = 'block';
 }
 
+function loadConciergeDemo() {
+  const verb = document.getElementById('conciergeVerb').value;
+  if (!verb) {
+    showError('Select a verb first.');
+    return;
+  }
+  const demo = conciergeDemos[verb];
+  if (!demo) return;
+
+  document.getElementById('conciergeReservationText').value = '';
+  document.getElementById('conciergeReservationDateTime').value = '';
+  document.getElementById('conciergeMeetingRequest').value = '';
+  document.getElementById('conciergeDayPlanText').value = '';
+  document.getElementById('conciergeReminderSubject').value = '';
+  document.getElementById('conciergeReminderContact').value = '';
+  document.getElementById('conciergeErrandText').value = '';
+
+  switch (verb) {
+    case 'book_reservation':
+      document.getElementById('conciergeReservationText').value = demo.text;
+      break;
+    case 'schedule_meeting':
+      document.getElementById('conciergeMeetingRequest').value = demo.text;
+      break;
+    case 'plan_my_day':
+      document.getElementById('conciergeDayPlanText').value = demo.text;
+      break;
+    case 'remind_me':
+      document.getElementById('conciergeReminderSubject').value = demo.text;
+      break;
+    case 'errand_request':
+      document.getElementById('conciergeErrandText').value = demo.text;
+      break;
+  }
+}
+
+async function sendConcierge() {
+  const url = document.getElementById('conciergeUrl').value.trim();
+  const token = document.getElementById('conciergeToken').value.trim();
+  const userId = document.getElementById('globalUserId').value.trim();
+  const verb = document.getElementById('conciergeVerb').value;
+
+  if (!url) return showError('API Endpoint is required.');
+  if (!userId) return showError('User ID is required. Set it in the header.');
+  if (!verb) return showError('Select a verb.');
+
+  let text = '';
+  switch (verb) {
+    case 'book_reservation':
+      text = document.getElementById('conciergeReservationText').value.trim();
+      if (!text) return showError('Reservation request is required.');
+      break;
+    case 'schedule_meeting':
+      text = document.getElementById('conciergeMeetingRequest').value.trim();
+      if (!text) return showError('Meeting request is required.');
+      break;
+    case 'plan_my_day':
+      text = document.getElementById('conciergeDayPlanText').value.trim();
+      if (!text) return showError('Calendar/inbox paste is required.');
+      break;
+    case 'remind_me':
+      text = document.getElementById('conciergeReminderSubject').value.trim();
+      if (!text) return showError('Reminder subject is required.');
+      break;
+    case 'errand_request':
+      text = document.getElementById('conciergeErrandText').value.trim();
+      if (!text) return showError('Errand description is required.');
+      break;
+  }
+
+  const payload = { userId, verbId: verb, text };
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    showConciergeResult(verb, data);
+  } catch (err) {
+    showError('Request failed: ' + err.message);
+  }
+}
+
+function showConciergeResult(verb, data) {
+  const payload = data.result || data;
+  let content = '';
+
+  switch (verb) {
+    case 'book_reservation':  content = renderReservation(payload); break;
+    case 'schedule_meeting':  content = renderMeeting(payload); break;
+    case 'plan_my_day':       content = renderDayPlan(payload); break;
+    case 'remind_me':         content = renderReminder(payload); break;
+    case 'errand_request':    content = renderErrand(payload); break;
+    default:                  content = `<pre class="raw-json-pre">${esc(JSON.stringify(payload, null, 2))}</pre>`;
+  }
+
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <span class="result-title">${esc(verb)}</span>
+        ${resultMeta(data)}
+      </div>
+      <div class="result-body">
+        ${warningsBanner(data)}
+        ${content}
+        ${metaRow(data)}
+      </div>
+    </div>
+    ${rawJsonSection(data)}`;
+}
+
 // ── Recap demo ──
 function loadDemoRecap() {
   const userId = document.getElementById('globalUserId').value || 'test-ux';
@@ -871,7 +986,9 @@ function loadDemoRecap() {
 
 // ── Send ──
 async function handleSend() {
-  if (activeSection === 'actions') {
+  if (activeSection === 'concierge') {
+    await sendConcierge();
+  } else if (activeSection === 'actions') {
     await sendAction();
   } else {
     await sendRecap();
