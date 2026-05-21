@@ -295,8 +295,6 @@ function buildResponse(
       code: "LOW_CONFIDENCE",
       message: "Result confidence is below threshold. Review before acting.",
     });
-  }% vs. ${Math.round(action.defaultConfidenceThreshold * 100)}% needed) — treat it as a starting point and verify before acting on it.`,
-    );
   }
   return {
     contractVersion: CONTRACT_VERSION,
