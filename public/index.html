@@ -3,465 +3,1015 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Concierge API Test Harness</title>
+  <title>Concierge — Internal MVP</title>
   <style>
-    * {
-      box-sizing: border-box;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f2f5;
+      --surface: #ffffff;
+      --surface2: #f7f8fa;
+      --border: #e2e5eb;
+      --accent: #5a67d8;
+      --accent-light: #ebedfc;
+      --accent-dark: #434fc0;
+      --success: #38a169;
+      --success-bg: #f0fff4;
+      --success-border: #c6f6d5;
+      --warn: #b7791f;
+      --warn-bg: #fffbeb;
+      --warn-border: #f6e05e;
+      --err: #c53030;
+      --err-bg: #fff5f5;
+      --err-border: #feb2b2;
+      --text: #1a202c;
+      --text2: #4a5568;
+      --text3: #718096;
+      --badge-llm: #d6bcfa;
+      --badge-det: #bee3f8;
+      --radius: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
     }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 1200px;
-      margin: 0;
-      padding: 20px;
-      background: #f5f5f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
     }
-    h1 {
-      color: #1a1a1a;
-      margin-bottom: 30px;
+
+    /* ── Header ── */
+    .app-header {
+      background: var(--accent);
+      color: white;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    .container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+    .app-header h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
     }
-    .panel {
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    .panel h2 {
-      margin-top: 0;
-      font-size: 1.2em;
-      color: #222;
-      border-bottom: 2px solid #007bff;
-      padding-bottom: 10px;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
+    .app-header .badge-internal {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-size: 11px;
       font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .identity-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .identity-row label { font-size: 12px; opacity: 0.85; }
+    .identity-row input {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 13px;
+      width: 150px;
+    }
+    .identity-row input::placeholder { color: rgba(255,255,255,0.6); }
+    .identity-row input:focus { outline: none; border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.2); }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 52px);
+    }
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      max-height: calc(100vh - 52px);
+      position: sticky;
+      top: 52px;
+    }
+    .main-content {
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    /* ── Tabs ── */
+    .tab-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text3);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      letter-spacing: 0.1px;
+    }
+    .tab-btn:hover { color: var(--text2); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface); }
+    .tab-pane { display: none; padding: 20px; flex: 1; }
+    .tab-pane.active { display: block; }
+
+    /* ── Form elements ── */
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
       margin-bottom: 5px;
-      font-size: 0.95em;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
     input[type="text"],
     input[type="url"],
-    input[type="number"],
     select,
     textarea {
       width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 0.95em;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
       font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    input[type="text"]:focus,
-    input[type="url"]:focus,
-    input[type="number"]:focus,
-    select:focus,
-    textarea:focus {
+    input:focus, select:focus, textarea:focus {
       outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(90,103,216,0.12);
     }
-    textarea {
-      resize: vertical;
-      min-height: 60px;
-      font-family: monospace;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.95em;
-      font-weight: 600;
-      transition: background 0.2s;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    button:active {
-      transform: scale(0.98);
-    }
-    button.secondary {
-      background: #6c757d;
-      margin-left: 10px;
-    }
-    button.secondary:hover {
-      background: #5a6268;
-    }
-    .tab-item {
-      background: #f9f9f9;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      padding: 12px;
-      margin-bottom: 10px;
-    }
-    .tab-item-header {
-      display: flex;
-      justify-content: space-between;
+    textarea { resize: vertical; min-height: 72px; font-family: "SF Mono", "Monaco", monospace; font-size: 12px; }
+    select { cursor: pointer; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
       align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-primary:disabled { background: #a0aec0; cursor: not-allowed; }
+    .btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--border); }
+    .btn-danger { background: var(--err-bg); color: var(--err); border: 1px solid var(--err-border); font-size: 12px; padding: 4px 8px; }
+    .btn-danger:hover { background: var(--err-border); }
+    .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    /* ── Tab items in sidebar ── */
+    .tabs-list { margin-bottom: 12px; }
+    .tab-chip {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
       margin-bottom: 8px;
     }
-    .tab-item-title {
+    .tab-chip-info { flex: 1; min-width: 0; }
+    .tab-chip-title {
       font-weight: 600;
-      color: #222;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .tab-item-url {
-      font-size: 0.85em;
-      color: #666;
-      word-break: break-all;
+    .tab-chip-url { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tab-chip-domain { font-size: 11px; color: var(--accent); font-weight: 500; }
+    .tabs-empty { color: var(--text3); font-size: 13px; text-align: center; padding: 16px 0; }
+
+    /* ── Section headings ── */
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text3);
+      margin-bottom: 10px;
     }
-    .tab-remove {
-      background: #dc3545;
-      color: white;
-      border: none;
-      padding: 4px 8px;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 0.8em;
+    hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ── Submit area ── */
+    .send-area {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky;
+      bottom: 0;
     }
-    .tab-remove:hover {
-      background: #c82333;
-    }
-    .response-panel {
-      grid-column: 1 / -1;
-    }
-    .response-status {
-      padding: 12px;
-      border-radius: 4px;
-      margin-bottom: 15px;
-      font-weight: 600;
-    }
-    .response-status.success {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-    .response-status.error {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-    .response-status.pending {
-      background: #fff3cd;
-      color: #856404;
-      border: 1px solid #ffeeba;
-    }
-    .response-content {
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 15px;
-      overflow-x: auto;
-    }
-    .response-json {
-      font-family: "Monaco", "Courier New", monospace;
-      font-size: 0.85em;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-    .loading {
+    .send-area .btn-primary { width: 100%; justify-content: center; padding: 10px; }
+
+    /* ── Result area ── */
+    .result-placeholder {
       text-align: center;
-      color: #666;
+      padding: 60px 24px;
+      color: var(--text3);
+    }
+    .result-placeholder svg { opacity: 0.3; margin-bottom: 16px; }
+    .result-placeholder p { font-size: 14px; }
+
+    .result-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .result-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .result-title {
+      font-size: 14px;
+      font-weight: 700;
+      flex: 1;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+    .badge-source-llm { background: var(--badge-llm); color: #553c9a; }
+    .badge-source-det { background: var(--badge-det); color: #2b6cb0; }
+    .badge-confidence { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
+    .badge-low-conf { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn); }
+
+    .result-body { padding: 18px; }
+
+    /* ── Warning/error banners ── */
+    .banner {
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .banner-warn { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn); }
+    .banner-err { background: var(--err-bg); border: 1px solid var(--err-border); color: var(--err); }
+    .banner-info { background: var(--accent-light); border: 1px solid #c3c9f7; color: var(--accent-dark); }
+    .banner-icon { font-size: 16px; flex-shrink: 0; line-height: 1.3; }
+    .banner-body { flex: 1; }
+    .banner-body strong { display: block; margin-bottom: 2px; }
+    .banner-body ul { margin: 4px 0 0 16px; }
+    .banner-body li { margin-bottom: 2px; }
+
+    /* ── Loading ── */
+    .loading-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text2);
     }
     .spinner {
       display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #007bff;
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .demo-tabs {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #ddd;
-    }
-    .demo-tabs button {
-      font-size: 0.85em;
-      padding: 6px 12px;
-    }
-    @media (max-width: 768px) {
-      .container {
-        grid-template-columns: 1fr;
-      }
-      .response-panel {
-        grid-column: 1;
-      }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Action-specific result renderers ── */
+    .email-field { margin-bottom: 14px; }
+    .email-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text3); margin-bottom: 4px; }
+    .email-value { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+    .email-subject { font-size: 16px; font-weight: 700; color: var(--text); }
+    .recipients { display: flex; gap: 6px; flex-wrap: wrap; }
+    .recipient-chip { background: var(--accent-light); color: var(--accent-dark); border-radius: 100px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+
+    .outline-section { margin-bottom: 12px; }
+    .outline-heading { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .outline-bullets { list-style: disc; margin-left: 20px; }
+    .outline-bullets li { font-size: 13px; color: var(--text2); margin-bottom: 3px; }
+    .outline-title { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 16px; border-bottom: 2px solid var(--accent-light); padding-bottom: 10px; }
+
+    .slide-cluster { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .slide-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .slide-num { background: var(--accent); color: white; border-radius: 100px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .slide-bullets { list-style: none; }
+    .slide-bullets li { font-size: 13px; color: var(--text2); padding: 3px 0 3px 14px; position: relative; }
+    .slide-bullets li::before { content: "•"; position: absolute; left: 0; color: var(--accent); }
+    .copy-all-area { margin-top: 14px; }
+    .copy-all-btn { font-size: 12px; }
+
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .compare-table th { background: var(--surface2); border: 1px solid var(--border); padding: 8px 12px; text-align: left; font-weight: 700; color: var(--text2); }
+    .compare-table td { border: 1px solid var(--border); padding: 8px 12px; color: var(--text); vertical-align: top; }
+    .compare-table tr:nth-child(even) td { background: var(--surface2); }
+    .table-overflow { overflow-x: auto; }
+    .export-btns { display: flex; gap: 8px; margin-top: 12px; }
+
+    .brief-title { font-size: 18px; font-weight: 800; margin-bottom: 12px; color: var(--text); }
+    .brief-overview { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 16px; }
+    .brief-sources { list-style: none; margin-bottom: 16px; }
+    .brief-sources li { padding: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+    .source-title { font-weight: 600; font-size: 13px; }
+    .source-url { font-size: 11px; color: var(--text3); margin: 2px 0 4px; word-break: break-all; }
+    .source-summary { font-size: 12px; color: var(--text2); }
+    .open-questions li { font-size: 13px; color: var(--text2); padding: 4px 0; }
+    .open-questions li::marker { color: var(--accent); }
+
+    .group-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .group-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .group-rationale { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+    .group-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab-id-chip { background: var(--accent-light); color: var(--accent-dark); border-radius: 4px; padding: 2px 8px; font-size: 11px; font-family: monospace; font-weight: 600; }
+
+    .cluster-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .cluster-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+    .cluster-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: var(--accent-light); color: var(--accent-dark); border-radius: 4px; padding: 2px 8px; }
+    .cluster-action-resume { background: #c6f6d5; color: #276749; }
+    .cluster-action-archive { background: #e2e8f0; color: #4a5568; }
+    .cluster-action-ignore { background: #fed7d7; color: #c53030; }
+    .cluster-headline { font-size: 15px; font-weight: 700; color: var(--text); flex: 1; }
+    .cluster-summary { font-size: 13px; color: var(--text2); margin-bottom: 8px; line-height: 1.6; }
+    .cluster-footer { display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--text3); }
+    .cluster-conf { display: flex; align-items: center; gap: 4px; }
+    .conf-bar { width: 48px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .conf-fill { height: 100%; border-radius: 2px; }
+
+    /* ── Intent window builder ── */
+    .window-builder { margin-bottom: 14px; }
+    .window-entry { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; }
+    .window-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .window-id-label { font-size: 12px; font-weight: 600; color: var(--accent); }
+    .window-tabs-hint { font-size: 11px; color: var(--text3); }
+
+    .raw-json-toggle { font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block; }
+    .raw-json-pre { font-family: "SF Mono", Monaco, monospace; font-size: 11px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; margin-top: 8px; white-space: pre; }
+
+    /* ── Misc ── */
+    .meta-row { display: flex; gap: 12px; font-size: 11px; color: var(--text3); flex-wrap: wrap; }
+    .meta-row span { display: flex; align-items: center; gap: 4px; }
+    .request-id { font-family: monospace; font-size: 10px; color: var(--text3); margin-top: 8px; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { max-height: none; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+      .identity-row input { width: 120px; }
     }
   </style>
 </head>
 <body>
-  <h1>🤖 Concierge API Test Harness</h1>
 
-  <div class="container">
-    <div class="panel">
-      <h2>Configuration</h2>
-      <div class="form-group">
-        <label for="apiUrl">API Endpoint</label>
-        <input type="url" id="apiUrl" placeholder="http://localhost:3000/v1/ai/action" value="http://localhost:3000/v1/ai/action">
+<header class="app-header">
+  <div style="display:flex;align-items:center;gap:12px">
+    <h1>Concierge</h1>
+    <span class="badge-internal">Internal MVP</span>
+  </div>
+  <div class="identity-row">
+    <label for="globalUserId">User ID</label>
+    <input type="text" id="globalUserId" value="test-ux" placeholder="e.g. test-ux">
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchSection('actions', this)">Actions</button>
+      <button class="tab-btn" onclick="switchSection('recap', this)">Recap</button>
+    </div>
+
+    <!-- Actions pane -->
+    <div id="pane-actions" class="tab-pane active">
+      <div class="field">
+        <label>API Endpoint</label>
+        <input type="url" id="actionUrl" value="https://ai-action-service.noahlaux.workers.dev/v1/ai/action">
       </div>
-      <div class="form-group">
-        <label for="authToken">Bearer Token (optional)</label>
-        <input type="text" id="authToken" placeholder="Leave blank for no auth">
+      <div class="field">
+        <label>Auth Token (optional)</label>
+        <input type="text" id="actionToken" placeholder="Leave blank — auth is disabled">
       </div>
-      <div class="form-group">
-        <label for="userId">User ID</label>
-        <input type="text" id="userId" placeholder="e.g., user@example.com" value="test-user">
-      </div>
-      <div class="form-group">
-        <label for="actionId">Action</label>
-        <select id="actionId">
-          <option value="">-- Select an action --</option>
-          <option value="summarize_email">Summarize Email</option>
-          <option value="outline_doc">Outline Document</option>
-          <option value="bullet_slides">Bullet Slides</option>
-          <option value="compare_tabs">Compare Tabs (requires 2+ tabs)</option>
-          <option value="research_brief">Research Brief</option>
-          <option value="regroup_windows">Regroup Windows</option>
+      <div class="field">
+        <label>Action</label>
+        <select id="actionId" onchange="onActionChange()">
+          <option value="">— Select an action —</option>
+          <option value="summarize_email">summarize_email — Draft email from tabs</option>
+          <option value="outline_doc">outline_doc — Doc outline from tabs</option>
+          <option value="bullet_slides">bullet_slides — Slide bullets from tabs</option>
+          <option value="compare_tabs">compare_tabs — Comparison table (≥ 2 tabs)</option>
+          <option value="research_brief">research_brief — Research brief</option>
+          <option value="regroup_windows">regroup_windows — Regroup into windows</option>
         </select>
       </div>
-      <div class="form-group">
-        <label for="contextHint">Context Hint (optional, max 250 chars)</label>
-        <textarea id="contextHint" placeholder="Additional context for the action..."></textarea>
+      <div class="field">
+        <label>Context Hint <span style="font-weight:400;text-transform:none">(optional, max 250 chars)</span></label>
+        <textarea id="contextHint" rows="2" placeholder="Extra context for the action…"></textarea>
       </div>
+      <hr>
+      <div class="section-title">Tabs</div>
+      <div class="tabs-list" id="actionTabsList"></div>
+      <div class="field">
+        <label>Tab Title</label>
+        <input type="text" id="newTabTitle" placeholder="e.g. GitHub PR #42">
+      </div>
+      <div class="field">
+        <label>Tab URL</label>
+        <input type="url" id="newTabUrl" placeholder="https://github.com/…" oninput="autoFillDomain()">
+      </div>
+      <div class="field">
+        <label>Domain</label>
+        <input type="text" id="newTabDomain" placeholder="auto-filled from URL">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="addActionTab()">+ Add Tab</button>
+        <button class="btn btn-ghost" onclick="loadDemoTabs()">Load demo tabs</button>
+      </div>
+      <div id="compare-hint" style="display:none;font-size:12px;color:var(--warn);margin-top:8px;">compare_tabs requires at least 2 tabs.</div>
     </div>
 
-    <div class="panel">
-      <h2>Tabs</h2>
-      <div id="tabsList"></div>
-      <div class="form-group">
-        <label for="newTabTitle">Tab Title</label>
-        <input type="text" id="newTabTitle" placeholder="e.g., Email from Sarah">
+    <!-- Recap pane -->
+    <div id="pane-recap" class="tab-pane">
+      <div class="field">
+        <label>API Endpoint</label>
+        <input type="url" id="recapUrl" value="https://ai-recap-service.noahlaux.workers.dev/v1/ai/recap">
       </div>
-      <div class="form-group">
-        <label for="newTabUrl">Tab URL</label>
-        <input type="url" id="newTabUrl" placeholder="https://example.com/page">
+      <div class="field">
+        <label>Auth Token (optional)</label>
+        <input type="text" id="recapToken" placeholder="Leave blank — auth is disabled">
       </div>
-      <div class="form-group">
-        <label for="newTabDomain">Domain (auto-filled if URL provided)</label>
-        <input type="text" id="newTabDomain" placeholder="example.com">
+      <hr>
+      <div class="section-title">Intent Windows</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">Paste raw JSON or use the builder below. Each window has <code>windowId</code>, <code>startedAt</code>, <code>endedAt</code>, and a <code>tabs</code> array.</p>
+      <div class="field">
+        <label>JSON Payload</label>
+        <textarea id="recapJson" rows="8" placeholder='{"userId":"test-ux","intentWindows":[{"windowId":"w1","startedAt":"2026-05-21T08:00:00Z","endedAt":"2026-05-21T09:00:00Z","tabs":[{"title":"GitHub PR #42","url":"https://github.com/jeevy/pr/42","domain":"github.com"}]}]}'></textarea>
       </div>
-      <button onclick="addTab()">+ Add Tab</button>
-      <div class="demo-tabs">
-        <strong>Quick Start:</strong>
-        <button class="secondary" onclick="loadDemoTabs()">Load Demo Tabs</button>
-      </div>
+      <button class="btn btn-ghost" onclick="loadDemoRecap()" style="margin-bottom:8px;font-size:12px;">Load demo intent windows</button>
     </div>
 
-    <div class="panel response-panel">
-      <h2>Response</h2>
-      <div id="responseArea">
-        <p style="color: #999;">No request sent yet. Fill out the form and click "Send Request".</p>
-      </div>
-      <button onclick="sendRequest()" style="margin-top: 20px;">📤 Send Request</button>
+    <div class="send-area">
+      <button class="btn btn-primary" id="sendBtn" onclick="handleSend()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Run
+      </button>
     </div>
-  </div>
+  </aside>
 
-  <script>
-    const tabsData = [];
+  <!-- ── Main content ── -->
+  <main class="main-content">
+    <div id="resultArea">
+      <div class="result-placeholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8M12 8v8"/></svg>
+        <p>Select an action and tabs, then click <strong>Run</strong>.</p>
+        <p style="margin-top:6px;font-size:12px;">Results appear here — structured, not raw JSON.</p>
+      </div>
+    </div>
+  </main>
+</div>
 
-    function extractDomain(url) {
-      try {
-        return new URL(url).hostname || '';
-      } catch {
-        return '';
+<script>
+'use strict';
+
+// ── State ──
+let activeSection = 'actions';
+const actionTabs = [];
+
+// ── Section switching ──
+function switchSection(section, btn) {
+  activeSection = section;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('pane-' + section).classList.add('active');
+}
+
+// ── Tab management ──
+function autoFillDomain() {
+  const url = document.getElementById('newTabUrl').value;
+  try {
+    const d = new URL(url).hostname;
+    if (d) document.getElementById('newTabDomain').value = d;
+  } catch {}
+}
+
+function addActionTab() {
+  const title = document.getElementById('newTabTitle').value.trim();
+  const url = document.getElementById('newTabUrl').value.trim();
+  let domain = document.getElementById('newTabDomain').value.trim();
+  if (!title || !url) { alert('Tab title and URL are required.'); return; }
+  if (!domain) {
+    try { domain = new URL(url).hostname; } catch {}
+  }
+  if (!domain) { alert('Could not extract domain from URL.'); return; }
+  actionTabs.push({ tabId: 'tab-' + (actionTabs.length + 1), title, url, domain });
+  document.getElementById('newTabTitle').value = '';
+  document.getElementById('newTabUrl').value = '';
+  document.getElementById('newTabDomain').value = '';
+  renderActionTabs();
+}
+
+function removeActionTab(idx) {
+  actionTabs.splice(idx, 1);
+  renderActionTabs();
+}
+
+function renderActionTabs() {
+  const el = document.getElementById('actionTabsList');
+  if (actionTabs.length === 0) {
+    el.innerHTML = '<div class="tabs-empty">No tabs added yet.</div>';
+    return;
+  }
+  el.innerHTML = actionTabs.map((t, i) => `
+    <div class="tab-chip">
+      <div class="tab-chip-info">
+        <div class="tab-chip-title">${esc(t.title)}</div>
+        <div class="tab-chip-domain">${esc(t.domain)}</div>
+        <div class="tab-chip-url">${esc(t.url)}</div>
+      </div>
+      <button class="btn btn-danger" onclick="removeActionTab(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function loadDemoTabs() {
+  actionTabs.length = 0;
+  const demos = [
+    { tabId: 'd1', title: 'GitHub PR #42: calendar sync fix', url: 'https://github.com/jeevy-ai/concierge/pull/42', domain: 'github.com' },
+    { tabId: 'd2', title: 'Google Calendar – Q2 Planning Kickoff', url: 'https://calendar.google.com/calendar/event?eid=abc123', domain: 'calendar.google.com' },
+    { tabId: 'd3', title: 'Gmail – Meeting request from Alice', url: 'https://mail.google.com/mail/u/0/#inbox/xyz', domain: 'mail.google.com' },
+    { tabId: 'd4', title: 'Notion – Q2 Roadmap', url: 'https://notion.so/Q2-Roadmap-abc123', domain: 'notion.so' },
+    { tabId: 'd5', title: 'Zoom – Upcoming meetings dashboard', url: 'https://zoom.us/meeting', domain: 'zoom.us' },
+  ];
+  actionTabs.push(...demos);
+  renderActionTabs();
+}
+
+function onActionChange() {
+  const id = document.getElementById('actionId').value;
+  document.getElementById('compare-hint').style.display = id === 'compare_tabs' ? 'block' : 'none';
+}
+
+// ── Recap demo ──
+function loadDemoRecap() {
+  const userId = document.getElementById('globalUserId').value || 'test-ux';
+  const payload = {
+    userId,
+    intentWindows: [
+      {
+        windowId: 'w1',
+        startedAt: '2026-05-21T08:00:00Z',
+        endedAt: '2026-05-21T09:30:00Z',
+        tabs: [
+          { title: 'GitHub PR #42', url: 'https://github.com/jeevy-ai/concierge/pull/42', domain: 'github.com' },
+          { title: 'Linear – YOU-536', url: 'https://linear.app/jeevy/issue/YOU-536', domain: 'linear.app' },
+        ]
+      },
+      {
+        windowId: 'w2',
+        startedAt: '2026-05-21T10:00:00Z',
+        endedAt: '2026-05-21T11:00:00Z',
+        tabs: [
+          { title: 'Figma – Concierge UI', url: 'https://figma.com/file/abc', domain: 'figma.com' },
+          { title: 'Notion – Design notes', url: 'https://notion.so/design-notes', domain: 'notion.so' },
+        ]
+      },
+      {
+        windowId: 'w3',
+        startedAt: '2026-05-21T11:30:00Z',
+        endedAt: '2026-05-21T12:00:00Z',
+        tabs: [
+          { title: 'Google Meet – Standup', url: 'https://meet.google.com/abc-def-ghi', domain: 'meet.google.com' },
+        ]
       }
+    ]
+  };
+  document.getElementById('recapJson').value = JSON.stringify(payload, null, 2);
+}
+
+// ── Send ──
+async function handleSend() {
+  if (activeSection === 'actions') {
+    await sendAction();
+  } else {
+    await sendRecap();
+  }
+}
+
+async function sendAction() {
+  const url = document.getElementById('actionUrl').value.trim();
+  const token = document.getElementById('actionToken').value.trim();
+  const userId = document.getElementById('globalUserId').value.trim();
+  const actionId = document.getElementById('actionId').value;
+  const contextHint = document.getElementById('contextHint').value.trim();
+
+  if (!url) return showError('API Endpoint is required.');
+  if (!userId) return showError('User ID is required. Set it in the header.');
+  if (!actionId) return showError('Select an action.');
+  if (actionTabs.length === 0) return showError('Add at least one tab.');
+  if (actionId === 'compare_tabs' && actionTabs.length < 2) return showError('compare_tabs requires at least 2 tabs.');
+
+  const payload = { userId, actionId, tabs: actionTabs, ...(contextHint ? { contextHint } : {}) };
+  showLoading('Running ' + actionId + '…');
+  setSendDisabled(true);
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+    const data = await res.json();
+    setSendDisabled(false);
+    if (!res.ok || data.error) {
+      showErrorResponse(data);
+    } else {
+      showActionResult(data);
     }
+  } catch (err) {
+    setSendDisabled(false);
+    showError('Request failed: ' + err.message);
+  }
+}
 
-    function renderTabs() {
-      const container = document.getElementById('tabsList');
-      if (tabsData.length === 0) {
-        container.innerHTML = '<p style="color: #999;">No tabs added yet.</p>';
-        return;
-      }
-      container.innerHTML = tabsData.map((tab, idx) => `
-        <div class="tab-item">
-          <div class="tab-item-header">
-            <div class="tab-item-title">${escapeHtml(tab.title)}</div>
-            <button class="tab-remove" onclick="removeTab(${idx})">Remove</button>
-          </div>
-          <div class="tab-item-url">${escapeHtml(tab.url)}</div>
+async function sendRecap() {
+  const url = document.getElementById('recapUrl').value.trim();
+  const token = document.getElementById('recapToken').value.trim();
+  const jsonText = document.getElementById('recapJson').value.trim();
+
+  if (!url) return showError('API Endpoint is required.');
+  if (!jsonText) return showError('Provide intent windows JSON.');
+
+  let payload;
+  try {
+    payload = JSON.parse(jsonText);
+  } catch (e) {
+    return showError('Invalid JSON: ' + e.message);
+  }
+
+  const userId = document.getElementById('globalUserId').value.trim();
+  if (userId && !payload.userId) payload.userId = userId;
+
+  showLoading('Running recap…');
+  setSendDisabled(true);
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+    const data = await res.json();
+    setSendDisabled(false);
+    if (!res.ok || data.error) {
+      showErrorResponse(data);
+    } else {
+      showRecapResult(data);
+    }
+  } catch (err) {
+    setSendDisabled(false);
+    showError('Request failed: ' + err.message);
+  }
+}
+
+// ── UI helpers ──
+function setSendDisabled(disabled) {
+  document.getElementById('sendBtn').disabled = disabled;
+}
+
+function showLoading(msg) {
+  document.getElementById('resultArea').innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>${esc(msg)}</p>
+    </div>`;
+}
+
+function showError(msg) {
+  document.getElementById('resultArea').innerHTML = `
+    <div class="banner banner-err">
+      <span class="banner-icon">⚠</span>
+      <div class="banner-body"><strong>Error</strong>${esc(msg)}</div>
+    </div>`;
+}
+
+function showErrorResponse(data) {
+  const err = data.error || {};
+  const code = err.code || 'UNKNOWN';
+  const message = err.message || JSON.stringify(data);
+  const retryable = err.retryable;
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <span class="result-title">Error</span>
+        <span class="badge" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err-border)">${esc(code)}</span>
+        ${retryable ? '<span class="badge badge-confidence">retryable</span>' : ''}
+      </div>
+      <div class="result-body">
+        <div class="banner banner-err">
+          <span class="banner-icon">⚠</span>
+          <div class="banner-body">${esc(message)}</div>
         </div>
-      `).join('');
-    }
+        ${data.requestId ? `<div class="request-id">Request ID: ${esc(data.requestId)}</div>` : ''}
+      </div>
+    </div>`;
+}
 
-    function addTab() {
-      const title = document.getElementById('newTabTitle').value.trim();
-      const url = document.getElementById('newTabUrl').value.trim();
-      let domain = document.getElementById('newTabDomain').value.trim();
+// ── Result renderers ──
+function resultMeta(data) {
+  const conf = data.confidence;
+  const pct = Math.round(conf * 100);
+  const isLow = data.warnings && data.warnings.some(w => w.code === 'LOW_CONFIDENCE');
+  const sourceBadge = data.source === 'llm'
+    ? '<span class="badge badge-source-llm">LLM</span>'
+    : '<span class="badge badge-source-det">Deterministic</span>';
+  const confBadge = isLow
+    ? `<span class="badge badge-low-conf">Confidence ${pct}% — low</span>`
+    : `<span class="badge badge-confidence">Confidence ${pct}%</span>`;
+  return sourceBadge + confBadge;
+}
 
-      if (!title || !url) {
-        alert('Title and URL are required.');
-        return;
-      }
+function warningsBanner(data) {
+  if (!data.warnings || data.warnings.length === 0) return '';
+  const relevant = data.warnings.filter(w => w.code !== 'LOW_CONFIDENCE');
+  const hasLow = data.warnings.some(w => w.code === 'LOW_CONFIDENCE');
+  let html = '';
+  if (hasLow) {
+    html += `<div class="banner banner-warn">
+      <span class="banner-icon">⚠</span>
+      <div class="banner-body"><strong>Low confidence — review before acting</strong>The model is not highly confident in this result. Double-check before using.</div>
+    </div>`;
+  }
+  if (relevant.length > 0) {
+    html += `<div class="banner banner-info">
+      <span class="banner-icon">ℹ</span>
+      <div class="banner-body"><strong>Warnings</strong><ul>${relevant.map(w => `<li>${esc(w.message || String(w))}</li>`).join('')}</ul></div>
+    </div>`;
+  }
+  return html;
+}
 
-      if (!domain) {
-        domain = extractDomain(url);
-      }
+function metaRow(data) {
+  const at = data.generatedAt ? new Date(data.generatedAt).toLocaleTimeString() : '';
+  return `<div class="meta-row" style="margin-top:12px">
+    ${at ? `<span>Generated ${at}</span>` : ''}
+    ${data.requestId ? `<span>ID: <code>${esc(data.requestId.slice(0,8))}…</code></span>` : ''}
+  </div>`;
+}
 
-      if (!domain) {
-        alert('Invalid URL or domain.');
-        return;
-      }
+function showActionResult(data) {
+  const payload = (data.result && data.result.payload) || {};
+  const actionId = data.actionId || '';
+  let content = '';
 
-      tabsData.push({
-        tabId: Math.random().toString(36).substr(2, 9),
-        title,
-        url,
-        domain
-      });
+  switch (actionId) {
+    case 'summarize_email': content = renderEmail(payload); break;
+    case 'outline_doc':     content = renderOutline(payload); break;
+    case 'bullet_slides':   content = renderSlides(payload); break;
+    case 'compare_tabs':    content = renderCompare(payload); break;
+    case 'research_brief':  content = renderBrief(payload); break;
+    case 'regroup_windows': content = renderGroups(payload); break;
+    default:                content = `<pre class="raw-json-pre">${esc(JSON.stringify(payload, null, 2))}</pre>`;
+  }
 
-      document.getElementById('newTabTitle').value = '';
-      document.getElementById('newTabUrl').value = '';
-      document.getElementById('newTabDomain').value = '';
-      renderTabs();
-    }
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <span class="result-title">${esc(actionId)}</span>
+        ${resultMeta(data)}
+      </div>
+      <div class="result-body">
+        ${warningsBanner(data)}
+        ${content}
+        ${metaRow(data)}
+      </div>
+    </div>
+    ${rawJsonSection(data)}`;
+}
 
-    function removeTab(idx) {
-      tabsData.splice(idx, 1);
-      renderTabs();
-    }
+function showRecapResult(data) {
+  const clusters = data.clusters || [];
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <span class="result-title">Recap</span>
+        <span class="badge badge-source-${data.source === 'llm' ? 'llm' : 'det'}">${data.source === 'llm' ? 'LLM' : 'Deterministic'}</span>
+        <span class="badge badge-confidence">${clusters.length} cluster${clusters.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="result-body">
+        ${clusters.length === 0 ? '<p style="color:var(--text3)">No clusters returned.</p>' : ''}
+        ${clusters.map(c => renderCluster(c)).join('')}
+        ${data.warnings && data.warnings.length ? `<div class="banner banner-info" style="margin-top:12px"><span class="banner-icon">ℹ</span><div class="banner-body"><ul>${data.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div></div>` : ''}
+        ${metaRow(data)}
+      </div>
+    </div>
+    ${rawJsonSection(data)}`;
+}
 
-    function loadDemoTabs() {
-      tabsData.length = 0;
-      tabsData.push({
-        tabId: 'demo-1',
-        title: 'Email from Product Team',
-        url: 'https://mail.google.com/mail/u/0/#inbox/email-subject',
-        domain: 'mail.google.com'
-      });
-      tabsData.push({
-        tabId: 'demo-2',
-        title: 'Q2 Product Roadmap',
-        url: 'https://docs.google.com/document/d/1example',
-        domain: 'docs.google.com'
-      });
-      tabsData.push({
-        tabId: 'demo-3',
-        title: 'Engineering Blog Post',
-        url: 'https://engineering.example.com/blog/feature-launch',
-        domain: 'engineering.example.com'
-      });
-      renderTabs();
-    }
+// ── Per-action renderers ──
+function renderEmail(p) {
+  const subject = p.subject || '';
+  const body = p.body || '';
+  const recipients = Array.isArray(p.recipients) ? p.recipients : [];
+  return `
+    <div class="email-field">
+      <div class="email-label">Subject</div>
+      <div class="email-subject">${esc(subject)}</div>
+    </div>
+    ${recipients.length ? `<div class="email-field">
+      <div class="email-label">Recipients</div>
+      <div class="recipients">${recipients.map(r => `<span class="recipient-chip">${esc(r)}</span>`).join('')}</div>
+    </div>` : ''}
+    <div class="email-field">
+      <div class="email-label">Body</div>
+      <div class="email-value">${esc(body)}</div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn btn-ghost" style="font-size:12px" onclick="copyText(${JSON.stringify(body)})">Copy body</button>
+    </div>`;
+}
 
-    function showResponse(status, content) {
-      const area = document.getElementById('responseArea');
-      const statusClass = status === 'loading' ? 'pending' : (status === 'success' ? 'success' : 'error');
-      const statusText = status === 'loading' ? 'Sending request...' : (status === 'success' ? '✓ Success' : '✗ Error');
+function renderOutline(p) {
+  const title = p.title || '';
+  const sections = Array.isArray(p.sections) ? p.sections : [];
+  return `
+    <div class="outline-title">${esc(title)}</div>
+    ${sections.map(s => `
+      <div class="outline-section">
+        <div class="outline-heading">${esc(s.heading || '')}</div>
+        <ul class="outline-bullets">
+          ${(s.bullets || []).map(b => `<li>${esc(b)}</li>`).join('')}
+        </ul>
+      </div>`).join('')}
+    ${p.markdown ? `<div style="margin-top:14px">
+      <button class="btn btn-ghost" style="font-size:12px" onclick="copyText(${JSON.stringify(p.markdown)})">Copy markdown</button>
+    </div>` : ''}`;
+}
 
-      if (status === 'loading') {
-        area.innerHTML = `<div class="response-status ${statusClass}"><div class="spinner"></div> ${statusText}</div>`;
-      } else {
-        const jsonStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
-        area.innerHTML = `
-          <div class="response-status ${statusClass}">${statusText}</div>
-          <div class="response-content">
-            <div class="response-json">${escapeHtml(jsonStr)}</div>
-          </div>
-        `;
-      }
-    }
+function renderSlides(p) {
+  const clusters = Array.isArray(p.clusters) ? p.clusters : [];
+  const copyAll = p.copyAll || '';
+  return `
+    ${clusters.map((c, i) => `
+      <div class="slide-cluster">
+        <div class="slide-title"><span class="slide-num">${i + 1}</span>${esc(c.title || '')}</div>
+        <ul class="slide-bullets">
+          ${(c.bullets || []).map(b => `<li>${esc(b)}</li>`).join('')}
+        </ul>
+      </div>`).join('')}
+    ${copyAll ? `<div class="copy-all-area">
+      <button class="btn btn-ghost copy-all-btn" onclick="copyText(${JSON.stringify(copyAll)})">Copy all slides</button>
+    </div>` : ''}`;
+}
 
-    async function sendRequest() {
-      const apiUrl = document.getElementById('apiUrl').value.trim();
-      const authToken = document.getElementById('authToken').value.trim();
-      const userId = document.getElementById('userId').value.trim();
-      const actionId = document.getElementById('actionId').value.trim();
-      const contextHint = document.getElementById('contextHint').value.trim();
+function renderCompare(p) {
+  const columns = Array.isArray(p.columns) ? p.columns : [];
+  const rows = Array.isArray(p.rows) ? p.rows : [];
+  if (columns.length === 0) return '<p style="color:var(--text3)">No comparison data.</p>';
+  return `
+    <div class="table-overflow">
+      <table class="compare-table">
+        <thead><tr>${columns.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(r => `<tr>${(r.cells || []).map(cell => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <div class="export-btns">
+      ${p.markdown ? `<button class="btn btn-ghost" style="font-size:12px" onclick="copyText(${JSON.stringify(p.markdown)})">Copy markdown table</button>` : ''}
+      ${p.csv ? `<button class="btn btn-ghost" style="font-size:12px" onclick="copyText(${JSON.stringify(p.csv)})">Copy CSV</button>` : ''}
+    </div>`;
+}
 
-      if (!apiUrl) {
-        showResponse('error', 'API Endpoint is required.');
-        return;
-      }
+function renderBrief(p) {
+  const title = p.title || '';
+  const overview = p.overview || '';
+  const sources = Array.isArray(p.sources) ? p.sources : [];
+  const questions = Array.isArray(p.openQuestions) ? p.openQuestions : [];
+  return `
+    <div class="brief-title">${esc(title)}</div>
+    <div class="brief-overview">${esc(overview)}</div>
+    ${sources.length ? `<div class="section-title">Sources</div>
+    <ul class="brief-sources">
+      ${sources.map(s => `<li>
+        <div class="source-title">${esc(s.title || '')}</div>
+        <div class="source-url">${esc(s.url || '')}</div>
+        <div class="source-summary">${esc(s.summary || '')}</div>
+      </li>`).join('')}
+    </ul>` : ''}
+    ${questions.length ? `<div class="section-title" style="margin-top:8px">Open Questions</div>
+    <ol class="open-questions" style="margin-left:18px">
+      ${questions.map(q => `<li>${esc(q)}</li>`).join('')}
+    </ol>` : ''}`;
+}
 
-      if (!userId) {
-        showResponse('error', 'User ID is required.');
-        return;
-      }
+function renderGroups(p) {
+  const groups = Array.isArray(p.groups) ? p.groups : [];
+  return groups.map(g => `
+    <div class="group-card">
+      <div class="group-name">${esc(g.name || g.groupId || '')}</div>
+      <div class="group-rationale">${esc(g.rationale || '')}</div>
+      <div class="group-tabs">
+        ${(g.tabIds || []).map(id => `<span class="tab-id-chip">${esc(String(id))}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
 
-      if (!actionId) {
-        showResponse('error', 'Action is required.');
-        return;
-      }
+function renderCluster(c) {
+  const actionClass = { resume: 'cluster-action-resume', archive: 'cluster-action-archive', ignore: 'cluster-action-ignore' }[c.suggestedAction] || '';
+  const confPct = Math.round((c.confidence || 0) * 100);
+  const confColor = c.confidence >= 0.7 ? 'var(--success)' : c.confidence >= 0.4 ? 'var(--warn)' : 'var(--err)';
+  return `
+    <div class="cluster-card">
+      <div class="cluster-header">
+        <div style="flex:1">
+          <div class="cluster-headline">${esc(c.headline || '')}</div>
+        </div>
+        <span class="cluster-label">${esc(c.label || '')}</span>
+        <span class="badge ${actionClass}" style="border-radius:4px">${esc(c.suggestedAction || '')}</span>
+      </div>
+      <div class="cluster-summary">${esc(c.summary || '')}</div>
+      <div class="cluster-footer">
+        <div class="cluster-conf">
+          <div class="conf-bar"><div class="conf-fill" style="width:${confPct}%;background:${confColor}"></div></div>
+          ${confPct}%
+        </div>
+        <span>Windows: ${(c.intentWindowIds || []).join(', ')}</span>
+      </div>
+    </div>`;
+}
 
-      if (tabsData.length === 0) {
-        showResponse('error', 'At least one tab is required.');
-        return;
-      }
+// ── Raw JSON toggle ──
+function rawJsonSection(data) {
+  const id = 'raw-' + Math.random().toString(36).slice(2, 7);
+  return `<div class="result-card" style="margin-top:8px">
+    <div class="result-header" style="cursor:pointer" onclick="toggleRaw('${id}')">
+      <span class="result-title" style="font-size:12px;color:var(--text3)">Raw JSON response</span>
+      <span id="${id}-arrow" style="color:var(--text3);font-size:12px">▶ show</span>
+    </div>
+    <div id="${id}" style="display:none;padding:14px">
+      <pre class="raw-json-pre">${esc(JSON.stringify(data, null, 2))}</pre>
+    </div>
+  </div>`;
+}
 
-      const payload = {
-        userId,
-        actionId,
-        tabs: tabsData,
-        ...(contextHint ? { contextHint } : {})
-      };
+function toggleRaw(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById(id + '-arrow');
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+  arrow.textContent = visible ? '▶ show' : '▼ hide';
+}
 
-      showResponse('loading');
+// ── Utilities ──
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
 
-      try {
-        const headers = {
-          'Content-Type': 'application/json'
-        };
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const el = document.createElement('div');
+    el.textContent = 'Copied!';
+    Object.assign(el.style, { position:'fixed', bottom:'24px', right:'24px', background:'#1a202c', color:'white', padding:'8px 14px', borderRadius:'6px', fontSize:'13px', zIndex:9999, transition:'opacity 0.3s' });
+    document.body.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 1500);
+  });
+}
 
-        if (authToken) {
-          headers['Authorization'] = `Bearer ${authToken}`;
-        }
-
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          showResponse('success', data);
-        } else {
-          showResponse('error', data);
-        }
-      } catch (err) {
-        showResponse('error', `Request failed: ${err.message}`);
-      }
-    }
-
-    function escapeHtml(text) {
-      const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-      };
-      return text.replace(/[&<>"']/g, m => map[m]);
-    }
-
-    // Initialize
-    document.getElementById('newTabUrl').addEventListener('change', (e) => {
-      const domain = extractDomain(e.target.value);
-      if (domain) {
-        document.getElementById('newTabDomain').value = domain;
-      }
-    });
-
-    renderTabs();
-  </script>
+// ── Init ──
+renderActionTabs();
+</script>
 </body>
 </html>
