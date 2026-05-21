@@ -457,4 +457,22 @@ describe("bullet_slides validate() — YOU-522 placeholder / loop guard", () => 
     expect((result as unknown as { copyAll: string }).copyAll).not.toContain(OPEN_Q);
     expect((result as unknown as { copyAll: string }).copyAll).toContain("Revenue up 15%");
   });
+
+  // YOU-527: exact LLM evidence — title-derived real bullet + 4 identical placeholders
+  it("returns single real bullet when LLM emits 1 real + 4 placeholder bullets (YOU-527)", () => {
+    const result = bullet_slides.validate(
+      raw([{
+        clusterId: "cls_1",
+        title: "Slides",
+        bullets: [
+          "Slides - Q2 Kickoff Deck",
+          OPEN_Q, OPEN_Q, OPEN_Q, OPEN_Q,
+        ],
+      }]),
+    ) as ValidatedSlides;
+    expect(result).not.toBeNull();
+    const bullets = result!.clusters[0]!.bullets;
+    expect(bullets).toEqual(["Slides - Q2 Kickoff Deck"]);
+    expect(bullets.some((b) => b === OPEN_Q)).toBe(false);
+  });
 });
