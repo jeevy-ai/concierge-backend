@@ -23,6 +23,7 @@ const DEDUP_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 const NPS_DETRACTOR_THRESHOLD = 6;
 
 export interface InterviewsEnv {
+  ENVIRONMENT: string;
   INTERVIEWS_KV: KVNamespace;
   RESEND_API_KEY: string;
   SCHEDULING_LINK: string;
@@ -167,7 +168,7 @@ export async function sendSaveInterviewEmail(
     distinctId: user.userId,
     event: AnalyticsEventName.SAVE_INTERVIEW_INVITE_SENT,
     props: { userId: user.userId, trigger: reason },
-    superProps: { env: "production", app_version: "0.1.0", surface: "app" },
+    superProps: { env: env.ENVIRONMENT as "production" | "staging" | "development", app_version: "0.1.0", surface: "app" },
   }).catch((err) => {
     console.error("[save-interview] analytics capture failed (non-fatal):", err);
   });

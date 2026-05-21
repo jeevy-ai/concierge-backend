@@ -98,6 +98,7 @@ async function fetchClerkUserById(
 async function scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
   const result = await runDailyAtRiskScan(
     {
+      ENVIRONMENT: env.ENVIRONMENT,
       INTERVIEWS_KV: env.INTERVIEWS_KV,
       RESEND_API_KEY: env.RESEND_API_KEY,
       SCHEDULING_LINK: env.SCHEDULING_LINK,

@@ -60,6 +60,7 @@ export function registerSaveInterviewRoutes(app: App): void {
 
     const result = await maybeInviteUser(
       {
+        ENVIRONMENT: c.env.ENVIRONMENT,
         INTERVIEWS_KV: c.env.INTERVIEWS_KV,
         RESEND_API_KEY: c.env.RESEND_API_KEY,
         SCHEDULING_LINK: c.env.SCHEDULING_LINK,
@@ -87,6 +88,7 @@ export function registerSaveInterviewRoutes(app: App): void {
 
     const result = await maybeInviteUser(
       {
+        ENVIRONMENT: c.env.ENVIRONMENT,
         INTERVIEWS_KV: c.env.INTERVIEWS_KV,
         RESEND_API_KEY: c.env.RESEND_API_KEY,
         SCHEDULING_LINK: c.env.SCHEDULING_LINK,
