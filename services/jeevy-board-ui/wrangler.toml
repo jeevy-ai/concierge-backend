@@ -1,0 +1,9 @@
+name = "jeevy-board-ui"
+main = "src/index.ts"
+compatibility_date = "2024-12-18"
+compatibility_flags = ["nodejs_compat"]
+
+# Secrets (set via `wrangler secret put <NAME>`):
+#   INTERNAL_API_SECRET  — shared secret forwarded to ai-action-service
+#   AI_ACTION_SERVICE_URL — base URL of staged ai-action-service, e.g.
+#                           https://ai-action-service-staging.<account>.workers.dev
