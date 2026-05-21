@@ -65,7 +65,7 @@ name = "ai-action-service-staging"
 [env.staging.vars]
 ENVIRONMENT = "staging"
 POSTHOG_HOST = "https://eu.i.posthog.com"
-FROM_EMAIL = "team@jeevy.app"
+FROM_EMAIL = "onboarding@resend.dev"
 
 [[env.staging.kv_namespaces]]
 binding = "ENTITLEMENTS_KV"
