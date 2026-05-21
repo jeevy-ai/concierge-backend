@@ -511,7 +511,7 @@
     </div>
 
     <!-- Actions pane -->
-    <div id="pane-actions" class="tab-pane active">
+    <div id="pane-actions" class="tab-pane">
       <div class="field">
         <label>API Endpoint</label>
         <input type="url" id="actionUrl" value="https://ai-action-service.noahlaux.workers.dev/v1/ai/action">
@@ -920,7 +920,7 @@ async function sendConcierge() {
 }
 
 function showConciergeResult(verb, data) {
-  const payload = data.result || data;
+  const payload = data.result?.payload ?? data.result ?? data;
   let content = '';
 
   switch (verb) {
