@@ -1,0 +1,463 @@
+- generic [active] [ref=e1]:
+  - alertdialog "Cookie Consent Prompt" [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - text: We use essential cookies to make our site work. With your consent, we may also use non-essential cookies to improve user experience and analyze website traffic. By clicking “Accept,” you agree to our website's cookie use as described in our
+        - button "Cookie Policy" [ref=e6] [cursor=pointer]
+        - text: . You can change your cookie settings at any time by clicking “
+        - button "Preferences" [ref=e7] [cursor=pointer]
+        - text: .”
+      - generic [ref=e8]:
+        - button "Preferences" [ref=e9] [cursor=pointer]
+        - button "Decline" [ref=e10] [cursor=pointer]
+        - button "Accept" [ref=e11] [cursor=pointer]
+  - generic [ref=e13]:
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - img "Logo" [ref=e21] [cursor=pointer]
+        - generic [ref=e23]:
+          - link "Product" [ref=e25] [cursor=pointer]:
+            - /url: ./product
+            - paragraph [ref=e27]: Product
+          - paragraph [ref=e31] [cursor=pointer]: Channels
+          - paragraph [ref=e36] [cursor=pointer]: Resources
+          - link "Customers" [ref=e39] [cursor=pointer]:
+            - /url: ./customers
+            - paragraph [ref=e41]: Customers
+          - link "Pricing" [ref=e43] [cursor=pointer]:
+            - /url: ./pricing
+            - paragraph [ref=e45]: Pricing
+          - link "Support" [ref=e47] [cursor=pointer]:
+            - /url: https://plain.support.site/
+            - paragraph [ref=e49]: Support
+      - generic [ref=e51]:
+        - link "Sign in" [ref=e53] [cursor=pointer]:
+          - /url: https://app.plain.com/
+          - heading "Sign in" [level=4] [ref=e55]
+        - link "Book a demo" [ref=e57] [cursor=pointer]:
+          - /url: ./get/demo
+          - heading "Book a demo" [level=4] [ref=e59]
+    - generic [ref=e60]:
+      - generic [ref=e61]:
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - 'link "New: Suggested responses, now powered by Ari" [ref=e68] [cursor=pointer]':
+              - /url: ./changelog
+              - generic [ref=e69]:
+                - paragraph [ref=e71]: "New:"
+                - paragraph [ref=e75]: Suggested responses, now powered by Ari
+            - heading "Build support your way" [level=1] [ref=e78]
+            - paragraph [ref=e80]: Break free from the duct tape, the rigid workflows, and the lock-in. Plain is AI support infrastructure that enables B2B teams to build anything – no-code or all-code.
+          - generic [ref=e81]:
+            - link "BOOK A DEMO" [ref=e84] [cursor=pointer]:
+              - /url: ./get/demo
+              - heading "BOOK A DEMO" [level=4] [ref=e86]
+            - link "Get started" [ref=e89] [cursor=pointer]:
+              - /url: ./get/trial
+              - heading "Get started" [level=4] [ref=e91]
+        - generic [ref=e96]:
+          - paragraph [ref=e100] [cursor=pointer]: Support from anywhere
+          - paragraph [ref=e104] [cursor=pointer]: Ask anything
+          - paragraph [ref=e108] [cursor=pointer]: Orchestrate agents
+          - paragraph [ref=e112] [cursor=pointer]: Learn with insights
+        - generic [ref=e123]:
+          - heading "HUNDREDS of fast-moving teams rely on plain" [level=4] [ref=e125]
+          - generic [ref=e128]:
+            - img "Granola" [ref=e129]
+            - img "Cursor" [ref=e130]:
+              - img [ref=e132]
+            - img "Vercel" [ref=e134]:
+              - img [ref=e136]
+            - img "n8n" [ref=e138]:
+              - img [ref=e140]
+            - img "Raycast" [ref=e142]:
+              - img [ref=e144]
+            - img "Mintlify" [ref=e146]:
+              - img [ref=e148]
+            - img "Laravel" [ref=e150]:
+              - img [ref=e152]
+            - img "Ashby" [ref=e154]:
+              - img [ref=e156]
+            - img "Sourcegraph" [ref=e158]:
+              - img [ref=e160]
+      - generic [ref=e166]:
+        - generic [ref=e168]:
+          - generic [ref=e171]:
+            - heading "Tools add" [level=2] [ref=e173]
+            - generic [ref=e175]:
+              - img [ref=e181]
+              - paragraph [ref=e185]: "8"
+            - heading "distance." [level=2] [ref=e187]
+          - paragraph [ref=e189]: Your customers are talking to you in Slack, MS Teams, email, and inside your product – and your team is jumping between all those places. Insights are scattered, and each "new support tool" imposes their opinions on you.
+          - paragraph [ref=e191]: But what if it was different?
+        - img [ref=e195]
+      - generic [ref=e196]:
+        - generic [ref=e198]:
+          - img [ref=e205]
+          - 'heading "Meet a new approach: Support Infrastructure" [level=2] [ref=e207]':
+            - text: "Meet a new approach:"
+            - text: Support Infrastructure
+          - paragraph [ref=e210]: Connect your channels. Orchestrate every conversation. Get smarter with each interaction, all inside one unified workspace built to scale intelligently with you.
+        - generic [ref=e213]:
+          - generic [ref=e214]:
+            - generic [ref=e219]:
+              - paragraph [ref=e221]: Channels
+              - paragraph [ref=e223]: Consolidate support
+              - paragraph [ref=e225]: Connect and scale Slack, Microsoft Teams, Discord, email, chat, portal and more.
+            - generic [ref=e230]:
+              - paragraph [ref=e232]: Assistant
+              - paragraph [ref=e234]: Supercharge your team
+              - paragraph [ref=e236]: Give your team an AI assistant that researches, triages and resolves across systems.
+            - generic [ref=e241]:
+              - paragraph [ref=e243]: Agents
+              - paragraph [ref=e245]: Run any AI agent
+              - paragraph [ref=e247]: Run multiple AI agents while humans stay in control of complex conversations.
+          - generic [ref=e248]:
+            - generic [ref=e253]:
+              - paragraph [ref=e255]: Workflows
+              - paragraph [ref=e257]: Automate everything
+              - paragraph [ref=e259]: Auto route, trigger investigations, notify teams, or take action in your own systems.
+            - generic [ref=e264]:
+              - paragraph [ref=e266]: Insights
+              - paragraph [ref=e268]: Learn from support
+              - paragraph [ref=e270]: Automatically learn from your support. Spot themes, churn risks and upsell potential.
+            - generic [ref=e275]:
+              - paragraph [ref=e277]: API
+              - paragraph [ref=e279]: Build anything
+              - paragraph [ref=e281]: Every part of Plain can be extended, customized, or embedded into your own product and tooling.
+      - generic [ref=e282]:
+        - generic [ref=e283]:
+          - generic [ref=e288]:
+            - generic [ref=e290]:
+              - img [ref=e293]
+              - heading "AGENTS" [level=4] [ref=e296]
+            - generic [ref=e297]:
+              - generic [ref=e298]:
+                - heading "10x with agents" [level=2] [ref=e300]
+                - paragraph [ref=e302]: Plain is completely open, so you orchestrate your workload across any number of AI agents.
+              - link "Discover Agents" [ref=e305] [cursor=pointer]:
+                - /url: https://plain.support.site/article/sidekick
+                - heading "Discover Agents" [level=4] [ref=e307]
+                - img [ref=e310]
+          - generic [ref=e312]:
+            - generic [ref=e318]:
+              - paragraph [ref=e320]: Orchestrate actions
+              - paragraph [ref=e322]: Run multiple AI agents alongside human teammates. Plain gives you the infrastructure to coordinate them.
+            - generic [ref=e328]:
+              - paragraph [ref=e330]: Use Ari, Plain's agent
+              - paragraph [ref=e332]: Ari helps triage requests, investigate issues, and assist your team using the knowledge your team has already built.
+            - generic [ref=e338]:
+              - paragraph [ref=e340]: Build your own agents
+              - paragraph [ref=e342]: Connect your own models and internal data to create agents tailored to your workflows.
+        - generic [ref=e343]:
+          - generic [ref=e345]:
+            - generic [ref=e347]:
+              - img [ref=e350]
+              - heading "WORKFLOWS" [level=4] [ref=e353]
+            - generic [ref=e354]:
+              - generic [ref=e355]:
+                - heading "Automate everything" [level=2] [ref=e357]
+                - paragraph [ref=e359]: Automatically assign conversations, surface product issues, notify engineers, enrich conversations with customer data, or take action inside your own systems.
+              - link "Discover Workflows" [ref=e362] [cursor=pointer]:
+                - /url: https://plain.support.site/article/sidekick
+                - heading "Discover Workflows" [level=4] [ref=e364]
+                - img [ref=e367]
+          - generic [ref=e372]:
+            - generic [ref=e378]:
+              - paragraph [ref=e380]: Connect external systems
+              - paragraph [ref=e382]: Route requests to any external service. Create a Linear issue, trigger a PagerDuty incident, or call your own API.
+            - generic [ref=e388]:
+              - paragraph [ref=e390]: Build with AI
+              - paragraph [ref=e392]: Let AI decide how threads route – by context, tone, or anything else that's hard to capture with rules alone.
+            - generic [ref=e397]:
+              - paragraph [ref=e399]: Auto-triage
+              - paragraph [ref=e401]: Automatically assign labels, detect urgency, and keep thread summaries up to date as conversations evolve.
+        - generic [ref=e402]:
+          - generic [ref=e408]:
+            - generic [ref=e410]:
+              - img [ref=e413]
+              - heading "Sidekick" [level=4] [ref=e416]
+            - generic [ref=e417]:
+              - generic [ref=e418]:
+                - heading "Save time" [level=2] [ref=e420]
+                - paragraph [ref=e422]: Sidekick helps you do customer work. It’s fully aware of customer context, product knowledge and historical interactions. Draft replies and find answers without ever leaving Plain.
+              - link "Discover Sidekick" [ref=e425] [cursor=pointer]:
+                - /url: ./sidekick
+                - heading "Discover Sidekick" [level=4] [ref=e427]
+                - img [ref=e430]
+          - generic [ref=e432]:
+            - generic [ref=e438]:
+              - paragraph [ref=e440]: Knows everything
+              - paragraph [ref=e442]: …so you can ask anything. Sidekick understands customer history, previous chats, and product context.
+            - generic [ref=e448]:
+              - paragraph [ref=e450]: Always there
+              - paragraph [ref=e452]: Sidekick is just a keyboard shortcut away – no setup required. Close those tabs, and open Sidekick instead.
+            - generic [ref=e458]:
+              - paragraph [ref=e460]: Multitalented
+              - paragraph [ref=e462]: Get key information, summarize, draft, and search all your knowledge sources without switching tools.
+        - generic [ref=e463]:
+          - generic [ref=e465]:
+            - generic [ref=e467]:
+              - img [ref=e470]
+              - heading "Insights" [level=4] [ref=e473]
+            - generic [ref=e474]:
+              - generic [ref=e475]:
+                - heading "Learn from customers" [level=2] [ref=e477]
+                - paragraph [ref=e479]: Move beyond just answering tickets and drive product change instead. Get real-time, aggregated and automated insights from your support. Plain makes your data work for you.
+              - link "Discover Insights" [ref=e482] [cursor=pointer]:
+                - /url: https://plain.support.site/article/themes-beta
+                - heading "Discover Insights" [level=4] [ref=e484]
+                - img [ref=e487]
+          - generic [ref=e492]:
+            - generic [ref=e498]:
+              - paragraph [ref=e500]: Detect trends
+              - paragraph [ref=e502]: Spot recurring issues, trends, and opportunities across every conversation - without lifting a finger.
+            - generic [ref=e508]:
+              - paragraph [ref=e510]: Catch up instantly
+              - paragraph [ref=e512]: Get summaries and instant context on every thread – what’s changed, what’s new and what matters.
+            - generic [ref=e518]:
+              - paragraph [ref=e520]: Get the latest, every day
+              - paragraph [ref=e522]: Get daily summaries that surface what’s shifting across your customers, who's working on what, and what needs to happen next.
+      - generic [ref=e523]:
+        - generic [ref=e527]:
+          - generic [ref=e528]:
+            - heading "Speed, meet power." [level=2] [ref=e530]
+            - paragraph [ref=e532]: We get it. When you’re comparing platforms, they all look the same. We’ll make it easy for you. Here’s why, and when, we win.
+          - generic [ref=e535]:
+            - generic [ref=e536]:
+              - generic [ref=e537]:
+                - paragraph [ref=e539]: When you need performance and scale
+                - heading "Discover our product" [level=4] [ref=e541]:
+                  - link "Discover our product" [ref=e542] [cursor=pointer]:
+                    - /url: ./product
+              - paragraph [ref=e544]: Plain is designed for work, not to feel like work. Every aspect of the Plain interface has been forged, stress-tested and iterated on by and with some of the fastest-growing, and most demanding support teams in the world. They love it, and we think you will too.
+            - generic [ref=e545]:
+              - generic [ref=e546]:
+                - paragraph [ref=e548]: When you demand complete extensibility
+                - heading "Learn about our API" [level=4] [ref=e550]:
+                  - link "Learn about our API" [ref=e551] [cursor=pointer]:
+                    - /url: https://www.plain.com/docs/
+              - paragraph [ref=e553]: We give you flexible building blocks, not rigid opinions. Plain is API-first, so everything you see in the product can be done programmatically. Extend workflows, automate the edge cases, or replace entire pieces with your own logic. If you can imagine it, you can ship it.
+            - generic [ref=e554]:
+              - paragraph [ref=e557]: When you want to enjoy the buying process
+              - paragraph [ref=e559]: Seriously. People often choose us because working together feels straightforward. We know you are not switching platforms all day because you love it. So we focus on clarity, honest guidance and removing friction. Our sales team knows the product deeply and works with you to get to a yes or no quickly, whichever is right.
+          - generic [ref=e561]:
+            - heading "Start fast. Scale fearlessly." [level=3] [ref=e563]
+            - paragraph [ref=e565]: Plain isn’t just faster, it’s built to last.
+        - img [ref=e569]
+      - generic [ref=e570]:
+        - img [ref=e574]
+        - generic [ref=e575]:
+          - generic [ref=e576]:
+            - heading "Fast growing companies love plain" [level=4] [ref=e578]
+            - heading "Take their word for it" [level=2] [ref=e580]
+          - generic [ref=e581]:
+            - generic [ref=e585]:
+              - generic [ref=e586]:
+                - img [ref=e591]
+                - link "Case study" [ref=e594] [cursor=pointer]:
+                  - /url: ./
+                  - heading "Case study" [level=4] [ref=e596]
+                  - img [ref=e599]
+              - generic [ref=e601]:
+                - generic [ref=e602]:
+                  - img [ref=e607]
+                  - paragraph [ref=e610]: We chose Plain because it was the right fit for our fast-moving team to get going quickly. It’s helped us stay organized & responsive as we 100x-ed our users, and we’re confident it will keep supporting us as we continue to grow.
+                - generic [ref=e614]:
+                  - paragraph [ref=e616]: Jo Barrow
+                  - paragraph [ref=e618]: Chief of Staff
+            - generic [ref=e624]:
+              - generic [ref=e626]:
+                - generic [ref=e627]:
+                  - img [ref=e630]
+                  - paragraph [ref=e633]: With Plain powering our support, we don't have to think about scaling challenges. Everything just works.
+                - generic [ref=e634]:
+                  - generic [ref=e638]:
+                    - paragraph [ref=e640]: Christopher O'Neill
+                    - paragraph [ref=e642]: Head of Developer Success
+                  - img [ref=e649]
+              - generic [ref=e652]:
+                - generic [ref=e653]:
+                  - img [ref=e656]
+                  - paragraph [ref=e659]: We see Plain as a tool very similar to Raycast. Focused on a great user experience, intelligent workflows, and truly empowering the teams that use it.
+                - generic [ref=e664]:
+                  - paragraph [ref=e666]: Daniel Sequeira
+                  - paragraph [ref=e668]: Head of Business Ops
+      - generic [ref=e677]:
+        - generic [ref=e678]:
+          - heading "Time is money. Money is pizza." [level=4] [ref=e680]
+          - heading "Here’s what you can do in 29 mins and 59 secs" [level=2] [ref=e682]
+        - generic [ref=e683]:
+          - heading "5 mins" [level=3] [ref=e686]
+          - heading "15 mins" [level=3] [ref=e690]
+          - heading "29 mins" [level=3] [ref=e694]
+        - generic [ref=e695]:
+          - generic [ref=e697]:
+            - generic [ref=e698]:
+              - img [ref=e701]
+              - paragraph [ref=e704]: Connect Slack, Microsoft Teams, Discord and email
+            - generic [ref=e705]:
+              - img [ref=e708]
+              - paragraph [ref=e711]: Connect your CRMs and issue tracker
+            - generic [ref=e712]:
+              - img [ref=e715]
+              - paragraph [ref=e718]: Respond to your first ticket
+          - generic [ref=e720]:
+            - generic [ref=e721]:
+              - img [ref=e724]
+              - paragraph [ref=e727]: Deploy an AI agent across all communication channels
+            - generic [ref=e728]:
+              - img [ref=e731]
+              - paragraph [ref=e734]: Define SLAs, business hours, and customer tiers
+            - generic [ref=e735]:
+              - img [ref=e738]
+              - paragraph [ref=e741]: Automate queries with workflows
+          - generic [ref=e743]:
+            - generic [ref=e744]:
+              - img [ref=e747]
+              - paragraph [ref=e750]: Automatically generate AI insights from support requests
+            - generic [ref=e751]:
+              - img [ref=e754]
+              - paragraph [ref=e757]: Deploy a knowledge base, formed from your support messages
+            - generic [ref=e758]:
+              - img [ref=e761]
+              - paragraph [ref=e764]: Help customers help themselves with Ask AI
+      - generic [ref=e769]:
+        - img [ref=e773]
+        - generic [ref=e777]:
+          - heading "Engineered with enterprise-level security. Built for everyone." [level=2] [ref=e779]
+          - paragraph [ref=e781]: We don’t see security as a set of badges, but as a core engineering principle. Every part of our platform is architected to protect your data.
+    - generic [ref=e782]:
+      - generic [ref=e785]:
+        - img [ref=e789]
+        - generic [ref=e790]:
+          - img [ref=e793]
+          - generic [ref=e794]:
+            - img [ref=e800]
+            - generic [ref=e805]:
+              - img [ref=e808]
+              - img [ref=e811]
+              - generic [ref=e812]:
+                - generic [ref=e814]:
+                  - img "Logo" [ref=e817]
+                  - img "Logo" [ref=e820]
+                  - img "Logo" [ref=e823]
+                - generic [ref=e824]:
+                  - paragraph [ref=e826]:
+                    - text: Join the teams who rely on Plain to
+                    - text: provide world-class support
+                  - generic [ref=e827]:
+                    - link "BOOK A DEMO" [ref=e829] [cursor=pointer]:
+                      - /url: ./get/demo
+                      - heading "BOOK A DEMO" [level=4] [ref=e831]
+                    - link "Start for free" [ref=e833] [cursor=pointer]:
+                      - /url: ./get/trial
+                      - heading "Start for free" [level=4] [ref=e835]
+              - img [ref=e838]
+            - img [ref=e846]
+      - generic [ref=e850]:
+        - generic [ref=e851]:
+          - generic [ref=e852]:
+            - link [ref=e853] [cursor=pointer]:
+              - /url: ./
+              - img [ref=e856]
+            - generic [ref=e858]:
+              - paragraph [ref=e860]: © 2026 Plain
+              - paragraph [ref=e862]: Not Just Tickets Ltd
+          - generic [ref=e864]:
+            - paragraph [ref=e866]: Plain
+            - generic [ref=e867]:
+              - paragraph [ref=e869]:
+                - link "Product" [ref=e870] [cursor=pointer]:
+                  - /url: ./product
+              - paragraph [ref=e872]:
+                - link "Pricing" [ref=e873] [cursor=pointer]:
+                  - /url: ./pricing
+              - paragraph [ref=e875]:
+                - link "Customers" [ref=e876] [cursor=pointer]:
+                  - /url: ./customers
+              - paragraph [ref=e878]:
+                - link "Security" [ref=e879] [cursor=pointer]:
+                  - /url: https://help.plain.com/article/security
+              - paragraph [ref=e881]:
+                - link "Integrations" [ref=e882] [cursor=pointer]:
+                  - /url: ./integrations
+              - paragraph [ref=e884]:
+                - link "Startup Program" [ref=e885] [cursor=pointer]:
+                  - /url: ./startups
+              - paragraph [ref=e887]:
+                - link "Careers" [ref=e888] [cursor=pointer]:
+                  - /url: ./careers
+              - paragraph [ref=e890]:
+                - link "Blog" [ref=e891] [cursor=pointer]:
+                  - /url: ./blog
+          - generic [ref=e892]:
+            - paragraph [ref=e894]: Channels
+            - generic [ref=e895]:
+              - paragraph [ref=e897]:
+                - link "Slack" [ref=e898] [cursor=pointer]:
+                  - /url: ./channels/slack
+              - paragraph [ref=e900]:
+                - link "Microsoft Teams" [ref=e901] [cursor=pointer]:
+                  - /url: ./channels/microsoft-teams
+              - paragraph [ref=e903]:
+                - link "Discourse" [ref=e904] [cursor=pointer]:
+                  - /url: https://help.plain.com/article/discourse
+              - paragraph [ref=e906]:
+                - link "Email" [ref=e907] [cursor=pointer]:
+                  - /url: ./channels/email
+              - paragraph [ref=e909]:
+                - link "Help Center" [ref=e910] [cursor=pointer]:
+                  - /url: ./channels/help-center
+              - paragraph [ref=e912]:
+                - link "In-app Forms" [ref=e913] [cursor=pointer]:
+                  - /url: ./channels/contact-forms
+              - paragraph [ref=e915]:
+                - link "Headless Portal" [ref=e916] [cursor=pointer]:
+                  - /url: ./channels/headless-portal
+              - paragraph [ref=e918]:
+                - link "Live Chat" [ref=e919] [cursor=pointer]:
+                  - /url: https://help.plain.com/article/live-chat-overview
+          - generic [ref=e920]:
+            - paragraph [ref=e922]: Resources
+            - generic [ref=e923]:
+              - paragraph [ref=e925]:
+                - link "Help Center" [ref=e926] [cursor=pointer]:
+                  - /url: https://help.plain.com
+              - paragraph [ref=e928]:
+                - link "API Reference" [ref=e929] [cursor=pointer]:
+                  - /url: https://www.plain.com/docs/graphql/introduction
+              - paragraph [ref=e931]:
+                - link "Trust Center" [ref=e932] [cursor=pointer]:
+                  - /url: https://trust.plain.com
+              - paragraph [ref=e934]:
+                - link "Privacy" [ref=e935] [cursor=pointer]:
+                  - /url: https://www.plain.com/legal/privacy-policy
+              - paragraph [ref=e937]:
+                - link "Terms" [ref=e938] [cursor=pointer]:
+                  - /url: https://www.plain.com/legal/terms-and-conditions
+              - paragraph [ref=e940]:
+                - link "Data Processing" [ref=e941] [cursor=pointer]:
+                  - /url: https://www.plain.com/legal/dpa
+              - paragraph [ref=e943]:
+                - link "Vulnerability" [ref=e944] [cursor=pointer]:
+                  - /url: https://plain.support.site/article/security
+          - generic [ref=e946]:
+            - paragraph [ref=e948]: Support
+            - generic [ref=e949]:
+              - paragraph [ref=e951]:
+                - link "Status" [ref=e952] [cursor=pointer]:
+                  - /url: https://status.plain.com/
+              - paragraph [ref=e954]:
+                - link "@plainsupport" [ref=e955] [cursor=pointer]:
+                  - /url: https://x.com/plainsupport
+        - img [ref=e958]
+  - img [ref=e1024]
+  - img [ref=e1029]
+  - img [ref=e1033]
+  - img [ref=e1049]
+  - img [ref=e1051]
+  - img [ref=e1060]
+  - button [ref=e1069] [cursor=pointer]:
+    - img [ref=e1070]
+  - iframe

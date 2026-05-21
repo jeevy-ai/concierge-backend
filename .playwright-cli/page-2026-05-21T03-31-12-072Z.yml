@@ -1,0 +1,129 @@
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - img "Google" [ref=e10]
+        - generic [ref=e11]: Sign in with Google
+      - img [ref=e12]
+    - generic [ref=e13]:
+      - generic [ref=e15]:
+        - heading "Sign in" [level=1] [ref=e16]
+        - paragraph [ref=e17]:
+          - text: to continue to
+          - button "Plain" [ref=e18] [cursor=pointer]
+      - generic [ref=e19]:
+        - generic [ref=e22]:
+          - generic [ref=e27]:
+            - textbox "Email or phone" [active] [ref=e28]
+            - generic:
+              - generic: Email or phone
+          - paragraph [ref=e29]:
+            - link "Forgot email?" [ref=e30] [cursor=pointer]:
+              - /url: /signin/v2/usernamerecovery?access_type=offline&app_domain=https://auth.plain.com&client_id=944976496898-kmqaj17hcir462q2fr1m9ogmj9q6q5d7.apps.googleusercontent.com&continue=https://accounts.google.com/signin/oauth/legacy/consent?authuser%3Dunknown%26part%3DAJi8hAPFQkw72E_eQx9-exim2xRiSwwZua9rGqOhA1VvX2DjkxyDLYTEtFJHSvFuVxYQveVdJZFaEhalW8pFFeEev1-qPW-dZ9cmBElzUitv0bf_cFWHspmZr08li4zOjw0s1wvhslbCMejb3riNlwM5FidmvKgxHv9wS-OAv47xt9eD-_828KD2CElGaDLlQqQwrWScPKvhfn4mfK4BPsM7LSqHo4LV5xPX-LMEzUH7oeQh_p2Wzspz8gIge-imtez-Jui1SkM9pyRWG4tHUBcNaVyjC9LPTILGiGpPMVagu2tPtrI1w_ZbM9MYlMv0rmgiA3zedliP-gesq24hqdVVtHRpwczKgOCXQ9q7IXDZslTPz0Nf2Y1pKJe3w1FDLcr4f00KS4pZSBbnXHCtHOcPoGxG8Fg0kQgm1bQkcEU7zSZbHakkO8Ju43lAuapSWIziVD1eRU0kNVU9bGsF3U_Wl0ZV9PfJTzyR33chMlrm-mfO-XpAVYMhPcsvm-gLH86Ru62cjzcX26GOidZz9PGXV6uArGW259ynE-jsbDYNNTDvecotkJyW9gZoPFbbGeU8fH53aomvC5r6XtU17fWHdkNrhoQM-pgguxHh060QyBORQYjyoii_EUqTP86sA4mEvhYDwmGq%26flowName%3DGeneralOAuthFlow%26as%3DS824748365%253A1779334270916226%26client_id%3D944976496898-kmqaj17hcir462q2fr1m9ogmj9q6q5d7.apps.googleusercontent.com%23&dsh=S824748365:1779334270916226&flowName=GeneralOAuthLite&o2v=2&opparams=%253F&prompt=select_account&rart=ANgoxcfUHZugoeoW6mwab8Qpx-XqHxRYEDgbd8n2y_Al8dVOxKhtbd-x1k2BZuw8dCZV4X2fymoyA8UJYHKqKNm6qRzIKdHDd2FYJXHwq_awq2DwtXFbbBA&redirect_uri=https://auth.plain.com/sso/oauth/google/p6gkZBnCWSCaeC9vjKvZ2xr3v/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile&service=lso&state=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGkiOiJ1c2VyX21hbmFnZW1lbnQiLCJyZWRpcmVjdF91cmkiOiJodHRwczovL3NpZ25pbi5hdXRoLnBsYWluLmNvbS9hcGkvY2FsbGJhY2siLCJzdGF0ZSI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZEdGMFpTSTZJbnRjSW5KbFpHbHlaV04wVUdGMGFGd2lPbHdpYUhSMGNITTZMeTloY0hBdWNHeGhhVzR1WTI5dEwzZHZjbXR6Y0dGalpYTXZQM0psWkdseVpXTjBWRzlNWVhOMFYyOXlhM053WVdObFBYUnlkV1ZjSW4waUxDSnlaV1JwY21WamRGOTFjbWtpT2lKb2RIUndjem92TDJGd2NDNXdiR0ZwYmk1amIyMHZZMkZzYkdKaFkyc3ZJaXdpWVhWMGFHOXlhWHBoZEdsdmJsOXpaWE56YVc5dVgybGtJam9pTURGTFV6UTVRemt3TkRkV01sQTJRVGxSTkVOUlVVYzNOMUVpTENKemIzVnlZMlVpT2lKemFXZHVhVzRpTENKa1pYWnBZMlZmWm1sdVoyVnljSEpwYm5RaU9pSTFOVEl5Tm1Fek5HSTBaRFEwT0dObE1EbGhNV1E0WlRNNVlqY3haV1kxT1RrellXRXlNVFptTURFM00yTmhNRE5pWWprd1pEWXdZak00T1RJNVpEY3hJaXdpY0hKdmRtbGtaWElpT2lKSGIyOW5iR1ZQUVhWMGFDSXNJbTV2Ym1ObElqb2lLMFZMVEZwaE0wSmFLemhYVnk5YVQyRmljWEZJWVU4NGVYUmxRa05QZGpFd1RFSm9kWHBGV1dJM1ZUMGlMQ0p6YVdkdVlXeHpYMmxrSWpvaU1ERkxVelE1UTBzME1sWlJXRmt4UTBoWlNsbFFRVXM1VVRjaUxDSnBZWFFpT2pFM056a3pNelF5TnpCOS5DSGplbGlhZTFVb1FBNjBmYXlmT1IzOVBjSTF6SDJXYk5VZGRvbDhfcXk0IiwiaWF0IjoxNzc5MzM0MjcwLCJleHAiOjE3NzkzMzUxNzB9.UAIBmkyYAofyryjgPDQgfQ8JHXz3ptb_bqoUuRKES8o
+        - paragraph [ref=e33]:
+          - text: Before using this app, you can review Plain’s
+          - link "Privacy Policy" [ref=e34] [cursor=pointer]:
+            - /url: https://plain.com/legal-pages/privacy-policy
+          - text: and
+          - link "Terms of Service" [ref=e35] [cursor=pointer]:
+            - /url: https://plain.com/legal-pages/terms-and-conditions
+          - text: .
+        - generic [ref=e37]:
+          - button "Next" [ref=e39]
+          - link "Create account" [ref=e41] [cursor=pointer]:
+            - /url: /lifecycle/flows/signup?access_type=offline&app_domain=https://auth.plain.com&client_id=944976496898-kmqaj17hcir462q2fr1m9ogmj9q6q5d7.apps.googleusercontent.com&continue=https://accounts.google.com/signin/oauth/legacy/consent?authuser%3Dunknown%26part%3DAJi8hAPFQkw72E_eQx9-exim2xRiSwwZua9rGqOhA1VvX2DjkxyDLYTEtFJHSvFuVxYQveVdJZFaEhalW8pFFeEev1-qPW-dZ9cmBElzUitv0bf_cFWHspmZr08li4zOjw0s1wvhslbCMejb3riNlwM5FidmvKgxHv9wS-OAv47xt9eD-_828KD2CElGaDLlQqQwrWScPKvhfn4mfK4BPsM7LSqHo4LV5xPX-LMEzUH7oeQh_p2Wzspz8gIge-imtez-Jui1SkM9pyRWG4tHUBcNaVyjC9LPTILGiGpPMVagu2tPtrI1w_ZbM9MYlMv0rmgiA3zedliP-gesq24hqdVVtHRpwczKgOCXQ9q7IXDZslTPz0Nf2Y1pKJe3w1FDLcr4f00KS4pZSBbnXHCtHOcPoGxG8Fg0kQgm1bQkcEU7zSZbHakkO8Ju43lAuapSWIziVD1eRU0kNVU9bGsF3U_Wl0ZV9PfJTzyR33chMlrm-mfO-XpAVYMhPcsvm-gLH86Ru62cjzcX26GOidZz9PGXV6uArGW259ynE-jsbDYNNTDvecotkJyW9gZoPFbbGeU8fH53aomvC5r6XtU17fWHdkNrhoQM-pgguxHh060QyBORQYjyoii_EUqTP86sA4mEvhYDwmGq%26flowName%3DGeneralOAuthFlow%26as%3DS824748365%253A1779334270916226%26client_id%3D944976496898-kmqaj17hcir462q2fr1m9ogmj9q6q5d7.apps.googleusercontent.com%23&dsh=S824748365:1779334270916226&flowEntry=SignUp&flowName=GlifWebSignIn&o2v=2&opparams=%253F&prompt=select_account&rart=ANgoxcfUHZugoeoW6mwab8Qpx-XqHxRYEDgbd8n2y_Al8dVOxKhtbd-x1k2BZuw8dCZV4X2fymoyA8UJYHKqKNm6qRzIKdHDd2FYJXHwq_awq2DwtXFbbBA&redirect_uri=https://auth.plain.com/sso/oauth/google/p6gkZBnCWSCaeC9vjKvZ2xr3v/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile&service=lso&signInUrl=https://accounts.google.com/signin/oauth?access_type%3Doffline%26app_domain%3Dhttps://auth.plain.com%26client_id%3D944976496898-kmqaj17hcir462q2fr1m9ogmj9q6q5d7.apps.googleusercontent.com%26continue%3Dhttps://accounts.google.com/signin/oauth/legacy/consent?authuser%253Dunknown%2526part%253DAJi8hAPFQkw72E_eQx9-exim2xRiSwwZua9rGqOhA1VvX2DjkxyDLYTEtFJHSvFuVxYQveVdJZFaEhalW8pFFeEev1-qPW-dZ9cmBElzUitv0bf_cFWHspmZr08li4zOjw0s1wvhslbCMejb3riNlwM5FidmvKgxHv9wS-OAv47xt9eD-_828KD2CElGaDLlQqQwrWScPKvhfn4mfK4BPsM7LSqHo4LV5xPX-LMEzUH7oeQh_p2Wzspz8gIge-imtez-Jui1SkM9pyRWG4tHUBcNaVyjC9LPTILGiGpPMVagu2tPtrI1w_ZbM9MYlMv0rmgiA3zedliP-gesq24hqdVVtHRpwczKgOCXQ9q7IXDZslTPz0Nf2Y1pKJe3w1FDLcr4f00KS4pZSBbnXHCtHOcPoGxG8Fg0kQgm1bQkcEU7zSZbHakkO8Ju43lAuapSWIziVD1eRU0kNVU9bGsF3U_Wl0ZV9PfJTzyR33chMlrm-mfO-XpAVYMhPcsvm-gLH86Ru62cjzcX26GOidZz9PGXV6uArGW259ynE-jsbDYNNTDvecotkJyW9gZoPFbbGeU8fH53aomvC5r6XtU17fWHdkNrhoQM-pgguxHh060QyBORQYjyoii_EUqTP86sA4mEvhYDwmGq%2526flowName%253DGeneralOAuthFlow%2526as%253DS824748365%25253A1779334270916226%2526client_id%253D944976496898-kmqaj17hcir462q2fr1m9ogmj9q6q5d7.apps.googleusercontent.com%2523%26dsh%3DS824748365:1779334270916226%26flowName%3DGeneralOAuthLite%26o2v%3D2%26opparams%3D%25253F%26prompt%3Dselect_account%26rart%3DANgoxcfUHZugoeoW6mwab8Qpx-XqHxRYEDgbd8n2y_Al8dVOxKhtbd-x1k2BZuw8dCZV4X2fymoyA8UJYHKqKNm6qRzIKdHDd2FYJXHwq_awq2DwtXFbbBA%26redirect_uri%3Dhttps://auth.plain.com/sso/oauth/google/p6gkZBnCWSCaeC9vjKvZ2xr3v/callback%26response_type%3Dcode%26scope%3Dhttps://www.googleapis.com/auth/userinfo.email%2Bhttps://www.googleapis.com/auth/userinfo.profile%26service%3Dlso%26state%3DeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGkiOiJ1c2VyX21hbmFnZW1lbnQiLCJyZWRpcmVjdF91cmkiOiJodHRwczovL3NpZ25pbi5hdXRoLnBsYWluLmNvbS9hcGkvY2FsbGJhY2siLCJzdGF0ZSI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZEdGMFpTSTZJbnRjSW5KbFpHbHlaV04wVUdGMGFGd2lPbHdpYUhSMGNITTZMeTloY0hBdWNHeGhhVzR1WTI5dEwzZHZjbXR6Y0dGalpYTXZQM0psWkdseVpXTjBWRzlNWVhOMFYyOXlhM053WVdObFBYUnlkV1ZjSW4waUxDSnlaV1JwY21WamRGOTFjbWtpT2lKb2RIUndjem92TDJGd2NDNXdiR0ZwYmk1amIyMHZZMkZzYkdKaFkyc3ZJaXdpWVhWMGFHOXlhWHBoZEdsdmJsOXpaWE56YVc5dVgybGtJam9pTURGTFV6UTVRemt3TkRkV01sQTJRVGxSTkVOUlVVYzNOMUVpTENKemIzVnlZMlVpT2lKemFXZHVhVzRpTENKa1pYWnBZMlZmWm1sdVoyVnljSEpwYm5RaU9pSTFOVEl5Tm1Fek5HSTBaRFEwT0dObE1EbGhNV1E0WlRNNVlqY3haV1kxT1RrellXRXlNVFptTURFM00yTmhNRE5pWWprd1pEWXdZak00T1RJNVpEY3hJaXdpY0hKdmRtbGtaWElpT2lKSGIyOW5iR1ZQUVhWMGFDSXNJbTV2Ym1ObElqb2lLMFZMVEZwaE0wSmFLemhYVnk5YVQyRmljWEZJWVU4NGVYUmxRa05QZGpFd1RFSm9kWHBGV1dJM1ZUMGlMQ0p6YVdkdVlXeHpYMmxrSWpvaU1ERkxVelE1UTBzME1sWlJXRmt4UTBoWlNsbFFRVXM1VVRjaUxDSnBZWFFpT2pFM056a3pNelF5TnpCOS5DSGplbGlhZTFVb1FBNjBmYXlmT1IzOVBjSTF6SDJXYk5VZGRvbDhfcXk0IiwiaWF0IjoxNzc5MzM0MjcwLCJleHAiOjE3NzkzMzUxNzB9.UAIBmkyYAofyryjgPDQgfQ8JHXz3ptb_bqoUuRKES8o&state=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGkiOiJ1c2VyX21hbmFnZW1lbnQiLCJyZWRpcmVjdF91cmkiOiJodHRwczovL3NpZ25pbi5hdXRoLnBsYWluLmNvbS9hcGkvY2FsbGJhY2siLCJzdGF0ZSI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZEdGMFpTSTZJbnRjSW5KbFpHbHlaV04wVUdGMGFGd2lPbHdpYUhSMGNITTZMeTloY0hBdWNHeGhhVzR1WTI5dEwzZHZjbXR6Y0dGalpYTXZQM0psWkdseVpXTjBWRzlNWVhOMFYyOXlhM053WVdObFBYUnlkV1ZjSW4waUxDSnlaV1JwY21WamRGOTFjbWtpT2lKb2RIUndjem92TDJGd2NDNXdiR0ZwYmk1amIyMHZZMkZzYkdKaFkyc3ZJaXdpWVhWMGFHOXlhWHBoZEdsdmJsOXpaWE56YVc5dVgybGtJam9pTURGTFV6UTVRemt3TkRkV01sQTJRVGxSTkVOUlVVYzNOMUVpTENKemIzVnlZMlVpT2lKemFXZHVhVzRpTENKa1pYWnBZMlZmWm1sdVoyVnljSEpwYm5RaU9pSTFOVEl5Tm1Fek5HSTBaRFEwT0dObE1EbGhNV1E0WlRNNVlqY3haV1kxT1RrellXRXlNVFptTURFM00yTmhNRE5pWWprd1pEWXdZak00T1RJNVpEY3hJaXdpY0hKdmRtbGtaWElpT2lKSGIyOW5iR1ZQUVhWMGFDSXNJbTV2Ym1ObElqb2lLMFZMVEZwaE0wSmFLemhYVnk5YVQyRmljWEZJWVU4NGVYUmxRa05QZGpFd1RFSm9kWHBGV1dJM1ZUMGlMQ0p6YVdkdVlXeHpYMmxrSWpvaU1ERkxVelE1UTBzME1sWlJXRmt4UTBoWlNsbFFRVXM1VVRjaUxDSnBZWFFpT2pFM056a3pNelF5TnpCOS5DSGplbGlhZTFVb1FBNjBmYXlmT1IzOVBjSTF6SDJXYk5VZGRvbDhfcXk0IiwiaWF0IjoxNzc5MzM0MjcwLCJleHAiOjE3NzkzMzUxNzB9.UAIBmkyYAofyryjgPDQgfQ8JHXz3ptb_bqoUuRKES8o
+  - contentinfo [ref=e42]:
+    - combobox [ref=e45] [cursor=pointer]:
+      - option "Afrikaans"
+      - option "azərbaycan"
+      - option "bosanski"
+      - option "català"
+      - option "Čeština"
+      - option "Cymraeg"
+      - option "Dansk"
+      - option "Deutsch"
+      - option "eesti"
+      - option "English (United Kingdom)"
+      - option "English (United States)" [selected]
+      - option "Español (España)"
+      - option "Español (Latinoamérica)"
+      - option "euskara"
+      - option "Filipino"
+      - option "Français (Canada)"
+      - option "Français (France)"
+      - option "Gaeilge"
+      - option "galego"
+      - option "Hrvatski"
+      - option "Indonesia"
+      - option "isiZulu"
+      - option "íslenska"
+      - option "Italiano"
+      - option "Kiswahili"
+      - option "latviešu"
+      - option "lietuvių"
+      - option "magyar"
+      - option "Melayu"
+      - option "Nederlands"
+      - option "norsk"
+      - option "o‘zbek"
+      - option "polski"
+      - option "Português (Brasil)"
+      - option "Português (Portugal)"
+      - option "română"
+      - option "shqip"
+      - option "Slovenčina"
+      - option "slovenščina"
+      - option "srpski (latinica)"
+      - option "Suomi"
+      - option "Svenska"
+      - option "Tiếng Việt"
+      - option "Türkçe"
+      - option "Ελληνικά"
+      - option "беларуская"
+      - option "български"
+      - option "кыргызча"
+      - option "қазақ тілі"
+      - option "македонски"
+      - option "монгол"
+      - option "Русский"
+      - option "српски (ћирилица)"
+      - option "Українська"
+      - option "ქართული"
+      - option "հայերեն"
+      - option "‫עברית‬‎"
+      - option "‫اردو‬‎"
+      - option "‫العربية‬‎"
+      - option "‫فارسی‬‎"
+      - option "አማርኛ"
+      - option "नेपाली"
+      - option "मराठी"
+      - option "हिन्दी"
+      - option "অসমীয়া"
+      - option "বাংলা"
+      - option "ਪੰਜਾਬੀ"
+      - option "ગુજરાતી"
+      - option "ଓଡ଼ିଆ"
+      - option "தமிழ்"
+      - option "తెలుగు"
+      - option "ಕನ್ನಡ"
+      - option "മലയാളം"
+      - option "සිංහල"
+      - option "ไทย"
+      - option "ລາວ"
+      - option "မြန်မာ"
+      - option "ខ្មែរ"
+      - option "한국어"
+      - option "中文（香港）"
+      - option "日本語"
+      - option "简体中文"
+      - option "繁體中文"
+    - list [ref=e46]:
+      - listitem [ref=e47]:
+        - link "Help" [ref=e48] [cursor=pointer]:
+          - /url: https://support.google.com/accounts?hl=en-US&p=account_iph
+      - listitem [ref=e49]:
+        - link "Privacy" [ref=e50] [cursor=pointer]:
+          - /url: https://accounts.google.com/TOS?loc=DK&hl=en-US&privacy=true
+      - listitem [ref=e51]:
+        - link "Terms" [ref=e52] [cursor=pointer]:
+          - /url: https://accounts.google.com/TOS?loc=DK&hl=en-US

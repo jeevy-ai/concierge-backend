@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useReducer, useState } from "react";
+import { track, AnalyticsEventName } from "@jeevy/analytics/web";
 import { ProgressBar } from "./ProgressBar";
 import { StepCalendars } from "./StepCalendars";
 import { StepContact } from "./StepContact";
@@ -125,17 +126,36 @@ export function ApplyShell() {
       submittedAt: new Date().toISOString(),
     };
 
-    const res = await fetch("/api/intake", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    // Track signup_submitted event (assume email method for form submission)
+    trackSignupSubmitted("email", { planIntent: "founder" });
 
-    if (!res.ok) {
-      throw new Error(`Submission failed: ${res.status}`);
+    try {
+      const res = await fetch("/api/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        trackSignupFailed("email", `http_${res.status}`);
+        throw new Error(`Submission failed: ${res.status}`);
+      }
+
+      // Track signup_completed on successful intake submission
+      track(AnalyticsEventName.SIGNUP_COMPLETED, {
+        method: "email",
+        plan_intent: "founder",
+        // Note: userId would only be available after actual account creation in auth flow
+      });
+
+      router.push("/apply/thank-you");
+    } catch (error) {
+      // Track error if not already tracked
+      if (!(error instanceof Error && error.message.includes("Submission failed"))) {
+        trackSignupFailed("email", error instanceof Error ? error.message : "unknown_error");
+      }
+      throw error;
     }
-
-    router.push("/apply/thank-you");
   }
 
   const isWelcome = currentStep === "welcome";

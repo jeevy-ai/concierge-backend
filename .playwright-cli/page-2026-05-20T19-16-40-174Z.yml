@@ -1,0 +1,194 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e7]:
+      - img [ref=e8]
+    - generic [ref=e11]:
+      - button "Open issues overlay" [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: "0"
+          - generic [ref=e15]: "1"
+        - generic [ref=e16]: Issue
+      - button "Collapse issues badge" [ref=e17]:
+        - img [ref=e18]
+  - main [ref=e20]:
+    - navigation [ref=e21]:
+      - link "← surfaces" [ref=e22] [cursor=pointer]:
+        - /url: /
+    - generic [ref=e24]:
+      - paragraph [ref=e25]: "YOU-84 · acceptance criterion #5"
+      - heading "Dev smoke" [level=1] [ref=e26]
+      - paragraph [ref=e27]: Every primitive, every surface route stub. Each link below renders the canonical empty state against the fixtures harness on localhost:3201.
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - heading "Surface routes" [level=2] [ref=e30]
+        - list [ref=e31]:
+          - listitem [ref=e32]:
+            - link "Approval queue (§1.1 · YOU-78) /operator/queue" [ref=e33] [cursor=pointer]:
+              - /url: /operator/queue
+              - generic [ref=e34]: Approval queue (§1.1 · YOU-78)
+              - code [ref=e35]: /operator/queue
+          - listitem [ref=e36]:
+            - link "Task state inspector (§1.2 · YOU-79) /operator/inspector" [ref=e37] [cursor=pointer]:
+              - /url: /operator/inspector
+              - generic [ref=e38]: Task state inspector (§1.2 · YOU-79)
+              - code [ref=e39]: /operator/inspector
+          - listitem [ref=e40]:
+            - link "Outreach review (§1.3 · YOU-80) /operator/outreach" [ref=e41] [cursor=pointer]:
+              - /url: /operator/outreach
+              - generic [ref=e42]: Outreach review (§1.3 · YOU-80)
+              - code [ref=e43]: /operator/outreach
+          - listitem [ref=e44]:
+            - link "Itinerary review (§1.4 · YOU-81) /operator/itinerary" [ref=e45] [cursor=pointer]:
+              - /url: /operator/itinerary
+              - generic [ref=e46]: Itinerary review (§1.4 · YOU-81)
+              - code [ref=e47]: /operator/itinerary
+          - listitem [ref=e48]:
+            - link "Action ledger (§1.5 · YOU-81/82) /operator/ledger" [ref=e49] [cursor=pointer]:
+              - /url: /operator/ledger
+              - generic [ref=e50]: Action ledger (§1.5 · YOU-81/82)
+              - code [ref=e51]: /operator/ledger
+          - listitem [ref=e52]:
+            - link "Telemetry / observability (§1.6 · YOU-82) /operator/telemetry" [ref=e53] [cursor=pointer]:
+              - /url: /operator/telemetry
+              - generic [ref=e54]: Telemetry / observability (§1.6 · YOU-82)
+              - code [ref=e55]: /operator/telemetry
+      - generic [ref=e56]:
+        - heading "State badges (all six task states + completed_external)" [level=2] [ref=e57]
+        - generic [ref=e58]:
+          - 'status "Task state: Draft" [ref=e59]': Draft
+          - 'status "Task state: Awaiting approval" [ref=e61]': Awaiting approval
+          - 'status "Task state: Executing" [ref=e63]': Executing
+          - 'status "Task state: Completed" [ref=e65]': Completed
+          - 'status "Task state: Completed (external)" [ref=e67]': Completed (external)
+          - 'status "Task state: Failed" [ref=e69]': Failed
+          - 'status "Task state: Needs input" [ref=e71]': Needs input
+      - generic [ref=e73]:
+        - heading "Countdown chip (YOU-74 §3.3)" [level=2] [ref=e74]
+        - generic [ref=e75]:
+          - timer [ref=e76]:
+            - generic [ref=e77]: ⏱
+            - text: 3:27
+          - status "Approval expired; re-mint required" [ref=e236]:
+            - generic [ref=e79]: ⏱
+            - text: Re-mint required
+          - status "Approval expired; re-mint required" [ref=e80]:
+            - generic [ref=e81]: ⏱
+            - text: Re-mint required
+          - generic [ref=e82]: — no approval
+      - generic [ref=e83]:
+        - heading "Correlation id copy chip" [level=2] [ref=e84]
+        - generic [ref=e85]:
+          - button "Copy correlation_id CAL-01-2026-05-03-rt001" [ref=e86]:
+            - generic [ref=e87]: correlation_id
+            - code [ref=e88]: CAL-01-2026-05-03-rt001
+            - generic [ref=e89]: ⧉
+          - button "Copy trace_id MSG-05-2026-05-03-rt001-very-long-tail-to-truncate" [ref=e90]:
+            - generic [ref=e91]: trace_id
+            - code [ref=e92]: MSG-05-2026-05-03-rt001-ver…
+            - generic [ref=e93]: ⧉
+      - generic [ref=e94]:
+        - heading "Error banner — every YOU-13 category (§4.1)" [level=2] [ref=e95]
+        - generic [ref=e96]:
+          - alert [ref=e97]:
+            - generic [ref=e99]:
+              - generic [ref=e100]:
+                - generic [ref=e101]: Needs input
+                - generic [ref=e102]: ·
+                - code [ref=e103]: input_ambiguous
+              - paragraph [ref=e104]: Pick one of the alternates or extend the search window.
+              - button "Copy correlation_id CAL-02-2026-05-03-rt001" [ref=e106]:
+                - generic [ref=e107]: correlation_id
+                - code [ref=e108]: CAL-02-2026-05-03-rt001
+                - generic [ref=e109]: ⧉
+          - alert [ref=e110]:
+            - generic [ref=e112]:
+              - generic [ref=e113]:
+                - generic [ref=e114]: Policy
+                - generic [ref=e115]: ·
+                - code [ref=e116]: approval_expired
+                - generic [ref=e117]: retryable
+              - paragraph [ref=e118]: Approval window expired. Re-review and re-mint.
+              - button "Copy correlation_id CAL-04-2026-05-03-rt001" [ref=e120]:
+                - generic [ref=e121]: correlation_id
+                - code [ref=e122]: CAL-04-2026-05-03-rt001
+                - generic [ref=e123]: ⧉
+          - alert [ref=e124]:
+            - generic [ref=e126]:
+              - generic [ref=e127]:
+                - generic [ref=e128]: Provider
+                - generic [ref=e129]: ·
+                - code [ref=e130]: calendar_provider_unavailable
+                - generic [ref=e131]: retryable
+              - paragraph [ref=e132]: Calendar provider is temporarily unavailable. Retrying.
+              - button "Copy correlation_id CAL-06-2026-05-03-rt001" [ref=e134]:
+                - generic [ref=e135]: correlation_id
+                - code [ref=e136]: CAL-06-2026-05-03-rt001
+                - generic [ref=e137]: ⧉
+          - alert [ref=e138]:
+            - generic [ref=e140]:
+              - generic [ref=e141]:
+                - generic [ref=e142]: Auth
+                - generic [ref=e143]: ·
+                - code [ref=e144]: auth_token_invalid
+              - paragraph [ref=e145]: Provider credential failed; on-call paged.
+              - button "Copy correlation_id MSG-05-2026-05-03-rt001" [ref=e147]:
+                - generic [ref=e148]: correlation_id
+                - code [ref=e149]: MSG-05-2026-05-03-rt001
+                - generic [ref=e150]: ⧉
+          - alert [ref=e151]:
+            - generic [ref=e153]:
+              - generic [ref=e154]:
+                - generic [ref=e155]: Idempotency conflict
+                - generic [ref=e156]: ·
+                - code [ref=e157]: idempotency_conflict
+              - paragraph [ref=e158]: Provider already has the requested state applied. Reconcile or re-plan.
+              - button "Copy correlation_id CAL-05-2026-05-03-rt001" [ref=e160]:
+                - generic [ref=e161]: correlation_id
+                - code [ref=e162]: CAL-05-2026-05-03-rt001
+                - generic [ref=e163]: ⧉
+      - generic [ref=e164]:
+        - heading "MarkdownView (sanitized — §7.1)" [level=2] [ref=e165]
+        - generic [ref=e166]:
+          - generic [ref=e167]:
+            - paragraph [ref=e168]: Hi Alex,
+            - paragraph [ref=e169]:
+              - text: Thanks for your patience. We'd like to
+              - strong [ref=e170]: reschedule the meeting to Tuesday at 14:00 CET
+              - text: .
+            - paragraph [ref=e171]: If that does not work, please share two alternates within the same week.
+            - paragraph [ref=e172]:
+              - text: Best,
+              - text: YOU concierge
+          - separator [ref=e173]
+          - paragraph [ref=e174]: "HTML-injection guard (script tag should render as text, never execute):"
+          - paragraph [ref=e176]:
+            - text: Inline alert(1) attempt and a
+            - link "link" [ref=e177] [cursor=pointer]:
+              - /url: https://example.test
+            - text: — the parser must escape, never evaluate.
+      - generic [ref=e178]:
+        - heading "IdempotentSubmitButton (§3.4 double-click safety)" [level=2] [ref=e179]
+        - generic [ref=e180]:
+          - button "Approve send" [ref=e182]:
+            - generic [ref=e183]: Approve send
+          - button "Reject task" [ref=e185]:
+            - generic [ref=e186]: Reject task
+          - button "Return to draft" [ref=e188]:
+            - generic [ref=e189]: Return to draft
+      - generic [ref=e190]:
+        - heading "Empty / loading states" [level=2] [ref=e191]
+        - generic [ref=e192]:
+          - generic [ref=e193]: ∅
+          - generic [ref=e194]:
+            - paragraph [ref=e195]: Queue is empty
+            - paragraph [ref=e196]: Real empty state, not placeholder text.
+        - status [ref=e197]:
+          - generic [ref=e199]: Loading from fixtures harness…
+      - generic [ref=e200]:
+        - heading "NPS prompt dev helpers (YOU-305)" [level=2] [ref=e201]
+        - paragraph [ref=e202]: These buttons manipulate localStorage to trigger NPS prompts without waiting real days. Reload the page after clicking.
+        - generic [ref=e203]:
+          - button "Reset NPS state" [ref=e204]
+          - button "Simulate Day 7" [ref=e205]
+          - button "Simulate Day 30" [ref=e206]
+  - alert [ref=e207]

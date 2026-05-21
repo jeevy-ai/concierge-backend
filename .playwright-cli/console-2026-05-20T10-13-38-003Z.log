@@ -1,0 +1,227 @@
+[    3065ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4174/dev/smoke:0
+[    3305ms] ModuleParseError: Module parse failed: Unexpected character '@' (1:0)
+File was processed with these loaders:
+ * ./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/next-flight-css-loader.js
+You may need an additional loader to handle the result of these loaders.
+> @import "tailwindcss";
+| 
+| @theme {
+    at <unknown> (File was processed with these loaders:)
+    at handleParseError (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:403799)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:405546)
+    at processResult (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:401241)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:402302)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:8727)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5565)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5650)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5879)
+    at runSyncOrAsync (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:4293)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5782)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5426)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:401777)
+    at eval (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:15:28858)
+    at Array.<anonymous> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/plugins/profiling-plugin.js:179:29)
+    at runCallbacks (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:3:167958)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:3:170085)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:3:268941)
+    at FSReqCallback.readFileAfterClose [as oncomplete] (node:internal/fs/read/context:68:3)
+[    3300ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme { @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[    3310ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4174/favicon.ico:0
+[   46056ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4174/dev/smoke:0
+[   46231ms] ModuleParseError: Module parse failed: Unexpected character '@' (1:0)
+File was processed with these loaders:
+ * ./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/next-flight-css-loader.js
+You may need an additional loader to handle the result of these loaders.
+> @import "tailwindcss";
+| 
+| @theme {
+    at <unknown> (File was processed with these loaders:)
+    at handleParseError (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:403799)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:405546)
+    at processResult (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:401241)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:402302)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:8727)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5565)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5650)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5879)
+    at runSyncOrAsync (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:4293)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5782)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5426)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:401777)
+    at eval (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:15:28858)
+    at Array.<anonymous> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/plugins/profiling-plugin.js:179:29)
+    at runCallbacks (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:3:167958)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:3:170085)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:3:268941)
+    at FSReqCallback.readFileAfterClose [as oncomplete] (node:internal/fs/read/context:68:3)
+[   46210ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme { @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[   60323ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4174/dev/smoke:0
+[   60404ms] ModuleParseError: Module parse failed: Unexpected character '@' (1:0)
+File was processed with these loaders:
+ * ./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/next-flight-css-loader.js
+You may need an additional loader to handle the result of these loaders.
+> @import "tailwindcss";
+| 
+| @theme {
+    at <unknown> (File was processed with these loaders:)
+    at handleParseError (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:403799)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:405546)
+    at processResult (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:401241)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:402302)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:8727)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5565)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5650)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5879)
+    at runSyncOrAsync (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:4293)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5782)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5426)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:401777)
+    at eval (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:15:28858)
+    at Array.<anonymous> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/plugins/profiling-plugin.js:179:29)
+    at runCallbacks (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:3:167958)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:3:170085)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:3:268941)
+    at FSReqCallback.readFileAfterClose [as oncomplete] (node:internal/fs/read/context:68:3)
+[   60403ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme { @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[  178704ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme {
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[  178711ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:4174/__nextjs_original-stack-frame?isServer=true&isEdgeServer=false&isAppDirectory=false&errorMessage=ModuleParseError%3A+Module+parse+failed%3A+Unexpected+character+%27%40%27+%281%3A0%29%0AFile+was+processed+with+these+loaders%3A%0A+*+.%2Fnode_modules%2F.pnpm%2Fnext%4014.2.18_react-dom%4018.3.1_react%4018.3.1__react%4018.3.1%2Fnode_modules%2Fnext%2Fdist%2Fbuild%2Fwebpack%2Floaders%2Fnext-flight-css-loader.js%0AYou+may+need+an+additional+loader+to+handle+the+result+of+these+loaders.%0A%3E+%40import+%22tailwindcss%22%3B%0A%7C+%0A%7C+%40theme+%7B&file=File+was+processed+with+these+loaders%3A&methodName=%3Cunknown%3E&arguments=&lineNumber=&column=:0
+[  178800ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:4174/__nextjs_original-stack-frame?isServer=true&isEdgeServer=false&isAppDirectory=false&errorMessage=ModuleParseError%3A+Module+parse+failed%3A+Unexpected+character+%27%40%27+%281%3A0%29%0AFile+was+processed+with+these+loaders%3A%0A+*+.%2Fnode_modules%2F.pnpm%2Fnext%4014.2.18_react-dom%4018.3.1_react%4018.3.1__react%4018.3.1%2Fnode_modules%2Fnext%2Fdist%2Fbuild%2Fwebpack%2Floaders%2Fnext-flight-css-loader.js%0AYou+may+need+an+additional+loader+to+handle+the+result+of+these+loaders.%0A%3E+%40import+%22tailwindcss%22%3B%0A%7C+%0A%7C+%40theme+%7B&file=File+was+processed+with+these+loaders%3A&methodName=%3Cunknown%3E&arguments=&lineNumber=&column=:0
+[  178835ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:4174/__nextjs_original-stack-frame?isServer=true&isEdgeServer=false&isAppDirectory=false&errorMessage=ModuleParseError%3A+Module+parse+failed%3A+Unexpected+character+%27%40%27+%281%3A0%29%0AFile+was+processed+with+these+loaders%3A%0A+*+.%2Fnode_modules%2F.pnpm%2Fnext%4014.2.18_react-dom%4018.3.1_react%4018.3.1__react%4018.3.1%2Fnode_modules%2Fnext%2Fdist%2Fbuild%2Fwebpack%2Floaders%2Fnext-flight-css-loader.js%0AYou+may+need+an+additional+loader+to+handle+the+result+of+these+loaders.%0A%3E+%40import+%22tailwindcss%22%3B%0A%7C+%0A%7C+%40theme+%7B&file=File+was+processed+with+these+loaders%3A&methodName=%3Cunknown%3E&arguments=&lineNumber=&column=:0
+[  178851ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:4174/__nextjs_original-stack-frame?isServer=true&isEdgeServer=false&isAppDirectory=false&errorMessage=ModuleParseError%3A+Module+parse+failed%3A+Unexpected+character+%27%40%27+%281%3A0%29%0AFile+was+processed+with+these+loaders%3A%0A+*+.%2Fnode_modules%2F.pnpm%2Fnext%4014.2.18_react-dom%4018.3.1_react%4018.3.1__react%4018.3.1%2Fnode_modules%2Fnext%2Fdist%2Fbuild%2Fwebpack%2Floaders%2Fnext-flight-css-loader.js%0AYou+may+need+an+additional+loader+to+handle+the+result+of+these+loaders.%0A%3E+%40import+%22tailwindcss%22%3B%0A%7C+%0A%7C+%40theme+%7B&file=File+was+processed+with+these+loaders%3A&methodName=%3Cunknown%3E&arguments=&lineNumber=&column=:0
+[  178903ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme {
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[  178951ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4174/_next/static/webpack/a98e3bed922d296c.webpack.hot-update.json:0
+[  178951ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:347
+[  178999ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4174/dev/smoke:0
+[  179084ms] ModuleParseError: Module parse failed: Unexpected character '@' (1:0)
+File was processed with these loaders:
+ * ./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/next-flight-css-loader.js
+You may need an additional loader to handle the result of these loaders.
+> @import "tailwindcss";
+| 
+| @theme {
+    at <unknown> (File was processed with these loaders:)
+    at handleParseError (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:403799)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:405546)
+    at processResult (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:401241)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:402302)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:8727)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5565)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5650)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5879)
+    at runSyncOrAsync (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:4293)
+    at iterateNormalLoaders (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5782)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js:1:5426)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:30:401777)
+    at eval (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:15:28858)
+    at <unknown> (file:///Users/noahlaux/.paperclip/instances/default/projects/0948f174-5724-469d-8142-63f05fd68854/0a13d3aa-1235-4ae0-84e9-a8448709ed31/_default/operator-ui/node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/plugins/profiling-plugin.js:179:29)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21)
+    at runNextTicks (node:internal/process/task_queues:69:3)
+    at process.processImmediate (node:internal/timers:453:9)
+[  179084ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme { @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[  184164ms] [ERROR] WebSocket connection to 'ws://localhost:4174/_next/webpack-hmr' failed:  @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/websocket.js:63
+[  185168ms] [ERROR] WebSocket connection to 'ws://localhost:4174/_next/webpack-hmr' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/websocket.js:63
+[  187059ms] [WARNING] [HMR] Invalid message: [object Object]
+Error: Unexpected action isrManifest
+    at eval (webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/dev/hot-middleware-client.js:67:27)
+    at processMessage (webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:304:21)
+    at eval (webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:67:13)
+    at WebSocket.handleMessage (webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/websocket.js:45:17) @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:69
+[  187072ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4174/_next/static/webpack/a98e3bed922d296c.webpack.hot-update.json:0
+[  187072ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:349
+[  188333ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme {
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[  188964ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4174/_next/static/webpack/a98e3bed922d296c.webpack.hot-update.json:0
+[  188964ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:349
+[  189023ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4174/_next/static/webpack/a98e3bed922d296c.webpack.hot-update.json:0
+[  189023ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:349
+[  189099ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme {
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[  189163ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme {
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[  193796ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4174/_next/static/webpack/a98e3bed922d296c.webpack.hot-update.json:0
+[  193796ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:349
+[  194885ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4174/_next/static/webpack/a98e3bed922d296c.webpack.hot-update.json:0
+[  194885ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:349
+[  195819ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme {
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[  195838ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4174/_next/static/webpack/a98e3bed922d296c.webpack.hot-update.json:0
+[  195838ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:349
+[  195908ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4174/_next/static/webpack/a98e3bed922d296c.webpack.hot-update.json:0
+[  195908ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:349
+[  195977ms] [ERROR] ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import "tailwindcss";
+| 
+| @theme {
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx @ webpack-internal:///./node_modules/.pnpm/next@14.2.18_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[  196472ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4174/dev/smoke:0

@@ -1,0 +1,15 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - navigation [ref=e3]:
+      - link "← surfaces" [ref=e4] [cursor=pointer]:
+        - /url: /
+    - generic [ref=e6]:
+      - paragraph [ref=e7]: §1.2 · §2.2 · YOU-79
+      - heading "Task state inspector" [level=1] [ref=e8]
+      - paragraph [ref=e9]: "Per-task detail surface. Renders state, history, current step, and latest error envelope. Live SSE updates land via streams/tasks/{task_id}."
+    - generic [ref=e11]:
+      - generic [ref=e12]: ∅
+      - generic [ref=e13]:
+        - paragraph [ref=e14]: No task selected
+        - paragraph [ref=e15]: Open a task from the approval queue, or append ?task_id=<id> to this URL. Try task_id=you31-task-cal-01 against the fixtures harness.
+  - alert [ref=e16]

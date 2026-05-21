@@ -2,30 +2,42 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { observeSection, track, trackPageView } from "./lib/analytics";
+import { track, AnalyticsEventName } from "@jeevy/analytics/web";
 
 const PRICE_MONTHLY = 29;
 const PRICE_ANNUAL = 249;
 
+function observePricingSection(): void {
+  if (typeof window === "undefined") return;
+  const el = document.querySelector("#pricing");
+  if (!el) return;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          track(AnalyticsEventName.LANDING_PRICING_VIEWED, {});
+          observer.disconnect();
+        }
+      }
+    },
+    { threshold: 0.5 },
+  );
+  observer.observe(el);
+}
+
 export default function HomePage() {
   useEffect(() => {
-    trackPageView();
-    observeSection("[data-analytics='video_section']", "founder_video_viewed", {
-      section: "founder_video",
+    if (typeof window === "undefined") return;
+
+    // Track page view
+    const params = new URLSearchParams(window.location.search);
+    track(AnalyticsEventName.LANDING_PAGE_VIEWED, {
+      page: "home",
+      referrer: document.referrer || undefined,
     });
-    observeSection("#pricing", "pricing_section_viewed", { section: "pricing" });
-    observeSection(
-      "[data-analytics='social_proof_section']",
-      "social_proof_viewed",
-      { section: "social_proof" },
-      0.25,
-    );
-    observeSection(
-      "[data-analytics='final_cta_section']",
-      "final_cta_viewed",
-      { section: "final_cta" },
-      0.25,
-    );
+
+    // Track pricing section view
+    observePricingSection();
   }, []);
 
   return (
@@ -47,7 +59,13 @@ export default function HomePage() {
           </p>
           <Link
             href="/apply"
-            onClick={() => track("hero_cta_engaged", { position: "hero" })}
+            onClick={() =>
+              track(AnalyticsEventName.LANDING_CTA_CLICKED, {
+                cta_id: "hero_primary",
+                location: "hero",
+                destination: "/apply",
+              })
+            }
             className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-4 text-lg font-semibold text-white shadow-lg hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-xl transition-all duration-150"
           >
             Get early access →
@@ -72,7 +90,13 @@ export default function HomePage() {
               src="https://www.loom.com/embed/PLACEHOLDER_LOOM_ID?hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true"
               className="absolute inset-0 w-full h-full rounded-xl border border-white/10"
               allowFullScreen
-              onLoad={() => track("founder_video_play_clicked", { video: "founder_intro" })}
+              onLoad={() =>
+                track(AnalyticsEventName.LANDING_CTA_CLICKED, {
+                  cta_id: "founder_video",
+                  location: "video_section",
+                  destination: "https://www.loom.com",
+                })
+              }
             />
           </div>
         </div>
@@ -81,7 +105,17 @@ export default function HomePage() {
         </p>
         <p className="mt-2 text-sm text-indigo-300">
           → Recording in progress.{" "}
-          <Link href="/apply" className="underline hover:text-white transition-colors">
+          <Link
+            href="/apply"
+            onClick={() =>
+              track(AnalyticsEventName.LANDING_CTA_CLICKED, {
+                cta_id: "video_waitlist",
+                location: "video_section",
+                destination: "/apply",
+              })
+            }
+            className="underline hover:text-white transition-colors"
+          >
             Join the waitlist
           </Link>{" "}
           to get notified when we launch.
@@ -136,7 +170,13 @@ export default function HomePage() {
             </ul>
             <Link
               href="/apply"
-              onClick={() => track("nav_cta_clicked", { position: "pricing_founder" })}
+              onClick={() =>
+                track(AnalyticsEventName.LANDING_CTA_CLICKED, {
+                  cta_id: "pricing_founder_plan",
+                  location: "pricing_card_founder",
+                  destination: "/apply",
+                })
+              }
               className="w-full text-center rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-700 transition-colors"
             >
               Get early access →
@@ -155,7 +195,13 @@ export default function HomePage() {
             <p className="text-gray-500 mb-6 flex-1">Full-price access once we open to everyone.</p>
             <Link
               href="/apply"
-              onClick={() => track("nav_cta_clicked", { position: "pricing_standard" })}
+              onClick={() =>
+                track(AnalyticsEventName.LANDING_CTA_CLICKED, {
+                  cta_id: "pricing_standard_plan",
+                  location: "pricing_card_standard",
+                  destination: "/apply",
+                })
+              }
               className="w-full text-center rounded-xl border border-gray-300 px-6 py-3 font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
               Join the waitlist
@@ -237,7 +283,13 @@ export default function HomePage() {
         </p>
         <Link
           href="/apply"
-          onClick={() => track("nav_cta_clicked", { position: "final_cta" })}
+          onClick={() =>
+            track(AnalyticsEventName.LANDING_CTA_CLICKED, {
+              cta_id: "final_cta",
+              location: "final_cta_section",
+              destination: "/apply",
+            })
+          }
           className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-10 py-4 text-lg font-semibold text-white shadow-lg hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-xl transition-all duration-150"
         >
           Get early access →

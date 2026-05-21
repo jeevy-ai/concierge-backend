@@ -1,0 +1,46 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - paragraph [ref=e4]: YOU operator console
+      - heading "Operator surfaces" [level=1] [ref=e5]
+      - paragraph [ref=e6]:
+        - text: Foundation scaffold for the YOU-15 operator-UI family. Endpoints and stream shapes follow the YOU-74 integration contract; data is served from the recorded-fixtures harness on
+        - code [ref=e7]: localhost:3201
+        - text: .
+    - list [ref=e8]:
+      - listitem [ref=e9]:
+        - link "Approval queue §1.1" [ref=e10] [cursor=pointer]:
+          - /url: /operator/queue
+          - generic [ref=e11]: Approval queue
+          - generic [ref=e12]: §1.1
+      - listitem [ref=e13]:
+        - link "Task state inspector §1.2" [ref=e14] [cursor=pointer]:
+          - /url: /operator/inspector
+          - generic [ref=e15]: Task state inspector
+          - generic [ref=e16]: §1.2
+      - listitem [ref=e17]:
+        - link "Outreach review §1.3" [ref=e18] [cursor=pointer]:
+          - /url: /operator/outreach
+          - generic [ref=e19]: Outreach review
+          - generic [ref=e20]: §1.3
+      - listitem [ref=e21]:
+        - link "Itinerary review §1.4" [ref=e22] [cursor=pointer]:
+          - /url: /operator/itinerary
+          - generic [ref=e23]: Itinerary review
+          - generic [ref=e24]: §1.4
+      - listitem [ref=e25]:
+        - link "Action ledger §1.5" [ref=e26] [cursor=pointer]:
+          - /url: /operator/ledger
+          - generic [ref=e27]: Action ledger
+          - generic [ref=e28]: §1.5
+      - listitem [ref=e29]:
+        - link "Telemetry / observability §1.6" [ref=e30] [cursor=pointer]:
+          - /url: /operator/telemetry
+          - generic [ref=e31]: Telemetry / observability
+          - generic [ref=e32]: §1.6
+      - listitem [ref=e33]:
+        - 'link "Dev: smoke route (every surface in its empty state) /dev/smoke" [ref=e34] [cursor=pointer]':
+          - /url: /dev/smoke
+          - generic [ref=e35]: "Dev: smoke route (every surface in its empty state)"
+          - generic [ref=e36]: /dev/smoke
+  - alert [ref=e37]

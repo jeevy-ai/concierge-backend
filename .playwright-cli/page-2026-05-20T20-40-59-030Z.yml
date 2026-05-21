@@ -1,0 +1,93 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "LinkedIn" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic "LinkedIn" [ref=e5]:
+        - img [ref=e6]
+  - main [ref=e8]:
+    - alert:
+      - generic [ref=e10]:
+        - img [ref=e13]
+        - generic [ref=e15]:
+          - generic [ref=e17]:
+            - paragraph [ref=e18]:
+              - text: LinkedIn and 3rd parties use essential and non-essential cookies to provide, secure, analyze and improve our Services, and to show you relevant ads (including professional and job ads) on and off LinkedIn. Learn more in our
+              - link [ref=e19] [cursor=pointer]:
+                - /url: https://www.linkedin.com/legal/cookie-policy
+                - text: Cookie Policy
+              - text: .
+            - paragraph [ref=e20]:
+              - text: Select Accept to consent or Reject to decline non-essential cookies for this use. You can update your choices at any time in your
+              - link [ref=e21] [cursor=pointer]:
+                - /url: https://www.linkedin.com/mypreferences/g/guest-cookies
+                - text: settings
+              - text: .
+          - generic [ref=e22]:
+            - button [ref=e23] [cursor=pointer]: Accept
+            - button [ref=e24] [cursor=pointer]: Reject
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - heading "Sign in" [level=1] [ref=e28]
+        - paragraph
+      - generic [ref=e29]:
+        - paragraph [ref=e30]:
+          - text: By clicking Continue, you agree to LinkedIn’s
+          - link "User Agreement" [ref=e31] [cursor=pointer]:
+            - /url: /legal/user-agreement
+          - text: ","
+          - link "Privacy Policy" [ref=e32] [cursor=pointer]:
+            - /url: /legal/privacy-policy
+          - text: ", and"
+          - link "Cookie Policy" [ref=e33] [cursor=pointer]:
+            - /url: /legal/cookie-policy
+          - text: .
+        - generic [ref=e35]: or
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - textbox "Email or phone" [active] [ref=e38]:
+            - /placeholder: " "
+          - generic [ref=e39]: Email or phone
+        - generic [ref=e40]:
+          - textbox "Password" [ref=e41]
+          - generic [ref=e42]: Password
+          - button "Show" [ref=e43] [cursor=pointer]
+        - link "Forgot password?" [ref=e44] [cursor=pointer]:
+          - /url: /checkpoint/rp/request-password-reset?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Ffeed%2F
+        - generic [ref=e45]:
+          - checkbox "Keep me logged in" [checked]
+          - generic [ref=e46]: Keep me logged in
+        - button "Sign in" [ref=e48] [cursor=pointer]
+    - generic [ref=e49]:
+      - text: New to LinkedIn?
+      - link "Join now" [ref=e50] [cursor=pointer]:
+        - /url: /signup/cold-join?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Ffeed%2F
+  - contentinfo [ref=e51]:
+    - generic [ref=e52]:
+      - paragraph [ref=e53]:
+        - img [ref=e55]
+        - emphasis [ref=e67]:
+          - generic: LinkedIn
+          - text: © 2026
+      - list "Footer Legal Menu" [ref=e69]:
+        - listitem [ref=e70]:
+          - link "User Agreement" [ref=e71] [cursor=pointer]:
+            - /url: /legal/user-agreement?trk=d_checkpoint_lg_consumer_login_ft_user_agreement
+        - listitem [ref=e72]:
+          - link "Privacy Policy" [ref=e73] [cursor=pointer]:
+            - /url: /legal/privacy-policy?trk=d_checkpoint_lg_consumer_login_ft_privacy_policy
+        - listitem [ref=e74]:
+          - link "Community Guidelines" [ref=e75] [cursor=pointer]:
+            - /url: /help/linkedin/answer/34593?lang=en&trk=d_checkpoint_lg_consumer_login_ft_community_guidelines
+        - listitem [ref=e76]:
+          - link "Cookie Policy" [ref=e77] [cursor=pointer]:
+            - /url: /legal/cookie-policy?trk=d_checkpoint_lg_consumer_login_ft_cookie_policy
+        - listitem [ref=e78]:
+          - link "Copyright Policy" [ref=e79] [cursor=pointer]:
+            - /url: /legal/copyright-policy?trk=d_checkpoint_lg_consumer_login_ft_copyright_policy
+        - listitem [ref=e80]:
+          - link "Send Feedback" [ref=e81] [cursor=pointer]:
+            - /url: /help/linkedin?trk=d_checkpoint_lg_consumer_login_ft_send_feedback&lang=en
+        - listitem [ref=e82]:
+          - button "Language" [ref=e84] [cursor=pointer]:
+            - text: Language
+            - img [ref=e86]

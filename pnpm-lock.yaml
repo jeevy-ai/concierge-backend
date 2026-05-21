@@ -17,6 +17,12 @@ importers:
 
   apps/landing:
     dependencies:
+      '@jeevy/analytics':
+        specifier: workspace:*
+        version: link:../../packages/analytics
+      '@jeevy/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       next:
         specifier: ^15.0.0
         version: 15.5.18(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

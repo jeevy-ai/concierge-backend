@@ -1,0 +1,12 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - navigation [ref=e3]:
+      - link "← surfaces" [ref=e4] [cursor=pointer]:
+        - /url: /
+    - generic [ref=e6]:
+      - paragraph [ref=e7]: §1.1 · §2.1 · YOU-78
+      - heading "Approval queue" [level=1] [ref=e8]
+      - paragraph [ref=e9]: Cross-workflow triage list of every task currently in awaiting_approval or needs_input. Polling fallback every 15s; SSE live updates wire up in YOU-78.
+    - status [ref=e11]:
+      - generic [ref=e13]: Loading queue from fixtures harness…
+  - alert [ref=e14]

@@ -1,0 +1,36 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img "Logo" [ref=e7]
+        - heading "Welcome back to Plain" [level=1] [ref=e8]
+      - generic [ref=e9]:
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - generic [ref=e13]:
+              - generic [ref=e15]: Email
+              - textbox "Email" [active] [ref=e17]:
+                - /placeholder: Your email address
+            - button "Continue with SSO" [ref=e18] [cursor=pointer]:
+              - generic [ref=e19]: Continue with SSO
+          - generic [ref=e20]: OR
+          - generic [ref=e21]:
+            - link "Continue with Google" [ref=e23] [cursor=pointer]:
+              - /url: api/login?provider=GoogleOAuth&state=%7B%22redirectPath%22%3A%22https%3A%2F%2Fapp.plain.com%2Fworkspaces%2F%3FredirectToLastWorkspace%3Dtrue%22%7D&redirect_uri=https%3A%2F%2Fapp.plain.com%2Fcallback%2F&client_id=client_01K9B6ZF7DN8TG461WE35SFM6R&source=signin&authorization_session_id=01KS49C9047V2P6A9Q4CQQG77Q
+              - img [ref=e24]
+              - generic [ref=e30]: Continue with Google
+            - link "Continue with Microsoft" [ref=e32] [cursor=pointer]:
+              - /url: api/login?provider=MicrosoftOAuth&state=%7B%22redirectPath%22%3A%22https%3A%2F%2Fapp.plain.com%2Fworkspaces%2F%3FredirectToLastWorkspace%3Dtrue%22%7D&redirect_uri=https%3A%2F%2Fapp.plain.com%2Fcallback%2F&client_id=client_01K9B6ZF7DN8TG461WE35SFM6R&source=signin&authorization_session_id=01KS49C9047V2P6A9Q4CQQG77Q
+              - img [ref=e33]
+              - generic [ref=e39]: Continue with Microsoft
+        - paragraph [ref=e40]:
+          - text: Don't have an account?
+          - link "Sign up" [ref=e41] [cursor=pointer]:
+            - /url: /sign-up?state=%7B%22redirectPath%22%3A%22https%3A%2F%2Fapp.plain.com%2Fworkspaces%2F%3FredirectToLastWorkspace%3Dtrue%22%7D&redirect_uri=https%3A%2F%2Fapp.plain.com%2Fcallback%2F&authorization_session_id=01KS49C9047V2P6A9Q4CQQG77Q
+    - generic [ref=e42]:
+      - link "Terms of Service" [ref=e43] [cursor=pointer]:
+        - /url: https://www.plain.com/legal/terms-and-conditions
+      - text: and
+      - link "Privacy Policy" [ref=e44] [cursor=pointer]:
+        - /url: https://www.plain.com/legal/privacy-policy
+  - alert [ref=e45]

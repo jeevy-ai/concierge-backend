@@ -1,0 +1,18 @@
+{
+  "runtime": "edge",
+  "name": "dev/smoke",
+  "deploymentTarget": "v8-worker",
+  "entrypoint": "index.js",
+  "assets": [],
+  "framework": {
+    "slug": "nextjs",
+    "version": "15.4.11"
+  },
+  "environment": {
+    "__NEXT_BUILD_ID": "bpql2Sy8c7EN7nj8EeHJ2",
+    "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "j7Z/+Lho00jmUpLhC4IqnVsWGAcxgCTaBzEEo87a91g=",
+    "__NEXT_PREVIEW_MODE_ID": "86f2772495449a5e3d1e90835876aff4",
+    "__NEXT_PREVIEW_MODE_SIGNING_KEY": "bac4e6f6644604aee6cfdb9a5998c81e0fde47d470b10643a4cd6c306f83e191",
+    "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "b99a2f0c2f446c983f20240204e1d5840fda5cd70f17afff13c8bb28f5144831"
+  }
+}
