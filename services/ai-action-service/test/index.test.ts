@@ -292,3 +292,46 @@ describe("outline_doc deterministic fallback — YOU-515", () => {
     expect(headings).toContain("Engineering");
   });
 });
+
+describe("bullet_slides deterministic fallback — YOU-517 regression", () => {
+  it("single tab: no placeholder bullets, only title-derived bullets", async () => {
+    const body = {
+      userId: "user_slides_1",
+      actionId: "bullet_slides",
+      tabs: [{ tabId: 1, title: "Slides - Q2 Kickoff Deck", url: "https://docs.google.com/presentation/1", domain: "docs.google.com" }],
+    };
+    const res = await app.request(
+      "/v1/ai/action",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+      BASE_ENV,
+    );
+
+    expect(res.status).toBe(200);
+    const envelope = (await res.json()) as { result: { payload: { clusters: { bullets: string[] }[] } } };
+    const allBullets = envelope.result.payload.clusters.flatMap((c) => c.bullets);
+    expect(allBullets.length).toBeGreaterThanOrEqual(1);
+    expect(allBullets.every((b) => b !== "Open question — fill in before sharing.")).toBe(true);
+    expect(allBullets.some((b) => /q2 kickoff deck/i.test(b))).toBe(true);
+  });
+
+  it("multi-tab same domain: all bullets title-derived, no placeholders", async () => {
+    const body = {
+      userId: "user_slides_2",
+      actionId: "bullet_slides",
+      tabs: [
+        { tabId: 1, title: "Q2 Kickoff Deck", url: "https://slides.google.com/1", domain: "slides.google.com" },
+        { tabId: 2, title: "Q3 Roadmap", url: "https://slides.google.com/2", domain: "slides.google.com" },
+      ],
+    };
+    const res = await app.request(
+      "/v1/ai/action",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+      BASE_ENV,
+    );
+
+    expect(res.status).toBe(200);
+    const envelope = (await res.json()) as { result: { payload: { clusters: { bullets: string[] }[] } } };
+    const allBullets = envelope.result.payload.clusters.flatMap((c) => c.bullets);
+    expect(allBullets.every((b) => b !== "Open question — fill in before sharing.")).toBe(true);
+  });
+});

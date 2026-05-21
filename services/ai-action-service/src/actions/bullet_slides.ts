@@ -17,15 +17,32 @@ type ValidatedSlides = ValidatedBase & {
 };
 
 const SYSTEM_PROMPT = [
-  "You are the slide-bullets action for the Zenbrain ⌘K command palette.",
-  "Convert the user's open tabs into clusters of 5-7 short bullets, ready to paste into a slide deck.",
+  "You are the slide-bullets action for the Zenbrain \u2318K command palette.",
+  "Convert the user's open tabs into clusters of short bullets, ready to paste into a slide deck.",
   "Reply ONLY with JSON matching this schema:",
   '{"clusters":[{"clusterId":string,"title":string,"bullets":string[]}],"copyAll":string,"confidence":number,"warnings":string[]}',
-  "1..4 clusters; each title <= 60 chars; bullets is 5..7 entries; each bullet <= 120 chars and a single line.",
+  "1..4 clusters; each title <= 60 chars; bullets is 1..7 entries; each bullet <= 120 chars and a single line.",
+  "Derive bullets from actual tab content \u2014 never emit placeholder text.",
   "Bullets are punchy, scannable, and avoid full sentences. No emoji.",
-  "copyAll: the full slide deck as plain text — one cluster per block, blank lines between blocks, bullets prefixed with '- '.",
+  "copyAll: the full slide deck as plain text \u2014 one cluster per block, blank lines between blocks, bullets prefixed with '- '.",
   "confidence: 0..1; warnings: short strings flagging gaps the user should verify.",
 ].join("\n");
+
+function titleToBullets(title: string, domain: string, url: string): string[] {
+  const text = (title || domain || url).trim();
+  if (!text) return [];
+  const parts = text
+    .split(/\s*[|\u2014\xb7\/]\s*|\s+-\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (parts.length >= 2) return parts.map((p) => truncate(p, 120));
+  const words = text.split(/\s+/);
+  if (words.length >= 6) {
+    const mid = Math.ceil(words.length / 2);
+    return [truncate(words.slice(0, mid).join(" "), 120), truncate(words.slice(mid).join(" "), 120)];
+  }
+  return [truncate(text, 120)];
+}
 
 function deterministic(tabs: MinimizedTab[]): ValidatedSlides {
   const grouped = new Map<string, MinimizedTab[]>();
@@ -38,11 +55,14 @@ function deterministic(tabs: MinimizedTab[]): ValidatedSlides {
   let i = 0;
   for (const [label, list] of grouped.entries()) {
     i += 1;
-    const bullets = list.slice(0, 7).map((t) => truncate(t.title || t.domain || t.url, 120));
-    while (bullets.length < 5) {
-      bullets.push("Open question — fill in before sharing.");
+    const bullets: string[] = [];
+    for (const t of list.slice(0, 7)) {
+      for (const b of titleToBullets(t.title, t.domain ?? "", t.url)) {
+        if (bullets.length < 7) bullets.push(b);
+      }
     }
-    clusters.push({ clusterId: `cls_${i}`, title: truncate(label, 60), bullets: bullets.slice(0, 7) });
+    if (bullets.length === 0) continue;
+    clusters.push({ clusterId: `cls_${i}`, title: truncate(label, 60), bullets });
     if (clusters.length >= 4) break;
   }
   const copyAll = clusters
@@ -62,7 +82,7 @@ function validate(raw: unknown): ValidatedSlides | null {
     if (!isNonEmptyString(cluster["clusterId"], 80)) return null;
     if (!isNonEmptyString(cluster["title"], 200)) return null;
     const bullets = cluster["bullets"];
-    if (!Array.isArray(bullets) || bullets.length < 5 || bullets.length > 7) return null;
+    if (!Array.isArray(bullets) || bullets.length < 1 || bullets.length > 7) return null;
     if (!(bullets as unknown[]).every((b) => isNonEmptyString(b, 200))) return null;
   }
   if (!isNonEmptyString(r["copyAll"], 4000)) return null;
