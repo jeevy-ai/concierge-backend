@@ -277,6 +277,7 @@
     .badge-source-det { background: var(--badge-det); color: #2b6cb0; }
     .badge-confidence { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
     .badge-low-conf { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn); }
+    .badge-verify { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn); }
 
     .result-body { padding: 18px; }
 
@@ -390,6 +391,28 @@
     .meta-row { display: flex; gap: 12px; font-size: 11px; color: var(--text3); flex-wrap: wrap; }
     .meta-row span { display: flex; align-items: center; gap: 4px; }
     .request-id { font-family: monospace; font-size: 10px; color: var(--text3); margin-top: 8px; }
+
+    /* ── Clarifying-question panel ── */
+    .clarify-panel {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: 6px;
+      padding: 14px;
+      margin-top: 14px;
+    }
+    .clarify-question { font-size: 13px; color: var(--warn); font-weight: 600; margin-bottom: 10px; }
+    .clarify-input-row { display: flex; gap: 8px; align-items: flex-start; }
+    .clarify-input {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid var(--warn-border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .clarify-input:focus { outline: none; border-color: var(--warn); box-shadow: 0 0 0 3px rgba(183,121,31,0.12); }
 
     @media (max-width: 900px) {
       .layout { grid-template-columns: 1fr; }
@@ -681,6 +704,8 @@
 // ── State ──
 let activeSection = 'concierge';
 const actionTabs = [];
+let lastConciergeVerb = '';
+let lastConciergeText = '';
 const conciergeDemos = {
   book_reservation: {
     text: 'Book a table for 2 at La Cicchetteria tomorrow at 7pm'
@@ -902,7 +927,11 @@ async function sendConcierge() {
       break;
   }
 
+  lastConciergeVerb = verb;
+  lastConciergeText = text;
   const payload = { userId, verbId: verb, text };
+  showLoading('Running ' + verb + '…');
+  setSendDisabled(true);
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -913,10 +942,64 @@ async function sendConcierge() {
       body: JSON.stringify(payload)
     });
     const data = await response.json();
-    showConciergeResult(verb, data);
+    setSendDisabled(false);
+    if (!response.ok || data.error) {
+      showErrorResponse(data);
+    } else {
+      showConciergeResult(verb, data);
+    }
   } catch (err) {
+    setSendDisabled(false);
     showError('Request failed: ' + err.message);
   }
+}
+
+// ── Verb response processing (§3 mapping + §4 confidence rules) ──
+
+function shouldAskClarification(data) {
+  return !data.isConfident || data.confidence < 0.7;
+}
+
+function verbVerifyBadge(data) {
+  if (data.isConfident === false) {
+    return '<span class="badge badge-verify">⚠ Verify</span>';
+  }
+  return '';
+}
+
+const CLARIFY_QUESTIONS = {
+  book_reservation: "I'm not certain of the best option here — can you clarify your preferences (e.g. departure time, hotel chain)?",
+  remind_me:        "I'm not fully certain about this reminder — could you clarify the timing or recipient?",
+  plan_my_day:      "I'm not fully certain about the best plan — could you share any additional constraints or priorities?",
+  errand_request:   "I'm not certain about all the details — could you clarify any specifics about this errand?"
+};
+
+function clarifyingQuestionPanel(verb, data) {
+  // S5/S6 (schedule_meeting) use badge only — no clarifying question
+  if (!shouldAskClarification(data) || verb === 'schedule_meeting') return '';
+  const q = CLARIFY_QUESTIONS[verb] || "I'm not fully confident in this result — could you clarify your request?";
+  return `<div class="clarify-panel">
+    <div class="clarify-question">⚠ ${esc(q)}</div>
+    <div class="clarify-input-row">
+      <input class="clarify-input" type="text" id="clarifyAnswer" placeholder="Your clarification…"
+        onkeydown="if(event.key==='Enter')submitClarification('${verb}')">
+      <button class="btn btn-ghost" style="flex-shrink:0" onclick="submitClarification('${verb}')">Re-run</button>
+    </div>
+  </div>`;
+}
+
+async function submitClarification(verb) {
+  const answer = document.getElementById('clarifyAnswer')?.value?.trim();
+  if (!answer) return;
+  const augmented = lastConciergeText + '. Additional context: ' + answer;
+  switch (verb) {
+    case 'book_reservation':  document.getElementById('conciergeReservationText').value = augmented; break;
+    case 'schedule_meeting':  document.getElementById('conciergeMeetingRequest').value  = augmented; break;
+    case 'plan_my_day':       document.getElementById('conciergeDayPlanText').value     = augmented; break;
+    case 'remind_me':         document.getElementById('conciergeReminderSubject').value = augmented; break;
+    case 'errand_request':    document.getElementById('conciergeErrandText').value      = augmented; break;
+  }
+  await sendConcierge();
 }
 
 function showConciergeResult(verb, data) {
@@ -937,10 +1020,12 @@ function showConciergeResult(verb, data) {
       <div class="result-header">
         <span class="result-title">${esc(verb)}</span>
         ${resultMeta(data)}
+        ${verbVerifyBadge(data)}
       </div>
       <div class="result-body">
         ${warningsBanner(data)}
         ${content}
+        ${clarifyingQuestionPanel(verb, data)}
         ${metaRow(data)}
       </div>
     </div>
