@@ -1,8 +1,8 @@
 import {
   type ActionDef,
   type MinimizedTab,
-  type ValidatedBase,
   TEXT_LIMITS,
+  type ValidatedBase,
   buildUserMessage,
   clampConfidence,
   isNonEmptyString,
@@ -36,7 +36,9 @@ function deterministic(tabs: MinimizedTab[], contextHint?: string): ValidatedBri
     title: truncate(t.title || t.domain || t.url, 140),
     url: t.url,
     summary: truncate(
-      t.title ? `"${t.title}" — from ${t.domain || "the web"}.` : `Source from ${t.domain || "the web"}.`,
+      t.title
+        ? `"${t.title}" — from ${t.domain || "the web"}.`
+        : `Source from ${t.domain || "the web"}.`,
       240,
     ),
   }));
@@ -76,32 +78,35 @@ function deterministic(tabs: MinimizedTab[], contextHint?: string): ValidatedBri
 function validate(raw: unknown): ValidatedBrief | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (!isNonEmptyString(r["title"], 200)) return null;
-  if (!isNonEmptyString(r["overview"], 1200)) return null;
-  const sources = r["sources"];
+  if (!isNonEmptyString(r.title, 200)) return null;
+  if (!isNonEmptyString(r.overview, 1200)) return null;
+  const sources = r.sources;
   if (!Array.isArray(sources) || sources.length < 1 || sources.length > 10) return null;
   for (const s of sources as unknown[]) {
     if (!s || typeof s !== "object") return null;
     const src = s as Record<string, unknown>;
-    if (!isNonEmptyString(src["title"], 200)) return null;
-    if (typeof src["url"] !== "string") return null;
-    if (!isNonEmptyString(src["summary"], 400)) return null;
+    if (!isNonEmptyString(src.title, 200)) return null;
+    if (typeof src.url !== "string") return null;
+    if (!isNonEmptyString(src.summary, 400)) return null;
   }
-  const openQuestions = r["openQuestions"];
-  if (!Array.isArray(openQuestions) || openQuestions.length < 2 || openQuestions.length > 5) return null;
+  const openQuestions = r.openQuestions;
+  if (!Array.isArray(openQuestions) || openQuestions.length < 2 || openQuestions.length > 5)
+    return null;
   if (!(openQuestions as unknown[]).every((q) => isNonEmptyString(q, 240))) return null;
-  if (!Array.isArray(r["warnings"])) return null;
+  if (!Array.isArray(r.warnings)) return null;
   return {
-    title: truncate(r["title"] as string, 100),
-    overview: truncate(r["overview"] as string, TEXT_LIMITS.PARAGRAPH_MAX),
+    title: truncate(r.title as string, 100),
+    overview: truncate(r.overview as string, TEXT_LIMITS.PARAGRAPH_MAX),
     sources: (sources as Array<{ title: string; url: string; summary: string }>).map((s) => ({
       title: truncate(s.title, 140),
       url: truncate(s.url, TEXT_LIMITS.URL_MAX),
       summary: truncate(s.summary, 240),
     })),
     openQuestions: (openQuestions as string[]).map((q) => truncate(q, 160)),
-    confidence: clampConfidence(r["confidence"]),
-    warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
+    confidence: clampConfidence(r.confidence),
+    warnings: (r.warnings as unknown[])
+      .filter((w): w is string => typeof w === "string")
+      .slice(0, 5),
   };
 }
 

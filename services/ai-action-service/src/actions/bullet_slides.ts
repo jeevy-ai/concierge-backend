@@ -42,7 +42,10 @@ function titleToBullets(title: string, domain: string, url: string): string[] {
   const words = text.split(/\s+/);
   if (words.length >= 6) {
     const mid = Math.ceil(words.length / 2);
-    return [truncate(words.slice(0, mid).join(" "), 120), truncate(words.slice(mid).join(" "), 120)];
+    return [
+      truncate(words.slice(0, mid).join(" "), 120),
+      truncate(words.slice(mid).join(" "), 120),
+    ];
   }
   return [truncate(text, 120)];
 }
@@ -52,7 +55,7 @@ function deterministic(tabs: MinimizedTab[]): ValidatedSlides {
   for (const t of tabs) {
     const label = clusterLabelForDomain(t.domain ?? "");
     if (!grouped.has(label)) grouped.set(label, []);
-    grouped.get(label)!.push(t);
+    grouped.get(label)?.push(t);
   }
   const clusters: SlideCluster[] = [];
   let i = 0;
@@ -89,19 +92,19 @@ function allIdentical(arr: string[]): boolean {
 function validate(raw: unknown): ValidatedSlides | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  const cls = r["clusters"];
+  const cls = r.clusters;
   if (!Array.isArray(cls) || cls.length < 1 || cls.length > 4) return null;
   for (const c of cls as unknown[]) {
     if (!c || typeof c !== "object") return null;
     const cluster = c as Record<string, unknown>;
-    if (!isNonEmptyString(cluster["clusterId"], 80)) return null;
-    if (!isNonEmptyString(cluster["title"], 200)) return null;
-    const bullets = cluster["bullets"];
+    if (!isNonEmptyString(cluster.clusterId, 80)) return null;
+    if (!isNonEmptyString(cluster.title, 200)) return null;
+    const bullets = cluster.bullets;
     if (!Array.isArray(bullets) || bullets.length < 1 || bullets.length > 7) return null;
     if (!(bullets as unknown[]).every((b) => isNonEmptyString(b, 200))) return null;
   }
-  if (!isNonEmptyString(r["copyAll"], 4000)) return null;
-  if (!Array.isArray(r["warnings"])) return null;
+  if (!isNonEmptyString(r.copyAll, 4000)) return null;
+  if (!Array.isArray(r.warnings)) return null;
 
   const validClusters = (cls as Array<{ clusterId: string; title: string; bullets: string[] }>)
     .map((c, idx) => {
@@ -124,8 +127,10 @@ function validate(raw: unknown): ValidatedSlides | null {
   return {
     clusters: validClusters,
     copyAll,
-    confidence: clampConfidence(r["confidence"]),
-    warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
+    confidence: clampConfidence(r.confidence),
+    warnings: (r.warnings as unknown[])
+      .filter((w): w is string => typeof w === "string")
+      .slice(0, 5),
   };
 }
 

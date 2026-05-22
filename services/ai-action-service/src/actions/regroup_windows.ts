@@ -9,7 +9,12 @@ import {
   truncate,
 } from "./_shared.js";
 
-type WindowGroup = { groupId: string; name: string; rationale: string; tabIds: (string | number)[] };
+type WindowGroup = {
+  groupId: string;
+  name: string;
+  rationale: string;
+  tabIds: (string | number)[];
+};
 
 type ValidatedGroups = ValidatedBase & {
   groups: WindowGroup[];
@@ -32,7 +37,7 @@ function deterministic(tabs: MinimizedTab[], contextHint?: string): ValidatedGro
   for (const t of tabs) {
     const label = clusterLabelForDomain(t.domain ?? "");
     if (!buckets.has(label)) buckets.set(label, []);
-    buckets.get(label)!.push(t);
+    buckets.get(label)?.push(t);
   }
   const groups: WindowGroup[] = [];
   let i = 0;
@@ -50,7 +55,10 @@ function deterministic(tabs: MinimizedTab[], contextHint?: string): ValidatedGro
             `Grouped "${titles.join('" and "')}"${extra} — ${label.toLowerCase()} context${hint}.`,
             200,
           )
-        : truncate(`${list.length} tab${list.length === 1 ? "" : "s"} from ${label.toLowerCase()}.`, 200);
+        : truncate(
+            `${list.length} tab${list.length === 1 ? "" : "s"} from ${label.toLowerCase()}.`,
+            200,
+          );
     groups.push({
       groupId: `grp_${i}`,
       name: truncate(label, 40),
@@ -62,19 +70,22 @@ function deterministic(tabs: MinimizedTab[], contextHint?: string): ValidatedGro
   return { groups, confidence: 0.4, warnings: [] };
 }
 
-function validate(raw: unknown, allowedTabIds?: Set<string | number> | null): ValidatedGroups | null {
+function validate(
+  raw: unknown,
+  allowedTabIds?: Set<string | number> | null,
+): ValidatedGroups | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  const rawGroups = r["groups"];
+  const rawGroups = r.groups;
   if (!Array.isArray(rawGroups) || rawGroups.length < 1 || rawGroups.length > 6) return null;
   const seenTabIds = new Set<string | number>();
   for (const g of rawGroups as unknown[]) {
     if (!g || typeof g !== "object") return null;
     const grp = g as Record<string, unknown>;
-    if (!isNonEmptyString(grp["groupId"], 80)) return null;
-    if (!isNonEmptyString(grp["name"], 200)) return null;
-    if (!isNonEmptyString(grp["rationale"], 400)) return null;
-    const tabIds = grp["tabIds"];
+    if (!isNonEmptyString(grp.groupId, 80)) return null;
+    if (!isNonEmptyString(grp.name, 200)) return null;
+    if (!isNonEmptyString(grp.rationale, 400)) return null;
+    const tabIds = grp.tabIds;
     if (!Array.isArray(tabIds) || tabIds.length === 0) return null;
     for (const id of tabIds as unknown[]) {
       if (typeof id !== "string" && typeof id !== "number") return null;
@@ -89,18 +100,25 @@ function validate(raw: unknown, allowedTabIds?: Set<string | number> | null): Va
       if (!seenTabIds.has(id)) return null;
     }
   }
-  if (!Array.isArray(r["warnings"])) return null;
+  if (!Array.isArray(r.warnings)) return null;
   return {
-    groups: (rawGroups as Array<{ groupId: string; name: string; rationale: string; tabIds: (string | number)[] }>).map(
-      (g, idx) => ({
-        groupId: truncate(g.groupId || `grp_${idx + 1}`, 80),
-        name: truncate(g.name, 40),
-        rationale: truncate(g.rationale, 200),
-        tabIds: g.tabIds,
-      }),
-    ),
-    confidence: clampConfidence(r["confidence"]),
-    warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
+    groups: (
+      rawGroups as Array<{
+        groupId: string;
+        name: string;
+        rationale: string;
+        tabIds: (string | number)[];
+      }>
+    ).map((g, idx) => ({
+      groupId: truncate(g.groupId || `grp_${idx + 1}`, 80),
+      name: truncate(g.name, 40),
+      rationale: truncate(g.rationale, 200),
+      tabIds: g.tabIds,
+    })),
+    confidence: clampConfidence(r.confidence),
+    warnings: (r.warnings as unknown[])
+      .filter((w): w is string => typeof w === "string")
+      .slice(0, 5),
   };
 }
 

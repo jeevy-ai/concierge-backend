@@ -125,7 +125,7 @@ export class GeminiProvider implements RecapProvider {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

@@ -44,7 +44,7 @@ function csvEscape(value: string): string {
 
 function extractTitleDelta(title: string, groupTitles: string[]): string {
   if (groupTitles.length <= 1) return "—";
-  const ref = groupTitles[0]!;
+  const ref = groupTitles[0] ?? "";
   const minLen = Math.min(...groupTitles.map((t) => t.length));
 
   let pfx = 0;
@@ -54,7 +54,11 @@ function extractTitleDelta(title: string, groupTitles: string[]): string {
 
   const maxSfx = Math.min(...groupTitles.map((t) => t.length - pfx));
   let sfx = 0;
-  while (sfx < maxSfx && groupTitles.every((t) => t[t.length - 1 - sfx] === title[title.length - 1 - sfx])) sfx++;
+  while (
+    sfx < maxSfx &&
+    groupTitles.every((t) => t[t.length - 1 - sfx] === title[title.length - 1 - sfx])
+  )
+    sfx++;
   while (sfx > 0 && !/\s/.test(title[title.length - sfx] ?? "")) sfx--;
 
   const end = sfx > 0 ? title.length - sfx : title.length;
@@ -86,7 +90,9 @@ function deterministic(tabs: MinimizedTab[]): ValidatedTable {
   });
   const header = `| ${columns.join(" | ")} |`;
   const sep = `| ${columns.map(() => "---").join(" | ")} |`;
-  const body = rows.map((r) => `| ${r.cells.map((c) => c.replace(/\|/g, "\\|")).join(" | ")} |`).join("\n");
+  const body = rows
+    .map((r) => `| ${r.cells.map((c) => c.replace(/\|/g, "\\|")).join(" | ")} |`)
+    .join("\n");
   const markdown = `${header}\n${sep}\n${body}\n`;
   const csv = `${columns.join(",")}\n${rows.map((r) => r.cells.map(csvEscape).join(",")).join("\n")}\n`;
   return { columns, rows, markdown, csv, confidence: 0.4, warnings: [] };
@@ -95,26 +101,30 @@ function deterministic(tabs: MinimizedTab[]): ValidatedTable {
 function validate(raw: unknown): ValidatedTable | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  const cols = r["columns"];
+  const cols = r.columns;
   if (!Array.isArray(cols) || cols.length < 2 || cols.length > 5) return null;
   if (!(cols as unknown[]).every((c) => isNonEmptyString(c, 60))) return null;
-  const rows = r["rows"];
+  const rows = r.rows;
   if (!Array.isArray(rows) || rows.length < 2 || rows.length > 8) return null;
   for (const row of rows as unknown[]) {
     if (!row || typeof row !== "object") return null;
     const rowObj = row as Record<string, unknown>;
-    if (!isNonEmptyString(rowObj["item"], 200)) return null;
-    const cells = rowObj["cells"];
+    if (!isNonEmptyString(rowObj.item, 200)) return null;
+    const cells = rowObj.cells;
     if (!Array.isArray(cells) || cells.length !== cols.length) return null;
     if (!(cells as unknown[]).every((c) => isNonEmptyString(c, 400))) return null;
   }
-  if (!isNonEmptyString(r["markdown"], 8000)) return null;
-  if (!isNonEmptyString(r["csv"], 8000)) return null;
-  if (!Array.isArray(r["warnings"])) return null;
+  if (!isNonEmptyString(r.markdown, 8000)) return null;
+  if (!isNonEmptyString(r.csv, 8000)) return null;
+  if (!Array.isArray(r.warnings)) return null;
   // Reject when any column has every cell as a dash placeholder — the LLM failed to compare
   const dashRe = /^[-—–]+$/;
   for (let col = 0; col < (cols as string[]).length; col++) {
-    if ((rows as Array<Record<string, unknown>>).every((row) => dashRe.test(((row["cells"] as string[])[col] ?? "").trim()))) {
+    if (
+      (rows as Array<Record<string, unknown>>).every((row) =>
+        dashRe.test(((row.cells as string[])[col] ?? "").trim()),
+      )
+    ) {
       return null;
     }
   }
@@ -124,10 +134,12 @@ function validate(raw: unknown): ValidatedTable | null {
       item: truncate(row.item, 200),
       cells: row.cells.map((c) => truncate(c, 200)),
     })),
-    markdown: truncate(r["markdown"] as string, 8000),
-    csv: truncate(r["csv"] as string, 8000),
-    confidence: clampConfidence(r["confidence"]),
-    warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
+    markdown: truncate(r.markdown as string, 8000),
+    csv: truncate(r.csv as string, 8000),
+    confidence: clampConfidence(r.confidence),
+    warnings: (r.warnings as unknown[])
+      .filter((w): w is string => typeof w === "string")
+      .slice(0, 5),
   };
 }
 
@@ -145,7 +157,12 @@ export const compare_tabs: ActionDef = {
   deterministic,
   toResultPayload(v: ValidatedBase): Record<string, unknown> {
     const validated = v as ValidatedTable;
-    return { columns: validated.columns, rows: validated.rows, markdown: validated.markdown, csv: validated.csv };
+    return {
+      columns: validated.columns,
+      rows: validated.rows,
+      markdown: validated.markdown,
+      csv: validated.csv,
+    };
   },
   toEnvelopeFields(v: ValidatedBase) {
     return { confidence: v.confidence, warnings: v.warnings };

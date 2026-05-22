@@ -62,7 +62,7 @@ export function minimizeUrl(raw: string): string {
     const lower = k.toLowerCase();
     if (TRACKING_PARAM_PREFIXES.some((p) => lower.startsWith(p))) drop.push(k);
   });
-  drop.forEach((k) => url.searchParams.delete(k));
+  for (const k of drop) url.searchParams.delete(k);
   return url.toString().slice(0, TEXT_LIMITS.URL_MAX);
 }
 
@@ -103,7 +103,10 @@ export function clusterLabelForDomain(domain: string): string {
 }
 
 export function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && (value as unknown[]).every((v) => typeof v === "string" && (v as string).length > 0);
+  return (
+    Array.isArray(value) &&
+    (value as unknown[]).every((v) => typeof v === "string" && (v as string).length > 0)
+  );
 }
 
 export function isNonEmptyString(value: unknown, max = 10000): value is string {
@@ -118,6 +121,8 @@ export function buildUserMessage(tabs: MinimizedTab[], contextHint?: string): st
     domain: t.domain,
     pathHint: t.pathHint,
   }));
-  const hint = contextHint ? `\nUser context: ${contextHint.slice(0, TEXT_LIMITS.CONTEXT_HINT_MAX)}` : "";
+  const hint = contextHint
+    ? `\nUser context: ${contextHint.slice(0, TEXT_LIMITS.CONTEXT_HINT_MAX)}`
+    : "";
   return `Tabs:\n${JSON.stringify(slim)}${hint}`;
 }

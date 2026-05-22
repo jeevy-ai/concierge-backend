@@ -25,7 +25,11 @@ describe("ai-recap-service", () => {
   it("GET /internal/healthz returns ok", async () => {
     const res = await app.request("/internal/healthz", {}, testEnv);
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { ok: boolean; contractVersion: string; llmEnabled: boolean };
+    const body = (await res.json()) as {
+      ok: boolean;
+      contractVersion: string;
+      llmEnabled: boolean;
+    };
     expect(body.ok).toBe(true);
     expect(typeof body.contractVersion).toBe("string");
     expect(typeof body.llmEnabled).toBe("boolean");
@@ -76,9 +80,17 @@ describe("ai-recap-service", () => {
 
 describe("meeting domain classification (YOU-519)", () => {
   const meetingCases = [
-    { domain: "meet.google.com", title: "Q2 Planning Kickoff", url: "https://meet.google.com/abc-defg-hij" },
+    {
+      domain: "meet.google.com",
+      title: "Q2 Planning Kickoff",
+      url: "https://meet.google.com/abc-defg-hij",
+    },
     { domain: "zoom.us", title: "Weekly Sync", url: "https://zoom.us/j/1234567890" },
-    { domain: "teams.microsoft.com", title: "Sprint Review", url: "https://teams.microsoft.com/meet/123" },
+    {
+      domain: "teams.microsoft.com",
+      title: "Sprint Review",
+      url: "https://teams.microsoft.com/meet/123",
+    },
     { domain: "whereby.com", title: "Design Review", url: "https://whereby.com/myroom" },
   ];
 
@@ -104,11 +116,13 @@ describe("meeting domain classification (YOU-519)", () => {
         testEnv,
       );
       expect(res.status).toBe(200);
-      const body = (await res.json()) as { clusters: Array<{ label: string; suggestedAction: string }> };
+      const body = (await res.json()) as {
+        clusters: Array<{ label: string; suggestedAction: string }>;
+      };
       expect(body.clusters.length).toBeGreaterThan(0);
-      const cluster = body.clusters[0]!;
-      expect(cluster.label).toBe("Meeting");
-      expect(cluster.suggestedAction).toBe("archive");
+      const cluster = body.clusters[0];
+      expect(cluster?.label).toBe("Meeting");
+      expect(cluster?.suggestedAction).toBe("archive");
     });
   }
 
@@ -125,7 +139,13 @@ describe("meeting domain classification (YOU-519)", () => {
               windowId: "win-meet-single",
               startedAt: "2026-05-01T10:00:00Z",
               endedAt: "2026-05-01T11:00:00Z",
-              tabs: [{ title: "Google Meet - Q2 Planning Kickoff", url: "https://meet.google.com/abc-defg-hij", domain: "meet.google.com" }],
+              tabs: [
+                {
+                  title: "Google Meet - Q2 Planning Kickoff",
+                  url: "https://meet.google.com/abc-defg-hij",
+                  domain: "meet.google.com",
+                },
+              ],
             },
           ],
         }),
@@ -133,10 +153,12 @@ describe("meeting domain classification (YOU-519)", () => {
       testEnv,
     );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { clusters: Array<{ label: string; suggestedAction: string }> };
-    const cluster = body.clusters[0]!;
-    expect(cluster.label).toBe("Meeting");
-    expect(cluster.suggestedAction).toBe("archive");
+    const body = (await res.json()) as {
+      clusters: Array<{ label: string; suggestedAction: string }>;
+    };
+    const cluster = body.clusters[0];
+    expect(cluster?.label).toBe("Meeting");
+    expect(cluster?.suggestedAction).toBe("archive");
   });
 });
 
@@ -148,7 +170,11 @@ const meetWindow = (windowId: string, domain: string) => ({
   tabs: [{ title: "Meeting", url: `https://${domain}/room`, domain }],
 });
 
-const makeCluster = (windowId: string, label: string, suggestedAction: "resume" | "archive" | "ignore") => ({
+const makeCluster = (
+  windowId: string,
+  label: string,
+  suggestedAction: "resume" | "archive" | "ignore",
+) => ({
   clusterId: "cls_1",
   label,
   headline: `${label}: Tab`,
@@ -162,51 +188,54 @@ describe("applyMeetingDomainOverrides (YOU-524)", () => {
   it("overrides Research/ignore LLM cluster for meet.google.com to Meeting/archive", () => {
     const windows = [meetWindow("w1", "meet.google.com")];
     const result = applyMeetingDomainOverrides([makeCluster("w1", "Research", "ignore")], windows);
-    expect(result[0]!.label).toBe("Meeting");
-    expect(result[0]!.suggestedAction).toBe("archive");
+    expect(result[0]?.label).toBe("Meeting");
+    expect(result[0]?.suggestedAction).toBe("archive");
   });
 
   it("overrides for zoom.us", () => {
     const windows = [meetWindow("w1", "zoom.us")];
     const result = applyMeetingDomainOverrides([makeCluster("w1", "Research", "ignore")], windows);
-    expect(result[0]!.label).toBe("Meeting");
-    expect(result[0]!.suggestedAction).toBe("archive");
+    expect(result[0]?.label).toBe("Meeting");
+    expect(result[0]?.suggestedAction).toBe("archive");
   });
 
   it("overrides for teams.microsoft.com", () => {
     const windows = [meetWindow("w1", "teams.microsoft.com")];
     const result = applyMeetingDomainOverrides([makeCluster("w1", "Research", "resume")], windows);
-    expect(result[0]!.label).toBe("Meeting");
-    expect(result[0]!.suggestedAction).toBe("archive");
+    expect(result[0]?.label).toBe("Meeting");
+    expect(result[0]?.suggestedAction).toBe("archive");
   });
 
   it("overrides for whereby.com", () => {
     const windows = [meetWindow("w1", "whereby.com")];
     const result = applyMeetingDomainOverrides([makeCluster("w1", "Research", "ignore")], windows);
-    expect(result[0]!.label).toBe("Meeting");
-    expect(result[0]!.suggestedAction).toBe("archive");
+    expect(result[0]?.label).toBe("Meeting");
+    expect(result[0]?.suggestedAction).toBe("archive");
   });
 
   it("leaves non-meeting cluster unchanged", () => {
     const windows = [meetWindow("w1", "github.com")];
-    const result = applyMeetingDomainOverrides([makeCluster("w1", "Engineering", "resume")], windows);
-    expect(result[0]!.label).toBe("Engineering");
-    expect(result[0]!.suggestedAction).toBe("resume");
+    const result = applyMeetingDomainOverrides(
+      [makeCluster("w1", "Engineering", "resume")],
+      windows,
+    );
+    expect(result[0]?.label).toBe("Engineering");
+    expect(result[0]?.suggestedAction).toBe("resume");
   });
 
   it("already-Meeting cluster is passed through unchanged", () => {
     const windows = [meetWindow("w1", "zoom.us")];
     const result = applyMeetingDomainOverrides([makeCluster("w1", "Meeting", "archive")], windows);
-    expect(result[0]!.label).toBe("Meeting");
-    expect(result[0]!.suggestedAction).toBe("archive");
+    expect(result[0]?.label).toBe("Meeting");
+    expect(result[0]?.suggestedAction).toBe("archive");
   });
 
   it("preserves other cluster fields when overriding", () => {
     const windows = [meetWindow("w1", "meet.google.com")];
     const cluster = makeCluster("w1", "Research", "ignore");
     const result = applyMeetingDomainOverrides([cluster], windows);
-    expect(result[0]!.clusterId).toBe("cls_1");
-    expect(result[0]!.confidence).toBe(0.8);
-    expect(result[0]!.intentWindowIds).toEqual(["w1"]);
+    expect(result[0]?.clusterId).toBe("cls_1");
+    expect(result[0]?.confidence).toBe(0.8);
+    expect(result[0]?.intentWindowIds).toEqual(["w1"]);
   });
 });

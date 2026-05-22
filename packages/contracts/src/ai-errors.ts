@@ -1,8 +1,4 @@
-export type AiErrorCode =
-  | "INVALID_INPUT"
-  | "UNAUTHORIZED"
-  | "PAYLOAD_TOO_LARGE"
-  | "UPSTREAM_ERROR";
+export type AiErrorCode = "INVALID_INPUT" | "UNAUTHORIZED" | "PAYLOAD_TOO_LARGE" | "UPSTREAM_ERROR";
 
 export type AiErrorDetail = {
   code: AiErrorCode;

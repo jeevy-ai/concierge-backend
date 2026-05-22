@@ -21,10 +21,40 @@ const SYSTEM_PROMPT = [
 ].join("\n");
 
 const TIME_PATTERNS: [RegExp, (now: Date) => Date][] = [
-  [/\btomorrow\b/i, (d) => { const n = new Date(d); n.setDate(n.getDate() + 1); n.setHours(9, 0, 0, 0); return n; }],
-  [/\bnext week\b/i, (d) => { const n = new Date(d); n.setDate(n.getDate() + 7); n.setHours(9, 0, 0, 0); return n; }],
-  [/\bin\s+(\d+)\s+hour/i, (d) => { const n = new Date(d); n.setHours(n.getHours() + 1); return n; }],
-  [/\bin\s+(\d+)\s+minute/i, (d) => { const n = new Date(d); n.setMinutes(n.getMinutes() + 30); return n; }],
+  [
+    /\btomorrow\b/i,
+    (d) => {
+      const n = new Date(d);
+      n.setDate(n.getDate() + 1);
+      n.setHours(9, 0, 0, 0);
+      return n;
+    },
+  ],
+  [
+    /\bnext week\b/i,
+    (d) => {
+      const n = new Date(d);
+      n.setDate(n.getDate() + 7);
+      n.setHours(9, 0, 0, 0);
+      return n;
+    },
+  ],
+  [
+    /\bin\s+(\d+)\s+hour/i,
+    (d) => {
+      const n = new Date(d);
+      n.setHours(n.getHours() + 1);
+      return n;
+    },
+  ],
+  [
+    /\bin\s+(\d+)\s+minute/i,
+    (d) => {
+      const n = new Date(d);
+      n.setMinutes(n.getMinutes() + 30);
+      return n;
+    },
+  ],
 ];
 
 function extractDueAt(text: string): string {
@@ -58,7 +88,13 @@ function deterministic(text: string): ValidatedReminder {
   const subject = extractSubject(text);
   const contact = extractContact(text);
   const dueAt = extractDueAt(text);
-  const dueFriendly = new Date(dueAt).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const dueFriendly = new Date(dueAt).toLocaleString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
   const ack = `Certainly — I'll remind you about "${subject.slice(0, 60)}" on ${dueFriendly}.`;
   return { subject, contact, dueAt, ack, confidence: 0.5, warnings: [] };
 }
@@ -66,18 +102,20 @@ function deterministic(text: string): ValidatedReminder {
 function validate(raw: unknown): ValidatedReminder | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (!isNonEmptyString(r["subject"], 300)) return null;
-  if (!isNonEmptyString(r["contact"], 200)) return null;
-  if (!isNonEmptyString(r["dueAt"], 60)) return null;
-  if (!isNonEmptyString(r["ack"], 400)) return null;
-  if (!Array.isArray(r["warnings"])) return null;
+  if (!isNonEmptyString(r.subject, 300)) return null;
+  if (!isNonEmptyString(r.contact, 200)) return null;
+  if (!isNonEmptyString(r.dueAt, 60)) return null;
+  if (!isNonEmptyString(r.ack, 400)) return null;
+  if (!Array.isArray(r.warnings)) return null;
   return {
-    subject: (r["subject"] as string).slice(0, 200),
-    contact: (r["contact"] as string).slice(0, 200),
-    dueAt: (r["dueAt"] as string).slice(0, 60),
-    ack: (r["ack"] as string).slice(0, 300),
-    confidence: clampConfidence(r["confidence"]),
-    warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
+    subject: (r.subject as string).slice(0, 200),
+    contact: (r.contact as string).slice(0, 200),
+    dueAt: (r.dueAt as string).slice(0, 60),
+    ack: (r.ack as string).slice(0, 300),
+    confidence: clampConfidence(r.confidence),
+    warnings: (r.warnings as unknown[])
+      .filter((w): w is string => typeof w === "string")
+      .slice(0, 5),
   };
 }
 

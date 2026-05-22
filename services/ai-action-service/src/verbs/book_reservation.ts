@@ -41,7 +41,7 @@ function calLink(venue: string, iso: string): string {
     action: "TEMPLATE",
     text: `Reservation at ${venue}`,
     dates: `${fmt(d)}/${fmt(end)}`,
-    details: `Reservation booked via YOU concierge`,
+    details: "Reservation booked via YOU concierge",
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
@@ -54,7 +54,9 @@ function extractVenue(text: string): string {
 }
 
 function extractPartySize(text: string): number {
-  const m = text.match(/\b(\d+)\s*(people|person|guests?|pax|of\s+us)\b/i) ?? text.match(/\bfor\s+(\d+)\b/i);
+  const m =
+    text.match(/\b(\d+)\s*(people|person|guests?|pax|of\s+us)\b/i) ??
+    text.match(/\bfor\s+(\d+)\b/i);
   if (m?.[1]) {
     const n = Number.parseInt(m[1], 10);
     return Number.isFinite(n) && n > 0 && n <= 50 ? n : 2;
@@ -67,15 +69,27 @@ function deterministic(text: string): ValidatedReservation {
   const partySize = extractPartySize(text);
   const dt = todayPlus(7);
   const slotDate = new Date(dt);
-  const slotLabel = slotDate.toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit" });
+  const slotLabel = slotDate.toLocaleString("en-US", {
+    weekday: "long",
+    hour: "numeric",
+    minute: "2-digit",
+  });
   return {
     venue,
     datetime: dt,
     partySize,
     slot: slotLabel,
     fallbacks: [
-      new Date(todayPlus(7, 18)).toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit" }),
-      new Date(todayPlus(8, 19)).toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit" }),
+      new Date(todayPlus(7, 18)).toLocaleString("en-US", {
+        weekday: "long",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+      new Date(todayPlus(8, 19)).toLocaleString("en-US", {
+        weekday: "long",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
     ],
     calendarAddLink: calLink(venue, dt),
     confidence: 0.45,
@@ -86,22 +100,26 @@ function deterministic(text: string): ValidatedReservation {
 function validate(raw: unknown): ValidatedReservation | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (!isNonEmptyString(r["venue"], 200)) return null;
-  if (!isNonEmptyString(r["datetime"], 100)) return null;
-  if (typeof r["partySize"] !== "number" || r["partySize"] < 1) return null;
-  if (!isNonEmptyString(r["slot"], 100)) return null;
-  if (!Array.isArray(r["fallbacks"])) return null;
-  if (!isNonEmptyString(r["calendarAddLink"], 500)) return null;
-  if (!Array.isArray(r["warnings"])) return null;
+  if (!isNonEmptyString(r.venue, 200)) return null;
+  if (!isNonEmptyString(r.datetime, 100)) return null;
+  if (typeof r.partySize !== "number" || r.partySize < 1) return null;
+  if (!isNonEmptyString(r.slot, 100)) return null;
+  if (!Array.isArray(r.fallbacks)) return null;
+  if (!isNonEmptyString(r.calendarAddLink, 500)) return null;
+  if (!Array.isArray(r.warnings)) return null;
   return {
-    venue: (r["venue"] as string).slice(0, 200),
-    datetime: (r["datetime"] as string).slice(0, 100),
-    partySize: Math.min(Math.max(1, Math.round(r["partySize"] as number)), 100),
-    slot: (r["slot"] as string).slice(0, 100),
-    fallbacks: (r["fallbacks"] as unknown[]).filter((f): f is string => typeof f === "string" && f.length > 0).slice(0, 5),
-    calendarAddLink: (r["calendarAddLink"] as string).slice(0, 500),
-    confidence: clampConfidence(r["confidence"]),
-    warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
+    venue: (r.venue as string).slice(0, 200),
+    datetime: (r.datetime as string).slice(0, 100),
+    partySize: Math.min(Math.max(1, Math.round(r.partySize as number)), 100),
+    slot: (r.slot as string).slice(0, 100),
+    fallbacks: (r.fallbacks as unknown[])
+      .filter((f): f is string => typeof f === "string" && f.length > 0)
+      .slice(0, 5),
+    calendarAddLink: (r.calendarAddLink as string).slice(0, 500),
+    confidence: clampConfidence(r.confidence),
+    warnings: (r.warnings as unknown[])
+      .filter((w): w is string => typeof w === "string")
+      .slice(0, 5),
   };
 }
 

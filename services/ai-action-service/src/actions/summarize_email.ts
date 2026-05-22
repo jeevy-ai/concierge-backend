@@ -1,8 +1,8 @@
 import {
   type ActionDef,
   type MinimizedTab,
-  type ValidatedBase,
   TEXT_LIMITS,
+  type ValidatedBase,
   buildUserMessage,
   clampConfidence,
   clusterLabelForDomain,
@@ -51,17 +51,19 @@ function deterministic(tabs: MinimizedTab[]): ValidatedEmail {
 function validate(raw: unknown): ValidatedEmail | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (!isNonEmptyString(r["subject"], 200)) return null;
-  if (!isNonEmptyString(r["body"], TEXT_LIMITS.EMAIL_BODY_MAX + 200)) return null;
-  if (!Array.isArray(r["recipients"]) || (r["recipients"] as unknown[]).length > 3) return null;
-  if ((r["recipients"] as unknown[]).length > 0 && !isStringArray(r["recipients"])) return null;
-  if (!Array.isArray(r["warnings"])) return null;
+  if (!isNonEmptyString(r.subject, 200)) return null;
+  if (!isNonEmptyString(r.body, TEXT_LIMITS.EMAIL_BODY_MAX + 200)) return null;
+  if (!Array.isArray(r.recipients) || (r.recipients as unknown[]).length > 3) return null;
+  if ((r.recipients as unknown[]).length > 0 && !isStringArray(r.recipients)) return null;
+  if (!Array.isArray(r.warnings)) return null;
   return {
-    subject: truncate(r["subject"] as string, 200),
-    body: truncate(r["body"] as string, TEXT_LIMITS.EMAIL_BODY_MAX),
-    recipients: (r["recipients"] as string[]).slice(0, 3).map((rec) => truncate(rec, 60)),
-    confidence: clampConfidence(r["confidence"]),
-    warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
+    subject: truncate(r.subject as string, 200),
+    body: truncate(r.body as string, TEXT_LIMITS.EMAIL_BODY_MAX),
+    recipients: (r.recipients as string[]).slice(0, 3).map((rec) => truncate(rec, 60)),
+    confidence: clampConfidence(r.confidence),
+    warnings: (r.warnings as unknown[])
+      .filter((w): w is string => typeof w === "string")
+      .slice(0, 5),
   };
 }
 
