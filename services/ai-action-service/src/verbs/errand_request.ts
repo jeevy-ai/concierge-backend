@@ -1,4 +1,9 @@
-import { type ValidatedBase, clampConfidence, isNonEmptyString, isStringArray } from "../actions/_shared.js";
+import {
+  type ValidatedBase,
+  clampConfidence,
+  isNonEmptyString,
+  isStringArray,
+} from "../actions/_shared.js";
 import type { ConciergeVerbDef } from "./_shared.js";
 
 type ValidatedErrand = ValidatedBase & {
@@ -41,18 +46,20 @@ function deterministic(text: string): ValidatedErrand {
 function validate(raw: unknown): ValidatedErrand | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (!isNonEmptyString(r["summary"], 400)) return null;
-  if (!Array.isArray(r["checklist"]) || (r["checklist"] as unknown[]).length === 0) return null;
-  if (!isStringArray(r["checklist"])) return null;
-  if (!Array.isArray(r["nextActions"])) return null;
-  if ((r["nextActions"] as unknown[]).length > 0 && !isStringArray(r["nextActions"])) return null;
-  if (!Array.isArray(r["warnings"])) return null;
+  if (!isNonEmptyString(r.summary, 400)) return null;
+  if (!Array.isArray(r.checklist) || (r.checklist as unknown[]).length === 0) return null;
+  if (!isStringArray(r.checklist)) return null;
+  if (!Array.isArray(r.nextActions)) return null;
+  if ((r.nextActions as unknown[]).length > 0 && !isStringArray(r.nextActions)) return null;
+  if (!Array.isArray(r.warnings)) return null;
   return {
-    summary: (r["summary"] as string).slice(0, 300),
-    checklist: (r["checklist"] as string[]).slice(0, 10).map((s) => s.slice(0, 200)),
-    nextActions: (r["nextActions"] as string[]).slice(0, 5).map((s) => s.slice(0, 200)),
-    confidence: clampConfidence(r["confidence"]),
-    warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
+    summary: (r.summary as string).slice(0, 300),
+    checklist: (r.checklist as string[]).slice(0, 10).map((s) => s.slice(0, 200)),
+    nextActions: (r.nextActions as string[]).slice(0, 5).map((s) => s.slice(0, 200)),
+    confidence: clampConfidence(r.confidence),
+    warnings: (r.warnings as unknown[])
+      .filter((w): w is string => typeof w === "string")
+      .slice(0, 5),
   };
 }
 

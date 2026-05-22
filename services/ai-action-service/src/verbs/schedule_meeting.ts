@@ -64,30 +64,39 @@ function deterministic(text: string): ValidatedMeeting {
     { label: slotLabel(todayPlusIso(2, 14)), iso: todayPlusIso(2, 14) },
     { label: slotLabel(todayPlusIso(3, 11)), iso: todayPlusIso(3, 11) },
   ];
-  const draftInvite = `Hi ${attendee},\n\nWould love to connect about ${topic}. A few options:\n${slots.map((s) => `- ${s.label}`).join("\n")}\n\nLet me know what works!`.slice(0, 300);
+  const draftInvite =
+    `Hi ${attendee},\n\nWould love to connect about ${topic}. A few options:\n${slots.map((s) => `- ${s.label}`).join("\n")}\n\nLet me know what works!`.slice(
+      0,
+      300,
+    );
   return { attendee, proposedSlots: slots, draftInvite, confidence: 0.5, warnings: [] };
 }
 
 function validate(raw: unknown): ValidatedMeeting | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (!isNonEmptyString(r["attendee"], 200)) return null;
-  if (!Array.isArray(r["proposedSlots"]) || (r["proposedSlots"] as unknown[]).length === 0) return null;
+  if (!isNonEmptyString(r.attendee, 200)) return null;
+  if (!Array.isArray(r.proposedSlots) || (r.proposedSlots as unknown[]).length === 0) return null;
   const slots: ProposedSlot[] = [];
-  for (const s of r["proposedSlots"] as unknown[]) {
+  for (const s of r.proposedSlots as unknown[]) {
     if (!s || typeof s !== "object") return null;
     const sr = s as Record<string, unknown>;
-    if (!isNonEmptyString(sr["label"], 100) || !isNonEmptyString(sr["iso"], 60)) return null;
-    slots.push({ label: (sr["label"] as string).slice(0, 100), iso: (sr["iso"] as string).slice(0, 60) });
+    if (!isNonEmptyString(sr.label, 100) || !isNonEmptyString(sr.iso, 60)) return null;
+    slots.push({
+      label: (sr.label as string).slice(0, 100),
+      iso: (sr.iso as string).slice(0, 60),
+    });
   }
-  if (!isNonEmptyString(r["draftInvite"], 600)) return null;
-  if (!Array.isArray(r["warnings"])) return null;
+  if (!isNonEmptyString(r.draftInvite, 600)) return null;
+  if (!Array.isArray(r.warnings)) return null;
   return {
-    attendee: (r["attendee"] as string).slice(0, 200),
+    attendee: (r.attendee as string).slice(0, 200),
     proposedSlots: slots.slice(0, 5),
-    draftInvite: (r["draftInvite"] as string).slice(0, 400),
-    confidence: clampConfidence(r["confidence"]),
-    warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
+    draftInvite: (r.draftInvite as string).slice(0, 400),
+    confidence: clampConfidence(r.confidence),
+    warnings: (r.warnings as unknown[])
+      .filter((w): w is string => typeof w === "string")
+      .slice(0, 5),
   };
 }
 

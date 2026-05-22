@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
+import type { AiErrorEnvelope, AiFallback } from "@jeevy/contracts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { type AiErrorEnvelope, type AiFallback } from "@jeevy/contracts";
 import { type RecapProvider, createProvider } from "./recap-provider.js";
 
 export type Env = {
@@ -98,7 +98,10 @@ function emptyFallback(overview: string): AiFallback {
 }
 
 function unauthorized(message: string): AiErrorEnvelope {
-  return { error: { code: "UNAUTHORIZED", message, retryable: false }, fallback: emptyFallback("Authentication required.") };
+  return {
+    error: { code: "UNAUTHORIZED", message, retryable: false },
+    fallback: emptyFallback("Authentication required."),
+  };
 }
 
 function badRequest(message: string): AiErrorEnvelope {
@@ -135,11 +138,15 @@ function getBearerToken(authHeader: string | undefined): string | null {
   if (!authHeader) return null;
   const parts = authHeader.split(" ");
   if (parts.length !== 2) return null;
-  if (parts[0]!.toLowerCase() !== "bearer") return null;
+  if (parts[0]?.toLowerCase() !== "bearer") return null;
   return parts[1] ?? null;
 }
 
-function isAuthorized(authHeader: string | undefined, authMode: string, authToken: string): boolean {
+function isAuthorized(
+  authHeader: string | undefined,
+  authMode: string,
+  authToken: string,
+): boolean {
   if (authMode === "none") return true;
   if (authMode === "static_bearer") {
     if (!authToken) return false;
@@ -166,7 +173,7 @@ function minimizeUrl(raw: string): string {
     const lower = k.toLowerCase();
     if (TRACKING_PARAM_PREFIXES.some((p) => lower.startsWith(p))) drop.push(k);
   });
-  drop.forEach((k) => url.searchParams.delete(k));
+  for (const k of drop) url.searchParams.delete(k);
   return url.toString().slice(0, 300);
 }
 
@@ -186,46 +193,107 @@ function minimizeTab(tab: RawTab): MinimizedTab {
 
 type ValidatedRequest = { userId: string; intentWindows: IntentWindow[]; totalTabs: number };
 
-function validateRequest(payload: unknown): { ok: true; data: ValidatedRequest } | { ok: false; error: AiErrorEnvelope } {
+function validateRequest(
+  payload: unknown,
+): { ok: true; data: ValidatedRequest } | { ok: false; error: AiErrorEnvelope } {
   if (!payload || typeof payload !== "object") {
-    return { ok: false, error: badRequest("I couldn't read that request — the body needs to be a JSON object.") };
+    return {
+      ok: false,
+      error: badRequest("I couldn't read that request — the body needs to be a JSON object."),
+    };
   }
   const p = payload as Record<string, unknown>;
-  if (typeof p["userId"] !== "string" || p["userId"].length === 0) {
-    return { ok: false, error: badRequest("I'll need a userId to continue — please include one in the request body.") };
+  if (typeof p.userId !== "string" || p.userId.length === 0) {
+    return {
+      ok: false,
+      error: badRequest("I'll need a userId to continue — please include one in the request body."),
+    };
   }
-  const windows = p["intentWindows"];
+  const windows = p.intentWindows;
   if (!Array.isArray(windows) || windows.length === 0) {
-    return { ok: false, error: badRequest("I'll need at least one intent window to recap — please include a non-empty intentWindows array.") };
+    return {
+      ok: false,
+      error: badRequest(
+        "I'll need at least one intent window to recap — please include a non-empty intentWindows array.",
+      ),
+    };
   }
   if (windows.length > MAX_WINDOWS) {
-    return { ok: false, error: payloadTooLarge(`That's more intent windows than I can handle at once — the request includes ${windows.length} but I can process at most ${MAX_WINDOWS} at a time.`) };
+    return {
+      ok: false,
+      error: payloadTooLarge(
+        `That's more intent windows than I can handle at once — the request includes ${windows.length} but I can process at most ${MAX_WINDOWS} at a time.`,
+      ),
+    };
   }
 
   let totalTabs = 0;
   for (const w of windows as unknown[]) {
-    if (!w || typeof w !== "object") return { ok: false, error: badRequest("I found an intent window that isn't in the right shape — each intentWindow must be a JSON object.") };
+    if (!w || typeof w !== "object")
+      return {
+        ok: false,
+        error: badRequest(
+          "I found an intent window that isn't in the right shape — each intentWindow must be a JSON object.",
+        ),
+      };
     const win = w as Record<string, unknown>;
-    if (typeof win["windowId"] !== "string" || win["windowId"].length === 0) {
-      return { ok: false, error: badRequest("One of the intent windows is missing a windowId — please include one for each window.") };
+    if (typeof win.windowId !== "string" || win.windowId.length === 0) {
+      return {
+        ok: false,
+        error: badRequest(
+          "One of the intent windows is missing a windowId — please include one for each window.",
+        ),
+      };
     }
-    if (typeof win["startedAt"] !== "string" || typeof win["endedAt"] !== "string") {
-      return { ok: false, error: badRequest(`Window ${win["windowId"]} is missing time boundaries — please include ISO 8601 startedAt and endedAt values.`) };
+    if (typeof win.startedAt !== "string" || typeof win.endedAt !== "string") {
+      return {
+        ok: false,
+        error: badRequest(
+          `Window ${win.windowId} is missing time boundaries — please include ISO 8601 startedAt and endedAt values.`,
+        ),
+      };
     }
-    if (Number.isNaN(Date.parse(win["startedAt"] as string)) || Number.isNaN(Date.parse(win["endedAt"] as string))) {
-      return { ok: false, error: badRequest(`Window ${win["windowId"]} has timestamps I couldn't parse — please use ISO 8601 format (e.g. 2026-05-21T10:00:00Z).`) };
+    if (
+      Number.isNaN(Date.parse(win.startedAt as string)) ||
+      Number.isNaN(Date.parse(win.endedAt as string))
+    ) {
+      return {
+        ok: false,
+        error: badRequest(
+          `Window ${win.windowId} has timestamps I couldn't parse — please use ISO 8601 format (e.g. 2026-05-21T10:00:00Z).`,
+        ),
+      };
     }
-    const tabs = win["tabs"];
+    const tabs = win.tabs;
     if (!Array.isArray(tabs) || tabs.length === 0) {
-      return { ok: false, error: badRequest(`Window ${win["windowId"]} has no tabs — please include at least one tab per intent window.`) };
+      return {
+        ok: false,
+        error: badRequest(
+          `Window ${win.windowId} has no tabs — please include at least one tab per intent window.`,
+        ),
+      };
     }
     for (const t of tabs as unknown[]) {
       if (!t || typeof t !== "object") {
-        return { ok: false, error: badRequest(`Window ${win["windowId"]} contains a tab that isn't in the right shape — each tab must be a JSON object.`) };
+        return {
+          ok: false,
+          error: badRequest(
+            `Window ${win.windowId} contains a tab that isn't in the right shape — each tab must be a JSON object.`,
+          ),
+        };
       }
       const tab = t as Record<string, unknown>;
-      if (typeof tab["title"] !== "string" || typeof tab["url"] !== "string" || typeof tab["domain"] !== "string") {
-        return { ok: false, error: badRequest(`Window ${win["windowId"]} has a tab that's missing some details — each tab needs a title, url, and domain.`) };
+      if (
+        typeof tab.title !== "string" ||
+        typeof tab.url !== "string" ||
+        typeof tab.domain !== "string"
+      ) {
+        return {
+          ok: false,
+          error: badRequest(
+            `Window ${win.windowId} has a tab that's missing some details — each tab needs a title, url, and domain.`,
+          ),
+        };
       }
     }
     totalTabs += (tabs as unknown[]).length;
@@ -234,11 +302,16 @@ function validateRequest(payload: unknown): { ok: true; data: ValidatedRequest }
   if (totalTabs > MAX_TABS_TOTAL) {
     return {
       ok: false,
-      error: payloadTooLarge(`That's more tabs than I can recap at once — the request includes ${totalTabs} but I can handle at most ${MAX_TABS_TOTAL} across all windows.`),
+      error: payloadTooLarge(
+        `That's more tabs than I can recap at once — the request includes ${totalTabs} but I can handle at most ${MAX_TABS_TOTAL} across all windows.`,
+      ),
     };
   }
 
-  return { ok: true, data: { userId: p["userId"] as string, intentWindows: windows as IntentWindow[], totalTabs } };
+  return {
+    ok: true,
+    data: { userId: p.userId as string, intentWindows: windows as IntentWindow[], totalTabs },
+  };
 }
 
 function idempotencyKey(userId: string, intentWindows: IntentWindow[]): string {
@@ -272,7 +345,8 @@ function rememberIdempotent(key: string, response: RecapResponse): void {
   }
 }
 
-const MEETING_DOMAINS = /meet\.google|zoom\.us|teams\.microsoft|whereby\.com|webex\.com|gotomeeting\.com/i;
+const MEETING_DOMAINS =
+  /meet\.google|zoom\.us|teams\.microsoft|whereby\.com|webex\.com|gotomeeting\.com/i;
 
 function clusterLabelForDomain(domain: string): string {
   if (MEETING_DOMAINS.test(domain)) return "Meeting";
@@ -298,7 +372,7 @@ function deterministicCluster(intentWindows: IntentWindow[]): RecapCluster[] {
       if (!grouped.has(key)) {
         grouped.set(key, { windowId: w.windowId, label, tabs: [] });
       }
-      grouped.get(key)!.tabs.push(min);
+      grouped.get(key)?.tabs.push(min);
     }
   }
 
@@ -309,9 +383,11 @@ function deterministicCluster(intentWindows: IntentWindow[]): RecapCluster[] {
     const anchorTitle = tabs[0]?.title ?? label;
     const headline = truncate(`${label}: ${anchorTitle}`, HEADLINE_MAX);
     const summary = truncate(
-      `${tabs.length} tab${tabs.length === 1 ? "" : "s"} from ${anchorTitle || label}` +
-        (tabs.length > 1 ? ` and ${tabs.length - 1} related page${tabs.length - 1 === 1 ? "" : "s"}` : "") +
-        ".",
+      `${tabs.length} tab${tabs.length === 1 ? "" : "s"} from ${anchorTitle || label}${
+        tabs.length > 1
+          ? ` and ${tabs.length - 1} related page${tabs.length - 1 === 1 ? "" : "s"}`
+          : ""
+      }.`,
       SUMMARY_MAX,
     );
     clusters.push({
@@ -336,7 +412,10 @@ export function applyMeetingDomainOverrides(
 ): RecapCluster[] {
   const windowDomains = new Map<string, string[]>();
   for (const w of intentWindows) {
-    windowDomains.set(w.windowId, w.tabs.map((t) => t.domain));
+    windowDomains.set(
+      w.windowId,
+      w.tabs.map((t) => t.domain),
+    );
   }
   return clusters.map((cluster) => {
     if (cluster.label === "Meeting") return cluster;
@@ -375,35 +454,43 @@ function buildUserMessage(intentWindows: IntentWindow[]): string {
 function validateLlmClusters(raw: unknown, allowedWindowIds: Set<string>): RecapCluster[] | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (!Array.isArray(r["clusters"])) return null;
+  if (!Array.isArray(r.clusters)) return null;
   const out: RecapCluster[] = [];
-  const clusters = r["clusters"] as unknown[];
+  const clusters = r.clusters as unknown[];
   for (let i = 0; i < clusters.length; i++) {
     const c = clusters[i];
     if (!c || typeof c !== "object") return null;
     const cluster = c as Record<string, unknown>;
     const clusterId =
-      typeof cluster["clusterId"] === "string" && cluster["clusterId"].length > 0
-        ? cluster["clusterId"]
+      typeof cluster.clusterId === "string" && cluster.clusterId.length > 0
+        ? cluster.clusterId
         : `cls_${i + 1}`;
-    if (typeof cluster["label"] !== "string" || typeof cluster["headline"] !== "string" || typeof cluster["summary"] !== "string") {
+    if (
+      typeof cluster.label !== "string" ||
+      typeof cluster.headline !== "string" ||
+      typeof cluster.summary !== "string"
+    ) {
       return null;
     }
-    if ((cluster["headline"] as string).trim().length === 0 || (cluster["summary"] as string).trim().length === 0) {
+    if (
+      (cluster.headline as string).trim().length === 0 ||
+      (cluster.summary as string).trim().length === 0
+    ) {
       return null;
     }
-    if (typeof cluster["confidence"] !== "number" || !Number.isFinite(cluster["confidence"])) return null;
-    const windowIds = cluster["intentWindowIds"];
+    if (typeof cluster.confidence !== "number" || !Number.isFinite(cluster.confidence)) return null;
+    const windowIds = cluster.intentWindowIds;
     if (!Array.isArray(windowIds) || windowIds.length === 0) return null;
-    if (!(windowIds as unknown[]).every((id) => typeof id === "string" && allowedWindowIds.has(id))) return null;
-    const action = cluster["suggestedAction"];
+    if (!(windowIds as unknown[]).every((id) => typeof id === "string" && allowedWindowIds.has(id)))
+      return null;
+    const action = cluster.suggestedAction;
     if (action !== "resume" && action !== "archive" && action !== "ignore") return null;
     out.push({
       clusterId,
-      label: truncate(cluster["label"] as string, HEADLINE_MAX),
-      headline: truncate(cluster["headline"] as string, HEADLINE_MAX),
-      summary: truncate(cluster["summary"] as string, SUMMARY_MAX),
-      confidence: Math.max(0, Math.min(1, cluster["confidence"] as number)),
+      label: truncate(cluster.label as string, HEADLINE_MAX),
+      headline: truncate(cluster.headline as string, HEADLINE_MAX),
+      summary: truncate(cluster.summary as string, SUMMARY_MAX),
+      confidence: Math.max(0, Math.min(1, cluster.confidence as number)),
       intentWindowIds: Array.from(new Set(windowIds as string[])),
       suggestedAction: action,
     });
@@ -432,7 +519,9 @@ async function generateClusters(
       warnings.push(`LLM call failed (${msg}); using deterministic fallback.`);
     }
   } else if (recapUseLlm && !vertexProjectId) {
-    warnings.push("RECAP_USE_LLM is set but VERTEX_PROJECT_ID is missing; using deterministic fallback.");
+    warnings.push(
+      "RECAP_USE_LLM is set but VERTEX_PROJECT_ID is missing; using deterministic fallback.",
+    );
   }
   return { clusters: deterministicCluster(intentWindows), source: "deterministic" };
 }
@@ -465,7 +554,11 @@ app.use("*", cors());
 app.get("/internal/healthz", (c) => {
   const env = c.env;
   const provider = getProvider(env);
-  return c.json({ ok: true, contractVersion: CONTRACT_VERSION, llmEnabled: env.RECAP_USE_LLM === "true" && Boolean(provider) });
+  return c.json({
+    ok: true,
+    contractVersion: CONTRACT_VERSION,
+    llmEnabled: env.RECAP_USE_LLM === "true" && Boolean(provider),
+  });
 });
 
 app.post("/v1/ai/recap", async (c) => {
@@ -476,7 +569,15 @@ app.post("/v1/ai/recap", async (c) => {
 
   if (!isAuthorized(c.req.header("authorization"), authMode, authToken)) {
     c.header("X-Request-Id", requestId);
-    return c.json({ requestId, ...unauthorized("I'm unable to authenticate this request — the bearer token is missing or doesn't match what I have on file.") }, 401);
+    return c.json(
+      {
+        requestId,
+        ...unauthorized(
+          "I'm unable to authenticate this request — the bearer token is missing or doesn't match what I have on file.",
+        ),
+      },
+      401,
+    );
   }
 
   let payload: unknown;
@@ -484,7 +585,10 @@ app.post("/v1/ai/recap", async (c) => {
     payload = await c.req.json();
   } catch {
     c.header("X-Request-Id", requestId);
-    return c.json({ requestId, ...badRequest("I couldn't parse that request — the body must be valid JSON.") }, 400);
+    return c.json(
+      { requestId, ...badRequest("I couldn't parse that request — the body must be valid JSON.") },
+      400,
+    );
   }
 
   const validation = validateRequest(payload);

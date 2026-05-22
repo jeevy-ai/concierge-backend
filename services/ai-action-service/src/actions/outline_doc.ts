@@ -39,7 +39,7 @@ function deterministic(tabs: MinimizedTab[]): ValidatedDoc {
   for (const t of tabs) {
     const label = clusterLabelForDomain(t.domain);
     if (!buckets.has(label)) buckets.set(label, []);
-    buckets.get(label)!.push(t);
+    buckets.get(label)?.push(t);
   }
   const sections: DocSection[] = [];
   for (const [label, list] of buckets.entries()) {
@@ -62,28 +62,30 @@ function deterministic(tabs: MinimizedTab[]): ValidatedDoc {
 function validate(raw: unknown): ValidatedDoc | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (!isNonEmptyString(r["title"], 200)) return null;
-  const secs = r["sections"];
+  if (!isNonEmptyString(r.title, 200)) return null;
+  const secs = r.sections;
   if (!Array.isArray(secs) || secs.length < 2 || secs.length > 6) return null;
   for (const s of secs as unknown[]) {
     if (!s || typeof s !== "object") return null;
     const sec = s as Record<string, unknown>;
-    if (!isNonEmptyString(sec["heading"], 200)) return null;
-    const bullets = sec["bullets"];
+    if (!isNonEmptyString(sec.heading, 200)) return null;
+    const bullets = sec.bullets;
     if (!Array.isArray(bullets) || bullets.length < 1 || bullets.length > 8) return null;
     if (!(bullets as unknown[]).every((b) => isNonEmptyString(b, 400))) return null;
   }
-  if (!isNonEmptyString(r["markdown"], 8000)) return null;
-  if (!Array.isArray(r["warnings"])) return null;
+  if (!isNonEmptyString(r.markdown, 8000)) return null;
+  if (!Array.isArray(r.warnings)) return null;
   return {
-    title: truncate(r["title"] as string, 80),
+    title: truncate(r.title as string, 80),
     sections: (secs as Array<{ heading: string; bullets: string[] }>).slice(0, 6).map((s) => ({
       heading: truncate(s.heading, 80),
       bullets: s.bullets.slice(0, 6).map((b) => truncate(b, 200)),
     })),
-    markdown: truncate(r["markdown"] as string, 8000),
-    confidence: clampConfidence(r["confidence"]),
-    warnings: (r["warnings"] as unknown[]).filter((w): w is string => typeof w === "string").slice(0, 5),
+    markdown: truncate(r.markdown as string, 8000),
+    confidence: clampConfidence(r.confidence),
+    warnings: (r.warnings as unknown[])
+      .filter((w): w is string => typeof w === "string")
+      .slice(0, 5),
   };
 }
 
