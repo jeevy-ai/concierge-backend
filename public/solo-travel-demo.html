@@ -1779,12 +1779,19 @@ function initMapInContainer(containerId, isMain) {
     });
     if (isMain) {
       const skeleton = document.getElementById('map-skeleton');
-      map.on('load', function() {
+      var loadTimer = setTimeout(function() { showMapError(); }, 7000);
+      var onMapReady = function() {
+        clearTimeout(loadTimer);
         if (skeleton) { skeleton.style.opacity = '0'; setTimeout(function() { skeleton.classList.add('hidden'); }, 200); }
+        var er = document.getElementById('map-error');
+        if (er) er.style.display = 'none';
         addMapPins(map, ml);
-      });
-      map.on('error', function() { showMapError(); });
-      setTimeout(function() { if (!map._loaded) showMapError(); }, 7000);
+      };
+      // MapLibre v4: 'load' may not fire in all environments; poll readiness instead
+      var readyPoll = setInterval(function() {
+        if (map.isStyleLoaded() && map.areTilesLoaded()) { clearInterval(readyPoll); onMapReady(); }
+      }, 100);
+      map.once('load', function() { clearInterval(readyPoll); onMapReady(); });
     } else {
       map.on('load', function() { addMobilePins(map, ml); });
     }
