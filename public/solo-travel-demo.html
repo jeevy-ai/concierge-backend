@@ -372,8 +372,16 @@
     .cal-sync-list li {
       display: flex; align-items: center; gap: 8px;
       padding: 4px 0; font-size: 13px;
+      opacity: 0; transform: translateY(6px);
+      transition: opacity 180ms ease-out, transform 180ms ease-out;
     }
+    .cal-sync-list li.item-in { opacity: 1; transform: translateY(0); }
     .cal-sync-list .check { color: var(--success); font-weight: 700; }
+    .cal-view-link {
+      margin-left: auto; font-size: 11px; color: var(--accent);
+      text-decoration: none; white-space: nowrap; flex-shrink: 0;
+    }
+    .cal-view-link:hover { text-decoration: underline; }
 
     /* ── Screen description ── */
     .screen-meta {
@@ -382,6 +390,15 @@
       font-size: 12px; color: var(--text2);
     }
     .screen-meta strong { color: var(--text); }
+
+    /* ── S1 dismissal ── */
+    #s1-btn-row { transition: opacity 0.18s ease-out; }
+    .stub-dismissed-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 18px; font-size: 12px; color: var(--text3);
+      border-top: 1px solid var(--border);
+    }
+    .stub-dismissed-footer .btn-ghost { font-size: 12px; padding: 4px 10px; }
 
     @media (max-width: 760px) {
       .layout { grid-template-columns: 1fr; }
@@ -502,18 +519,21 @@
         <strong>S1 — Butler Nudge.</strong> Jeevy detects calendar event geo-token. No API call — rendered from calendar event metadata. <code>verbId: none</code>
       </div>
 
-      <!-- Itinerary stub (collapsed) -->
-      <div class="itinerary-card" style="margin-bottom:20px;max-width:360px">
+      <!-- Itinerary stub (collapsed) — persists on dismissal -->
+      <div class="itinerary-card" id="s1-stub" style="margin-bottom:20px;max-width:360px">
         <div class="itin-header">
           <div>
-            <span class="itin-status">Planning…</span>
+            <span class="itin-status" id="s1-stub-status">Planning…</span>
             <div class="itin-title" style="margin-top:6px">Web Summit 2026</div>
             <div class="itin-dates">Nov 9–12 · Lisbon, Portugal · Origin: SFO</div>
           </div>
         </div>
-        <!-- body hidden — progressive disclosure stub -->
-        <div style="padding:10px 18px;font-size:12px;color:var(--text3);border-top:1px solid var(--border)">
+        <div id="s1-stub-footer-default" style="padding:10px 18px;font-size:12px;color:var(--text3);border-top:1px solid var(--border)">
           ↓ Details will appear as planning progresses
+        </div>
+        <div id="s1-stub-footer-dismissed" class="stub-dismissed-footer" style="display:none">
+          <span>Flow paused</span>
+          <button class="btn btn-ghost btn-sm" onclick="resumeFlow()">Resume →</button>
         </div>
       </div>
 
@@ -526,14 +546,14 @@
           </div>
         </div>
 
-        <div class="btn-row">
+        <div class="btn-row" id="s1-btn-row">
           <button class="btn btn-primary" onclick="showScreen('s2',null)">Set it up</button>
           <button class="btn btn-ghost" onclick="handleNotNow()">Not now</button>
         </div>
 
         <div id="s1-dismissed" style="display:none" class="banner banner-info">
           <span>ℹ</span>
-          <div>Flow dismissed. Itinerary stub persists in chat history (collapsed). Tap <em>Set it up</em> anytime to resume.</div>
+          <div>Flow dismissed. Itinerary stub persists above — tap <strong>Resume →</strong> on the stub to continue from Travel Preferences.</div>
         </div>
       </div>
     </div>
@@ -1100,9 +1120,59 @@ function showScreen(id, btn) {
   if (target) target.classList.add('active');
 }
 
-// ── S1: Not now ──
+// ── S1: Not now / dismissed flow ──
+const TRIP_ID = 'web-summit-2026';
+
 function handleNotNow() {
+  // 1. Fade out button row (opacity 1→0, 180ms ease-out)
+  const btnRow = document.getElementById('s1-btn-row');
+  btnRow.style.opacity = '0';
+  setTimeout(function() { btnRow.style.display = 'none'; }, 180);
+
+  // 2. Mutate stub: status badge + footer
+  document.getElementById('s1-stub-status').textContent = 'Dismissed';
+  document.getElementById('s1-stub-footer-default').style.display = 'none';
+  document.getElementById('s1-stub-footer-dismissed').style.display = 'flex';
+
+  // 3. Show dismissal confirmation in chat area
   document.getElementById('s1-dismissed').style.display = 'flex';
+
+  // 4. Persist state — survives page refresh
+  localStorage.setItem('travel-flow-' + TRIP_ID, JSON.stringify({
+    state: 'dismissed',
+    title: 'Web Summit 2026',
+    dates: 'Nov 9–12 · Lisbon, Portugal',
+    origin: 'SFO',
+    dismissedAt: Date.now()
+  }));
+}
+
+function resumeFlow() {
+  // Update stored state, re-enter at S2
+  const raw = localStorage.getItem('travel-flow-' + TRIP_ID);
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      data.state = 'active';
+      localStorage.setItem('travel-flow-' + TRIP_ID, JSON.stringify(data));
+    } catch(e) {}
+  }
+  showScreen('s2', null);
+}
+
+function initFlowFromStorage() {
+  const raw = localStorage.getItem('travel-flow-' + TRIP_ID);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    if (data.state === 'dismissed') {
+      document.getElementById('s1-btn-row').style.display = 'none';
+      document.getElementById('s1-stub-status').textContent = 'Dismissed';
+      document.getElementById('s1-stub-footer-default').style.display = 'none';
+      document.getElementById('s1-stub-footer-dismissed').style.display = 'flex';
+      document.getElementById('s1-dismissed').style.display = 'flex';
+    }
+  } catch(e) {}
 }
 
 // ── S2: Pref edit (inline affordance) ──
@@ -1216,6 +1286,9 @@ document.addEventListener('keydown', function(e) {
     showScreen(SCREENS[currentIdx], null);
   }
 });
+
+// Restore dismissed state from previous session
+initFlowFromStorage();
 </script>
 </body>
 </html>
