@@ -871,6 +871,14 @@
             <div class="session-info">
               <div class="session-title">Future of Work keynote</div>
               <div class="session-meta">Panel · Nov 10, 2:00–3:00 PM WET · Centre Stage</div>
+              <button id="vk02-t" class="details-toggle" aria-expanded="false" onclick="toggleDisc('vk02')">Venue <span class="dt-chevron" aria-hidden="true">▾</span></button>
+              <div id="vk02-b" class="details-body">
+                <div style="padding:6px 0 2px;font-size:12px;color:var(--text2)">
+                  <div><strong>Centre Stage</strong> · Altice Arena, Parque das Nações</div>
+                  <div style="margin-top:4px;color:var(--text3)">Panel on AI-driven workplace transformation, distributed teams, and the future of knowledge work.</div>
+                  <a href="https://websummit.com/schedule/?session=WS2026-K02" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:11px;color:var(--accent)">View room map →</a>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Session 3: WS2026-W07 -->
@@ -879,6 +887,14 @@
             <div class="session-info">
               <div class="session-title">Product Strategy in the AI Era</div>
               <div class="session-meta">Lenny Rachitsky · Nov 11, 10:00–11:30 AM WET · Workshop Hall C</div>
+              <button id="vw07-t" class="details-toggle" aria-expanded="false" onclick="toggleDisc('vw07')">Venue <span class="dt-chevron" aria-hidden="true">▾</span></button>
+              <div id="vw07-b" class="details-body">
+                <div style="padding:6px 0 2px;font-size:12px;color:var(--text2)">
+                  <div><strong>Workshop Hall C</strong> · Altice Arena, Parque das Nações</div>
+                  <div style="margin-top:4px;color:var(--text3)">90-min interactive workshop on product strategy in AI-first companies. Lenny Rachitsky (Lenny's Newsletter). Limited capacity.</div>
+                  <a href="https://websummit.com/schedule/?session=WS2026-W07" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:11px;color:var(--accent)">View room map →</a>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Session 4: WS2026-K08 — CONFLICT with All-Hands Q4 -->
@@ -891,6 +907,14 @@
               </div>
               <div class="session-meta">Padmasree Warrior · Nov 11, 3:30–5:00 PM WET · Centre Stage</div>
               <div style="font-size:11px;color:var(--warn);margin-top:3px">Overlaps All-Hands Q4 Planning (14:00–15:30 UTC) — resolve in next step</div>
+              <button id="vk08-t" class="details-toggle" aria-expanded="false" onclick="toggleDisc('vk08')">Venue <span class="dt-chevron" aria-hidden="true">▾</span></button>
+              <div id="vk08-b" class="details-body">
+                <div style="padding:6px 0 2px;font-size:12px;color:var(--text2)">
+                  <div><strong>Centre Stage</strong> · Altice Arena, Parque das Nações</div>
+                  <div style="margin-top:4px;color:var(--text3)">Padmasree Warrior (Fable) on the next wave of AI. Annual Web Summit closing session.</div>
+                  <a href="https://websummit.com/schedule/?session=WS2026-K08" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:11px;color:var(--accent)">View room map →</a>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -972,6 +996,19 @@
               <div class="conflict-side-label" style="color:var(--warn)">Conference session</div>
               <div class="conflict-side-title">Closing Keynote</div>
               <div class="conflict-side-time">Nov 11 · 15:30–17:00 WET · Padmasree Warrior</div>
+            </div>
+          </div>
+          <button id="att-t" class="details-toggle" aria-expanded="false" onclick="toggleDisc('att')" style="margin-bottom:10px">Attendees (12) <span class="dt-chevron" aria-hidden="true">▾</span></button>
+          <div id="att-b" class="details-body">
+            <div style="padding:0 0 10px;font-size:12px;color:var(--text2)">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px">
+                <div>Alex Chen (you)</div><div>Sarah Kim</div>
+                <div>Marcus Johnson</div><div>Priya Patel</div>
+                <div>Tom Williams</div><div>Lisa Zhang</div>
+                <div>David Lee</div><div>Aisha Okafor</div>
+                <div>James Murphy</div><div>Nina Reyes</div>
+                <div>Chris Anderson</div><div>Elena Vasquez</div>
+              </div>
             </div>
           </div>
           <div class="btn-row">
@@ -1058,70 +1095,90 @@
           </div>
 
           <div class="itin-section">
-            <div class="itin-section-label">✈ Outbound Flight</div>
-            <div class="itin-row">
-              <div class="itin-detail">
-                <strong>Delta UA88 · SFO → LIS</strong>
-                <small>Nov 9 · 22:10 PST → Nov 10 · 17:45 WET</small>
-                <small>Business Class · Aisle 4A · Direct · ~10.5h</small>
+            <div class="itin-section-label">✈ Outbound Flight
+              <button id="is1-t" class="itin-section-btn" aria-expanded="true" onclick="toggleItinSection('is1')"><span class="dt-chevron" aria-hidden="true">▾</span></button>
+            </div>
+            <div id="is1-b" class="details-body open">
+              <div class="itin-row">
+                <div class="itin-detail">
+                  <strong>Delta UA88 · SFO → LIS</strong>
+                  <small>Nov 9 · 22:10 PST → Nov 10 · 17:45 WET</small>
+                  <small>Business Class · Aisle 4A · Direct · ~10.5h</small>
+                </div>
+                <a href="webcal://calendar.delta.com/add?flight=UA88&date=20261109&seat=4A" target="_blank" rel="noopener" class="btn btn-sm btn-ghost" style="align-self:center">Add</a>
               </div>
-              <a href="webcal://calendar.delta.com/add?flight=UA88&date=20261109&seat=4A" target="_blank" rel="noopener" class="btn btn-sm btn-ghost" style="align-self:center">Add</a>
             </div>
           </div>
 
           <div class="itin-section">
-            <div class="itin-section-label">✈ Return Flight</div>
-            <div class="itin-row">
-              <div class="itin-detail">
-                <strong>Delta UA89 · LIS → SFO</strong>
-                <small>Nov 12 · 09:30 WET → Nov 12 · 12:15 PST</small>
-                <small>Business Class · Aisle 4A · Direct</small>
+            <div class="itin-section-label">✈ Return Flight
+              <button id="is2-t" class="itin-section-btn" aria-expanded="true" onclick="toggleItinSection('is2')"><span class="dt-chevron" aria-hidden="true">▾</span></button>
+            </div>
+            <div id="is2-b" class="details-body open">
+              <div class="itin-row">
+                <div class="itin-detail">
+                  <strong>Delta UA89 · LIS → SFO</strong>
+                  <small>Nov 12 · 09:30 WET → Nov 12 · 12:15 PST</small>
+                  <small>Business Class · Aisle 4A · Direct</small>
+                </div>
+                <a href="webcal://calendar.delta.com/add?flight=UA89&date=20261112&seat=4A" target="_blank" rel="noopener" class="btn btn-sm btn-ghost" style="align-self:center">Add</a>
               </div>
-              <a href="webcal://calendar.delta.com/add?flight=UA89&date=20261112&seat=4A" target="_blank" rel="noopener" class="btn btn-sm btn-ghost" style="align-self:center">Add</a>
             </div>
           </div>
 
           <div class="itin-section">
-            <div class="itin-section-label">🏨 Hotel</div>
-            <div class="itin-row">
-              <div class="itin-detail">
-                <strong>Bairro Alto Hotel · Marriott Bonvoy</strong>
-                <small>Rua da Bica de Duarte Belo 60, Lisbon</small>
-                <small>Check-in: Nov 10 · Check-out: Nov 12 · Superior King</small>
+            <div class="itin-section-label">🏨 Hotel
+              <button id="is3-t" class="itin-section-btn" aria-expanded="true" onclick="toggleItinSection('is3')"><span class="dt-chevron" aria-hidden="true">▾</span></button>
+            </div>
+            <div id="is3-b" class="details-body open">
+              <div class="itin-row">
+                <div class="itin-detail">
+                  <strong>Bairro Alto Hotel · Marriott Bonvoy</strong>
+                  <small>Rua da Bica de Duarte Belo 60, Lisbon</small>
+                  <small>Check-in: Nov 10 · Check-out: Nov 12 · Superior King</small>
+                </div>
+                <a href="webcal://marriott.com/calendar/add?hotel=bairro-alto&checkin=20261110&checkout=20261112" target="_blank" rel="noopener" class="btn btn-sm btn-ghost" style="align-self:center">Add</a>
               </div>
-              <a href="webcal://marriott.com/calendar/add?hotel=bairro-alto&checkin=20261110&checkout=20261112" target="_blank" rel="noopener" class="btn btn-sm btn-ghost" style="align-self:center">Add</a>
             </div>
           </div>
 
           <div class="itin-section">
-            <div class="itin-section-label">📅 Conference Sessions (4)</div>
-            <div class="itin-pill">
-              <span style="font-weight:600;font-size:12px;min-width:100px">Nov 10 · 09:30</span>
-              <span>The Age of Ambient AI · Stage 1</span>
+            <div class="itin-section-label">📅 Conference Sessions (4)
+              <button id="is4-t" class="itin-section-btn" aria-expanded="true" onclick="toggleItinSection('is4')"><span class="dt-chevron" aria-hidden="true">▾</span></button>
             </div>
-            <div class="itin-pill">
-              <span style="font-weight:600;font-size:12px;min-width:100px">Nov 10 · 14:00</span>
-              <span>Future of Work keynote · Centre Stage</span>
-            </div>
-            <div class="itin-pill">
-              <span style="font-weight:600;font-size:12px;min-width:100px">Nov 11 · 10:00</span>
-              <span>Product Strategy workshop · Workshop Hall C</span>
-            </div>
-            <div class="itin-pill">
-              <span style="font-weight:600;font-size:12px;min-width:100px">Nov 11 · 15:30</span>
-              <span>Closing Keynote · Centre Stage</span>
+            <div id="is4-b" class="details-body open">
+              <div class="itin-pill">
+                <span style="font-weight:600;font-size:12px;min-width:100px">Nov 10 · 09:30</span>
+                <span>The Age of Ambient AI · Stage 1</span>
+              </div>
+              <div class="itin-pill">
+                <span style="font-weight:600;font-size:12px;min-width:100px">Nov 10 · 14:00</span>
+                <span>Future of Work keynote · Centre Stage</span>
+              </div>
+              <div class="itin-pill">
+                <span style="font-weight:600;font-size:12px;min-width:100px">Nov 11 · 10:00</span>
+                <span>Product Strategy workshop · Workshop Hall C</span>
+              </div>
+              <div class="itin-pill">
+                <span style="font-weight:600;font-size:12px;min-width:100px">Nov 11 · 15:30</span>
+                <span>Closing Keynote · Centre Stage</span>
+              </div>
             </div>
           </div>
 
           <div class="itin-section">
-            <div class="itin-section-label">🔔 Reminders (2)</div>
-            <div class="itin-pill">
-              <span style="font-weight:600;font-size:12px;min-width:100px">Nov 9 · 20:00</span>
-              <span>Pack for Lisbon + check-in opens</span>
+            <div class="itin-section-label">🔔 Reminders (2)
+              <button id="is5-t" class="itin-section-btn" aria-expanded="true" onclick="toggleItinSection('is5')"><span class="dt-chevron" aria-hidden="true">▾</span></button>
             </div>
-            <div class="itin-pill">
-              <span style="font-weight:600;font-size:12px;min-width:100px">Nov 10 · 05:30</span>
-              <span>Leave for SFO — UA88 boards 09:00</span>
+            <div id="is5-b" class="details-body open">
+              <div class="itin-pill">
+                <span style="font-weight:600;font-size:12px;min-width:100px">Nov 9 · 20:00</span>
+                <span>Pack for Lisbon + check-in opens</span>
+              </div>
+              <div class="itin-pill">
+                <span style="font-weight:600;font-size:12px;min-width:100px">Nov 10 · 05:30</span>
+                <span>Leave for SFO — UA88 boards 09:00</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1202,7 +1259,7 @@
             <span style="display:flex;align-items:center;gap:4px"><span class="priority-dot priority-low" style="display:inline-block"></span>Low</span>
           </div>
 
-          <button class="rationale-toggle" onclick="toggleRationale()">Why this order? ↓</button>
+          <button id="rat-t" class="rationale-toggle" aria-expanded="false" onclick="toggleRationale()">Why this order? <span class="dt-chevron" aria-hidden="true">▾</span></button>
           <div class="rationale-box" id="rationale-box">
             Critical path: Lyft at 06:45 is the latest safe departure. International check-in closes 90 min before departure (22:10). Sky Club access allows lounge time if early.
           </div>
@@ -1220,6 +1277,23 @@
 
 <script>
 'use strict';
+
+// ── Progressive disclosure ──
+function toggleDisc(id) {
+  const body = document.getElementById(id + '-b');
+  const btn = document.getElementById(id + '-t');
+  if (!body || !btn) return;
+  const open = body.classList.toggle('open');
+  btn.setAttribute('aria-expanded', String(open));
+}
+
+function toggleItinSection(id) {
+  const body = document.getElementById(id + '-b');
+  const btn = document.getElementById(id + '-t');
+  if (!body || !btn) return;
+  const open = body.classList.toggle('open');
+  btn.setAttribute('aria-expanded', String(open));
+}
 
 // ── Screen navigation ──
 function showScreen(id, btn) {
@@ -1324,12 +1398,7 @@ function selectFlight(n) {
   document.getElementById('s3-done').style.display = 'block';
 }
 
-function toggleReturn(id) {
-  const el = document.getElementById(id);
-  el.classList.toggle('open');
-  const btn = el.previousElementSibling.querySelector('.return-toggle');
-  if (btn) btn.textContent = el.classList.contains('open') ? 'Return ↑' : 'Return ↓';
-}
+function toggleReturn(id) { toggleDisc(id); }
 
 // ── S4: Hotel selection ──
 let selectedHotel = null;
@@ -1394,9 +1463,10 @@ function confirmReminders() {
 // ── S9: Rationale toggle ──
 function toggleRationale() {
   const box = document.getElementById('rationale-box');
-  box.classList.toggle('open');
-  const btn = box.previousElementSibling;
-  btn.textContent = box.classList.contains('open') ? 'Why this order? ↑' : 'Why this order? ↓';
+  const btn = document.getElementById('rat-t');
+  if (!box || !btn) return;
+  const open = box.classList.toggle('open');
+  btn.setAttribute('aria-expanded', String(open));
 }
 
 // ── Init ──
