@@ -5,3 +5,10 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "development"
+AUTH_MODE = "none"
+AUTH_BEARER_TOKEN = ""
+RECAP_USE_LLM = "true"
+VERTEX_REGION = "us-central1"
+VERTEX_PROJECT_ID = "jeevy-495410"
+RECAP_MODEL = "gemini-2.5-flash"
+RECAP_TIMEOUT_MS = "8000"

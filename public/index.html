@@ -1,0 +1,2720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concierge — Internal MVP</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f2f5;
+      --surface: #ffffff;
+      --surface2: #f7f8fa;
+      --border: #e2e5eb;
+      --accent: #5a67d8;
+      --accent-light: #ebedfc;
+      --accent-dark: #434fc0;
+      --success: #38a169;
+      --success-bg: #f0fff4;
+      --success-border: #c6f6d5;
+      --warn: #b7791f;
+      --warn-bg: #fffbeb;
+      --warn-border: #f6e05e;
+      --err: #c53030;
+      --err-bg: #fff5f5;
+      --err-border: #feb2b2;
+      --text: #1a202c;
+      --text2: #4a5568;
+      --text3: #718096;
+      --badge-llm: #d6bcfa;
+      --badge-det: #bee3f8;
+      --radius: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      background: var(--accent);
+      color: white;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .app-header h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+    .app-header .badge-internal {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .identity-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .identity-row label { font-size: 12px; opacity: 0.85; }
+    .identity-row input {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 13px;
+      width: 150px;
+    }
+    .identity-row input::placeholder { color: rgba(255,255,255,0.6); }
+    .identity-row input:focus { outline: none; border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.2); }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 52px);
+    }
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      max-height: calc(100vh - 52px);
+      position: sticky;
+      top: 52px;
+    }
+    .main-content {
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    /* ── Tabs ── */
+    .tab-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text3);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      letter-spacing: 0.1px;
+    }
+    .tab-btn:hover { color: var(--text2); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface); }
+    .tab-pane { display: none; padding: 20px; flex: 1; }
+    .tab-pane.active { display: block; }
+
+    /* ── Form elements ── */
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    input[type="text"],
+    input[type="url"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(90,103,216,0.12);
+    }
+    textarea { resize: vertical; min-height: 72px; font-family: "SF Mono", "Monaco", monospace; font-size: 12px; }
+    select { cursor: pointer; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-primary:disabled { background: #a0aec0; cursor: not-allowed; }
+    .btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--border); }
+    .btn-danger { background: var(--err-bg); color: var(--err); border: 1px solid var(--err-border); font-size: 12px; padding: 4px 8px; }
+    .btn-danger:hover { background: var(--err-border); }
+    .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    /* ── Tab items in sidebar ── */
+    .tabs-list { margin-bottom: 12px; }
+    .tab-chip {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .tab-chip-info { flex: 1; min-width: 0; }
+    .tab-chip-title {
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tab-chip-url { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tab-chip-domain { font-size: 11px; color: var(--accent); font-weight: 500; }
+    .tabs-empty { color: var(--text3); font-size: 13px; text-align: center; padding: 16px 0; }
+
+    /* ── Section headings ── */
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text3);
+      margin-bottom: 10px;
+    }
+    hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ── Submit area ── */
+    .send-area {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky;
+      bottom: 0;
+    }
+    .send-area .btn-primary { width: 100%; justify-content: center; padding: 10px; }
+
+    /* ── Result area ── */
+    .result-placeholder {
+      text-align: center;
+      padding: 60px 24px;
+      color: var(--text3);
+    }
+    .result-placeholder svg { opacity: 0.3; margin-bottom: 16px; }
+    .result-placeholder p { font-size: 14px; }
+
+    .result-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .result-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .result-title {
+      font-size: 14px;
+      font-weight: 700;
+      flex: 1;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+    .badge-source-llm { background: var(--badge-llm); color: #553c9a; }
+    .badge-source-det { background: var(--badge-det); color: #2b6cb0; }
+    .badge-confidence { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
+    .badge-low-conf { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn); }
+    .badge-verify { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn); }
+
+    .result-body { padding: 18px; }
+
+    /* ── Warning/error banners ── */
+    .banner {
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .banner-warn { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn); }
+    .banner-err { background: var(--err-bg); border: 1px solid var(--err-border); color: var(--err); }
+    .banner-info { background: var(--accent-light); border: 1px solid #c3c9f7; color: var(--accent-dark); }
+    .banner-icon { font-size: 16px; flex-shrink: 0; line-height: 1.3; }
+    .banner-body { flex: 1; }
+    .banner-body strong { display: block; margin-bottom: 2px; }
+    .banner-body ul { margin: 4px 0 0 16px; }
+    .banner-body li { margin-bottom: 2px; }
+
+    /* ── Loading ── */
+    .loading-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text2);
+    }
+    .spinner {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Action-specific result renderers ── */
+    .email-field { margin-bottom: 14px; }
+    .email-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text3); margin-bottom: 4px; }
+    .email-value { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+    .email-subject { font-size: 16px; font-weight: 700; color: var(--text); }
+    .recipients { display: flex; gap: 6px; flex-wrap: wrap; }
+    .recipient-chip { background: var(--accent-light); color: var(--accent-dark); border-radius: 100px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+
+    .outline-section { margin-bottom: 12px; }
+    .outline-heading { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .outline-bullets { list-style: disc; margin-left: 20px; }
+    .outline-bullets li { font-size: 13px; color: var(--text2); margin-bottom: 3px; }
+    .outline-title { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 16px; border-bottom: 2px solid var(--accent-light); padding-bottom: 10px; }
+
+    .slide-cluster { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .slide-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .slide-num { background: var(--accent); color: white; border-radius: 100px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .slide-bullets { list-style: none; }
+    .slide-bullets li { font-size: 13px; color: var(--text2); padding: 3px 0 3px 14px; position: relative; }
+    .slide-bullets li::before { content: "•"; position: absolute; left: 0; color: var(--accent); }
+    .copy-all-area { margin-top: 14px; }
+    .copy-all-btn { font-size: 12px; }
+
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .compare-table th { background: var(--surface2); border: 1px solid var(--border); padding: 8px 12px; text-align: left; font-weight: 700; color: var(--text2); }
+    .compare-table td { border: 1px solid var(--border); padding: 8px 12px; color: var(--text); vertical-align: top; }
+    .compare-table tr:nth-child(even) td { background: var(--surface2); }
+    .table-overflow { overflow-x: auto; }
+    .export-btns { display: flex; gap: 8px; margin-top: 12px; }
+
+    .brief-title { font-size: 18px; font-weight: 800; margin-bottom: 12px; color: var(--text); }
+    .brief-overview { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 16px; }
+    .brief-sources { list-style: none; margin-bottom: 16px; }
+    .brief-sources li { padding: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+    .source-title { font-weight: 600; font-size: 13px; }
+    .source-url { font-size: 11px; color: var(--text3); margin: 2px 0 4px; word-break: break-all; }
+    .source-summary { font-size: 12px; color: var(--text2); }
+    .open-questions li { font-size: 13px; color: var(--text2); padding: 4px 0; }
+    .open-questions li::marker { color: var(--accent); }
+
+    .group-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .group-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .group-rationale { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+    .group-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab-id-chip { background: var(--accent-light); color: var(--accent-dark); border-radius: 4px; padding: 2px 8px; font-size: 11px; font-family: monospace; font-weight: 600; }
+
+    .cluster-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .cluster-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+    .cluster-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: var(--accent-light); color: var(--accent-dark); border-radius: 4px; padding: 2px 8px; }
+    .cluster-action-resume { background: #c6f6d5; color: #276749; }
+    .cluster-action-archive { background: #e2e8f0; color: #4a5568; }
+    .cluster-action-ignore { background: #fed7d7; color: #c53030; }
+    .cluster-headline { font-size: 15px; font-weight: 700; color: var(--text); flex: 1; }
+    .cluster-summary { font-size: 13px; color: var(--text2); margin-bottom: 8px; line-height: 1.6; }
+    .cluster-footer { display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--text3); }
+    .cluster-conf { display: flex; align-items: center; gap: 4px; }
+    .conf-bar { width: 48px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .conf-fill { height: 100%; border-radius: 2px; }
+
+    /* ── Intent window builder ── */
+    .window-builder { margin-bottom: 14px; }
+    .window-entry { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; }
+    .window-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .window-id-label { font-size: 12px; font-weight: 600; color: var(--accent); }
+    .window-tabs-hint { font-size: 11px; color: var(--text3); }
+
+    .raw-json-toggle { font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block; }
+    .raw-json-pre { font-family: "SF Mono", Monaco, monospace; font-size: 11px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; margin-top: 8px; white-space: pre; }
+
+    /* ── Misc ── */
+    .meta-row { display: flex; gap: 12px; font-size: 11px; color: var(--text3); flex-wrap: wrap; }
+    .meta-row span { display: flex; align-items: center; gap: 4px; }
+    .request-id { font-family: monospace; font-size: 10px; color: var(--text3); margin-top: 8px; }
+
+    /* ── Clarifying-question panel ── */
+    .clarify-panel {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: 6px;
+      padding: 14px;
+      margin-top: 14px;
+    }
+    .clarify-question { font-size: 13px; color: var(--warn); font-weight: 600; margin-bottom: 10px; }
+    .clarify-input-row { display: flex; gap: 8px; align-items: flex-start; }
+    .clarify-input {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid var(--warn-border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .clarify-input:focus { outline: none; border-color: var(--warn); box-shadow: 0 0 0 3px rgba(183,121,31,0.12); }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { max-height: none; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+      .identity-row input { width: 120px; }
+    }
+
+    /* ── S5 session rows & conflict badge ── */
+    @keyframes session-row-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes conflict-pulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    .session-rows-list { margin-bottom: 16px; }
+    .session-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      animation: session-row-in 150ms ease-out both;
+    }
+    .session-row-check { margin-top: 2px; flex-shrink: 0; }
+    .session-row-body { flex: 1; min-width: 0; }
+    .session-row-header { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+    .session-row-title { font-weight: 600; font-size: 13px; color: var(--text); flex: 1; }
+    .session-row-meta { font-size: 12px; color: var(--text3); margin-top: 3px; }
+    .badge-conflict {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      color: var(--warn);
+      white-space: nowrap;
+      animation: conflict-pulse 280ms ease-in-out 1;
+      flex-shrink: 0;
+    }
+
+    /* ── S6 conflict cards ── */
+    .s6-section { margin-top: 20px; }
+    .s6-header { font-size: 13px; font-weight: 600; color: var(--warn); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .conflict-card {
+      border-left: 3px solid var(--warn-border);
+      background: var(--surface);
+      border: 1px solid var(--warn-border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      max-height: 500px;
+      opacity: 1;
+      transition: opacity 200ms ease-out, max-height 160ms ease-out, margin-bottom 160ms ease-out;
+      animation: session-row-in 150ms ease-out both;
+    }
+    .conflict-card-inner { padding: 14px; }
+    .conflict-pair { display: flex; gap: 10px; margin-bottom: 12px; }
+    .conflict-event-box, .conflict-session-box {
+      flex: 1;
+      padding: 8px 10px;
+      background: var(--surface2);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .conflict-box-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); margin-bottom: 4px; }
+    .conflict-box-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .conflict-box-meta { font-size: 12px; color: var(--text3); }
+    .conflict-card-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn-warn { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-border); font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn-warn:hover { background: var(--warn-border); }
+    .btn-neutral { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn-neutral:hover { background: var(--border); }
+
+    /* ── Itinerary Card — progressive enrichment + animation system ── */
+    .itin-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      border: 2px solid var(--border);
+      overflow: hidden;
+      margin-bottom: 20px;
+      max-width: 560px;
+      opacity: 0;
+      transition: opacity 180ms ease-out, border-color 300ms ease-out;
+    }
+    .itin-card.itin-visible { opacity: 1; }
+    .itin-card.itin-complete { border-color: var(--success); }
+    @keyframes itinPulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.01); }
+    }
+    .itin-card.itin-pulse { animation: itinPulse 240ms ease-in-out; }
+
+    .itin-head { padding: 16px 18px 14px; }
+    .itin-status {
+      display: inline-block;
+      font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 100px; margin-bottom: 8px;
+      background: #edf2f7; color: #718096; border: 1px solid transparent;
+      transition: background 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out;
+    }
+    .itin-status.itin-status-done { background: var(--success-bg); color: var(--success); border-color: var(--success-border); }
+    .itin-head-title { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+    .itin-head-meta { font-size: 13px; color: var(--text3); }
+
+    /* Section grow — max-height trick; exact durations from spec §3 */
+    .itin-section { max-height: 0; overflow: hidden; }
+    .itin-section.revealed { max-height: 500px; }
+    /* S3 flight: 200ms ease-out, 80ms delay from selection */
+    .itin-section-flight    { transition: max-height 200ms ease-out 80ms; }
+    /* S4 hotel: 200ms ease-out */
+    .itin-section-hotel     { transition: max-height 200ms ease-out; }
+    /* S5 sessions: 240ms ease-out */
+    .itin-section-sessions  { transition: max-height 240ms ease-out; }
+    /* S7 reminders: 160ms ease-out */
+    .itin-section-reminders { transition: max-height 160ms ease-out; }
+
+    .itin-section-inner { padding: 12px 18px 14px; border-top: 1px solid var(--border); }
+    .itin-section-heading { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); margin-bottom: 10px; }
+    .itin-flight-row {
+      display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0;
+      cursor: pointer; transition: background 150ms; border-radius: 6px; margin: 0 -8px; padding: 8px;
+    }
+    .itin-flight-row:hover { background: rgba(90, 103, 216, 0.04); }
+    .itin-flight-row + .itin-flight-row { border-top: 1px solid var(--border); }
+    .itin-flight-route { font-weight: 700; font-size: 14px; }
+    .itin-flight-info { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .itin-flight-badge {
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+      background: var(--accent-light); color: var(--accent-dark);
+      padding: 2px 8px; border-radius: 4px; flex-shrink: 0; margin-left: 8px;
+    }
+    .itin-hotel-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .itin-hotel-info { font-size: 12px; color: var(--text3); margin-bottom: 2px; }
+    .itin-hotel-section {
+      cursor: pointer; padding: 8px; margin: 0 -8px; border-radius: 6px;
+      transition: background 150ms;
+    }
+    .itin-hotel-section:hover { background: rgba(90, 103, 216, 0.04); }
+    /* Session rows stagger in after section opens */
+    .itin-sess-row {
+      display: flex; gap: 12px; padding: 7px 8px;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 150ms ease-out, transform 150ms ease-out, background 150ms;
+      cursor: pointer; border-radius: 6px; margin: 0 -8px;
+    }
+    .itin-sess-row:hover { background: rgba(90, 103, 216, 0.04); }
+    .itin-sess-row + .itin-sess-row { border-top: 1px solid var(--border); }
+    .itin-sess-row.entered { opacity: 1; transform: translateY(0); }
+    .itin-sess-time { font-size: 11px; font-weight: 600; color: var(--text3); min-width: 88px; white-space: nowrap; }
+    .itin-sess-title { font-size: 13px; color: var(--text); font-weight: 500; }
+    /* Reminder pills stagger in */
+    .itin-rem-pills { display: flex; flex-direction: column; gap: 8px; }
+    .itin-rem-pill {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      opacity: 0; transform: translateX(-12px);
+      transition: opacity 160ms ease-out, transform 160ms ease-out;
+    }
+    .itin-rem-pill.entered { opacity: 1; transform: translateX(0); }
+    .itin-rem-time { font-size: 11px; font-weight: 700; color: var(--accent); min-width: 88px; }
+    .itin-rem-text { font-size: 12px; color: var(--text2); }
+
+    /* Travel flow chat area */
+    .travel-result-wrap { max-width: 560px; }
+    .travel-chat { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+    .jeevy-bubble-wrap { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+    /* Jeevy chat bubble: 220ms cubic-bezier(0.16,1,0.3,1) per spec §3 S1 */
+    .jeevy-bubble {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px 12px 12px 4px; padding: 12px 16px;
+      box-shadow: var(--shadow); max-width: 480px;
+      opacity: 0; transform: translateY(16px);
+    }
+    .jeevy-bubble.entered {
+      opacity: 1; transform: translateY(0);
+      transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1), transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .jeevy-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); margin-bottom: 5px; }
+    .jeevy-txt { font-size: 13px; color: var(--text); line-height: 1.6; }
+    .chat-btns { display: flex; gap: 8px; flex-wrap: wrap; opacity: 0; transition: opacity 120ms ease-out; }
+    .chat-btns.entered { opacity: 1; }
+    /* Option cards (flight / hotel) */
+    .opt-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 16px; cursor: pointer;
+      max-width: 480px; width: 100%; text-align: left;
+      opacity: 0; transform: translateY(10px);
+      transition: border-color 0.15s;
+    }
+    .opt-card.entered { opacity: 1; transform: translateY(0); }
+    .opt-card:hover:not(.opt-selected):not(.opt-faded) { border-color: var(--accent); }
+    .opt-card.opt-selected { border-color: var(--accent); background: var(--accent-light); cursor: default; }
+    .opt-card.opt-faded { opacity: 0.35; pointer-events: none; transition: opacity 120ms linear; }
+    .opt-card-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .opt-card-meta { font-size: 12px; color: var(--text3); }
+    .opt-card-badge {
+      display: inline-block; font-size: 11px; font-weight: 600;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 7px; margin-top: 6px; color: var(--text3);
+    }
+    .opt-card .sel-btn {
+      display: inline-block; margin-top: 10px; padding: 5px 14px;
+      background: var(--accent); color: white; border: none; border-radius: 6px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .opt-card .sel-btn:hover { background: var(--accent-dark); }
+    .opt-card.opt-selected .sel-btn, .opt-card.opt-faded .sel-btn { display: none; }
+    /* Session confirm rows */
+    .sess-confirm-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; margin-bottom: 8px; max-width: 480px;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 150ms ease-out, transform 150ms ease-out;
+    }
+    .sess-confirm-row.entered { opacity: 1; transform: translateY(0); }
+    .sess-time-chip {
+      font-size: 11px; font-weight: 600;
+      background: var(--accent-light); color: var(--accent-dark);
+      border-radius: 4px; padding: 2px 6px; white-space: nowrap;
+    }
+    /* Reminder confirm pills */
+    .rem-confirm-pill {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: 8px; max-width: 480px;
+      opacity: 0; transform: translateX(-12px);
+      transition: opacity 160ms ease-out, transform 160ms ease-out;
+    }
+    .rem-confirm-pill.entered { opacity: 1; transform: translateX(0); }
+    /* Step indicator dots */
+    .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 200ms; display: inline-block; }
+    .step-dot.dot-active { background: var(--accent); }
+    .step-dot.dot-done   { background: var(--success); }
+    /* S9 day-plan time blocks — translateX(-8px)→0, opacity 0→1, 140ms ease-out, 40ms stagger */
+    .s9-block {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 10px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; margin-bottom: 8px; max-width: 480px;
+      opacity: 0; transform: translateX(-8px);
+      transition: opacity 140ms ease-out, transform 140ms ease-out;
+    }
+    .s9-block.entered { opacity: 1; transform: translateX(0); }
+    .s9-time { font-size: 11px; font-weight: 700; color: var(--accent); min-width: 72px; }
+    .s9-task { font-size: 13px; color: var(--text); }
+    .s9-priority-high  { color: var(--err); font-size: 10px; font-weight: 600; margin-top: 2px; }
+    .s9-priority-medium { color: var(--warn); font-size: 10px; font-weight: 600; margin-top: 2px; }
+    .s9-priority-low   { color: var(--text3); font-size: 10px; font-weight: 600; margin-top: 2px; }
+    .s9-rationale-toggle {
+      display: inline-block; margin-top: 6px; font-size: 12px;
+      color: var(--accent); text-decoration: underline; cursor: pointer;
+      background: none; border: none; padding: 0; font-family: inherit;
+    }
+    .s9-rationale-text {
+      display: none; margin-top: 8px; padding: 8px 10px;
+      background: var(--accent-light); border-left: 3px solid var(--accent);
+      border-radius: 4px; font-size: 12px; color: var(--accent-dark); line-height: 1.5;
+      max-width: 480px;
+    }
+    .s9-rationale-text.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div style="display:flex;align-items:center;gap:12px">
+    <h1>Concierge</h1>
+    <span class="badge-internal">Internal MVP</span>
+  </div>
+  <div class="identity-row">
+    <label for="globalUserId">User ID</label>
+    <input type="text" id="globalUserId" value="test-ux" placeholder="e.g. test-ux">
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchSection('concierge', this)">Concierge</button>
+      <button class="tab-btn" onclick="switchSection('actions', this)">Actions</button>
+      <button class="tab-btn" onclick="switchSection('recap', this)">Recap</button>
+      <button class="tab-btn" onclick="switchSection('travel', this)">Travel</button>
+    </div>
+
+    <!-- Concierge pane -->
+    <div id="pane-concierge" class="tab-pane active">
+      <div class="field">
+        <label>API Endpoint</label>
+        <input type="url" id="conciergeUrl" value="https://ai-action-service.noahlaux.workers.dev/v1/ai/concierge">
+      </div>
+      <div class="field">
+        <label>Auth Token (optional)</label>
+        <input type="text" id="conciergeToken" placeholder="Leave blank — auth is disabled">
+      </div>
+      <div class="field">
+        <label>Verb</label>
+        <select id="conciergeVerb" onchange="onConciergeVerbChange()">
+          <option value="">— Select a verb —</option>
+          <option value="book_reservation">book_reservation — Book a reservation</option>
+          <option value="schedule_meeting">schedule_meeting — Schedule a meeting</option>
+          <option value="plan_my_day">plan_my_day — Plan my day</option>
+          <option value="remind_me">remind_me — Set a reminder</option>
+          <option value="errand_request">errand_request — Request an errand</option>
+        </select>
+      </div>
+
+      <!-- Concierge verb-specific fields -->
+      <div id="conciergeFieldsSection" style="display:none;margin:16px 0">
+        <div class="section-title">Verb Details</div>
+
+        <!-- book_reservation -->
+        <div id="concierge-book_reservation" style="display:none">
+          <div class="field">
+            <label>Reservation Request</label>
+            <textarea id="conciergeReservationText" rows="3" placeholder="e.g., Book a table for 2 at La Cicchetteria for tonight at 7pm…"></textarea>
+          </div>
+          <div class="field">
+            <label>Date & Time (optional)</label>
+            <input type="datetime-local" id="conciergeReservationDateTime">
+          </div>
+        </div>
+
+        <!-- schedule_meeting -->
+        <div id="concierge-schedule_meeting" style="display:none">
+          <div class="field">
+            <label>Meeting Request</label>
+            <textarea id="conciergeMeetingRequest" rows="3" placeholder="e.g., Schedule a meeting with Alice about Q2 roadmap next Tuesday at 2pm…"></textarea>
+          </div>
+        </div>
+
+        <!-- plan_my_day -->
+        <div id="concierge-plan_my_day" style="display:none">
+          <div class="field">
+            <label>Calendar/Inbox Paste</label>
+            <textarea id="conciergeDayPlanText" rows="5" placeholder="Paste your calendar events, emails, or goals here…"></textarea>
+          </div>
+        </div>
+
+        <!-- remind_me -->
+        <div id="concierge-remind_me" style="display:none">
+          <div class="field">
+            <label>Reminder Subject</label>
+            <input type="text" id="conciergeReminderSubject" placeholder="e.g., Follow up with team">
+          </div>
+          <div class="field">
+            <label>Contact / Person (optional)</label>
+            <input type="text" id="conciergeReminderContact" placeholder="e.g., Alice, or leave blank for self">
+          </div>
+          <div class="field">
+            <label>When</label>
+            <select id="conciergeReminderDelay">
+              <option value="in 1 hour">In 1 hour</option>
+              <option value="in 2 hours">In 2 hours</option>
+              <option value="tomorrow">Tomorrow at 9am</option>
+              <option value="next week">Next week at 9am</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- errand_request -->
+        <div id="concierge-errand_request" style="display:none">
+          <div class="field">
+            <label>Errand Description</label>
+            <textarea id="conciergeErrandText" rows="3" placeholder="e.g., Pick up dry cleaning, then schedule a haircut appointment…"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn btn-ghost" id="conciergeLoadDemoBtn" onclick="loadConciergeDemo()">Load demo</button>
+      </div>
+    </div>
+
+    <!-- Actions pane -->
+    <div id="pane-actions" class="tab-pane">
+      <div class="field">
+        <label>API Endpoint</label>
+        <input type="url" id="actionUrl" value="https://ai-action-service.noahlaux.workers.dev/v1/ai/action">
+      </div>
+      <div class="field">
+        <label>Auth Token (optional)</label>
+        <input type="text" id="actionToken" placeholder="Leave blank — auth is disabled">
+      </div>
+      <div class="field">
+        <label>Action</label>
+        <select id="actionId" onchange="onActionChange()">
+          <option value="">— Select an action —</option>
+          <optgroup label="Existing Actions">
+            <option value="summarize_email">summarize_email — Draft email from tabs</option>
+            <option value="outline_doc">outline_doc — Doc outline from tabs</option>
+            <option value="bullet_slides">bullet_slides — Slide bullets from tabs</option>
+            <option value="compare_tabs">compare_tabs — Comparison table (≥ 2 tabs)</option>
+            <option value="research_brief">research_brief — Research brief</option>
+            <option value="regroup_windows">regroup_windows — Regroup into windows</option>
+          </optgroup>
+          <optgroup label="Concierge">
+            <option value="schedule_meeting">schedule_meeting — Schedule a meeting</option>
+            <option value="plan_my_day">plan_my_day — Plan my day</option>
+            <option value="remind_me">remind_me — Set a reminder</option>
+            <option value="errand_request">errand_request — Request an errand</option>
+            <option value="book_reservation">book_reservation — Book a reservation</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="field">
+        <label>Context Hint <span style="font-weight:400;text-transform:none">(optional, max 250 chars)</span></label>
+        <textarea id="contextHint" rows="2" placeholder="Extra context for the action…"></textarea>
+      </div>
+
+      <!-- Concierge secondary fields -->
+      <div id="secondaryFieldsSection" style="display:none;margin:16px 0">
+        <div class="section-title">Action Details</div>
+
+        <!-- schedule_meeting -->
+        <div id="field-schedule_meeting" style="display:none">
+          <div class="field">
+            <label>Meeting Request</label>
+            <textarea id="meetingRequest" rows="3" placeholder="e.g., Schedule a meeting with Alice about Q2 roadmap next Tuesday at 2pm…"></textarea>
+          </div>
+        </div>
+
+        <!-- plan_my_day -->
+        <div id="field-plan_my_day" style="display:none">
+          <div class="field">
+            <label>Today's Goals</label>
+            <textarea id="dayPlanText" rows="4" placeholder="What do you want to accomplish today?…" style="font-family:inherit"></textarea>
+          </div>
+        </div>
+
+        <!-- remind_me -->
+        <div id="field-remind_me" style="display:none">
+          <div class="field">
+            <label>Reminder Subject</label>
+            <input type="text" id="reminderSubject" placeholder="e.g., Follow up with team">
+          </div>
+          <div class="field">
+            <label>Contact / Person</label>
+            <input type="text" id="reminderContact" placeholder="e.g., Team lead, or leave blank for self">
+          </div>
+          <div class="field">
+            <label>When</label>
+            <select id="reminderDelay">
+              <option value="in 1 hour">In 1 hour</option>
+              <option value="in 2 hours">In 2 hours</option>
+              <option value="tomorrow">Tomorrow at 9am</option>
+              <option value="next week">Next week at 9am</option>
+              <option value="custom">Custom time…</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- errand_request -->
+        <div id="field-errand_request" style="display:none">
+          <div class="field">
+            <label>Errand Description</label>
+            <textarea id="errandText" rows="4" placeholder="What errand or task do you need help with?…"></textarea>
+          </div>
+        </div>
+
+        <!-- book_reservation -->
+        <div id="field-book_reservation" style="display:none">
+          <div class="field">
+            <label>Venue / Restaurant</label>
+            <input type="text" id="reservationVenue" placeholder="e.g., La Cicchetteria">
+          </div>
+          <div class="field">
+            <label>Date & Time</label>
+            <input type="datetime-local" id="reservationDateTime">
+          </div>
+          <div class="field">
+            <label>Party Size</label>
+            <input type="number" id="partySize" min="1" max="50" value="2" placeholder="2">
+          </div>
+        </div>
+      </div>
+
+      <hr id="tabsHr">
+      <div class="section-title" id="tabsTitle">Tabs</div>
+      <div class="tabs-list" id="actionTabsList"></div>
+      <div class="field">
+        <label>Tab Title</label>
+        <input type="text" id="newTabTitle" placeholder="e.g. GitHub PR #42">
+      </div>
+      <div class="field">
+        <label>Tab URL</label>
+        <input type="url" id="newTabUrl" placeholder="https://github.com/…" oninput="autoFillDomain()">
+      </div>
+      <div class="field">
+        <label>Domain</label>
+        <input type="text" id="newTabDomain" placeholder="auto-filled from URL">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="addActionTab()">+ Add Tab</button>
+        <button class="btn btn-ghost" onclick="loadDemoTabs()">Load demo tabs</button>
+      </div>
+      <div id="compare-hint" style="display:none;font-size:12px;color:var(--warn);margin-top:8px;">compare_tabs requires at least 2 tabs.</div>
+    </div>
+
+    <!-- Recap pane -->
+    <div id="pane-recap" class="tab-pane">
+      <div class="field">
+        <label>API Endpoint</label>
+        <input type="url" id="recapUrl" value="https://ai-recap-service.noahlaux.workers.dev/v1/ai/recap">
+      </div>
+      <div class="field">
+        <label>Auth Token (optional)</label>
+        <input type="text" id="recapToken" placeholder="Leave blank — auth is disabled">
+      </div>
+      <hr>
+      <div class="section-title">Intent Windows</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">Paste raw JSON or use the builder below. Each window has <code>windowId</code>, <code>startedAt</code>, <code>endedAt</code>, and a <code>tabs</code> array.</p>
+      <div class="field">
+        <label>JSON Payload</label>
+        <textarea id="recapJson" rows="8" placeholder='{"userId":"test-ux","intentWindows":[{"windowId":"w1","startedAt":"2026-05-21T08:00:00Z","endedAt":"2026-05-21T09:00:00Z","tabs":[{"title":"GitHub PR #42","url":"https://github.com/jeevy/pr/42","domain":"github.com"}]}]}'></textarea>
+      </div>
+      <button class="btn btn-ghost" onclick="loadDemoRecap()" style="margin-bottom:8px;font-size:12px;">Load demo intent windows</button>
+    </div>
+
+    <!-- Travel pane -->
+    <div id="pane-travel" class="tab-pane">
+      <div class="section-title" style="margin-bottom:8px">Travel Flow Demo</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.6">
+        Alex Chen booking Web Summit 2026. Watch the itinerary card grow at each enrichment point.
+      </p>
+      <div style="margin-bottom:14px">
+        <div class="section-title" style="margin-bottom:6px">Progress</div>
+        <div id="travelStepLabel" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">—</div>
+        <div style="display:flex;gap:5px;align-items:center" id="travelDots">
+          <div class="step-dot" id="dot-s1" title="S1 — Butler nudge"></div>
+          <div class="step-dot" id="dot-s3" title="S3 — Flight"></div>
+          <div class="step-dot" id="dot-s4" title="S4 — Hotel"></div>
+          <div class="step-dot" id="dot-s5" title="S5 — Sessions"></div>
+          <div class="step-dot" id="dot-s7" title="S7 — Reminders"></div>
+          <div class="step-dot" id="dot-s8" title="S8 — Complete"></div>
+        </div>
+      </div>
+      <hr>
+      <div style="margin-top:12px">
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;font-size:12px" onclick="resetTravelDemo()">↺ Reset demo</button>
+      </div>
+    </div>
+
+    <div class="send-area">
+      <button class="btn btn-primary" id="sendBtn" onclick="handleSend()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Run
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main content ── -->
+  <main class="main-content">
+    <div id="resultArea">
+      <div class="result-placeholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8M12 8v8"/></svg>
+        <p>Select an action and tabs, then click <strong>Run</strong>.</p>
+        <p style="margin-top:6px;font-size:12px;">Results appear here — structured, not raw JSON.</p>
+      </div>
+    </div>
+
+    <!-- Travel result: itinerary card + chat (hidden until Travel tab active) -->
+    <div id="travelResult" style="display:none">
+      <div class="travel-result-wrap">
+        <!-- Itinerary card — all 4 sections pre-rendered; revealed at enrichment points -->
+        <div id="itinCard" class="itin-card">
+          <div class="itin-head">
+            <div id="itinStatus" class="itin-status">Planning…</div>
+            <div class="itin-head-title">Web Summit 2026</div>
+            <div class="itin-head-meta">Lisbon, Portugal &middot; Nov 9–12, 2026</div>
+          </div>
+
+          <!-- Enrichment 1: Flight segment (S3) — 200ms ease-out, 80ms delay -->
+          <div id="itin-flight" class="itin-section itin-section-flight">
+            <div class="itin-section-inner">
+              <div class="itin-section-heading">✈ Flights</div>
+              <div class="itin-flight-row" onclick="openDeepLink(FLIGHT_FIXTURES.outbound.calendarAddLink, 'flight', 'UA88')">
+                <div>
+                  <div class="itin-flight-route">SFO → LIS</div>
+                  <div class="itin-flight-info">Delta UA88 · Nov 9, 22:10 PST → Nov 10, 17:45 WET · Direct</div>
+                </div>
+                <span class="itin-flight-badge">Business 4A</span>
+              </div>
+              <div class="itin-flight-row" onclick="openDeepLink(FLIGHT_FIXTURES.return.calendarAddLink, 'flight', 'UA89')">
+                <div>
+                  <div class="itin-flight-route">LIS → SFO</div>
+                  <div class="itin-flight-info">Delta UA89 · Nov 12, 09:30 WET → Nov 12, 12:15 PST · Direct</div>
+                </div>
+                <span class="itin-flight-badge">Business 4A</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enrichment 2: Hotel segment (S4) — 200ms ease-out -->
+          <div id="itin-hotel" class="itin-section itin-section-hotel">
+            <div class="itin-section-inner">
+              <div class="itin-hotel-section" onclick="openDeepLink(HOTEL_FIXTURE.calendarAddLink, 'hotel', 'Bairro Alto Hotel')">
+                <div class="itin-hotel-name">Bairro Alto Hotel · Marriott Bonvoy</div>
+                <div class="itin-hotel-info">Rua da Bica de Duarte Belo 60, 1200-075 Lisbon</div>
+                <div class="itin-hotel-info">Check-in: Nov 10 &nbsp;·&nbsp; Check-out: Nov 12</div>
+                <div class="itin-hotel-info">Superior King Room · City View</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enrichment 3: Sessions list (S5) — 240ms ease-out; rows stagger in at 50ms -->
+          <div id="itin-sessions" class="itin-section itin-section-sessions">
+            <div class="itin-section-inner">
+              <div class="itin-section-heading">📅 Conference Sessions (4)</div>
+              <div class="itin-sess-row" id="is-1" onclick="openDeepLink(SESSION_FIXTURES[0].calendarAddLink, 'session', SESSION_FIXTURES[0].title)"><span class="itin-sess-time">Nov 10, 09:30</span><span class="itin-sess-title"></span></div>
+              <div class="itin-sess-row" id="is-2" onclick="openDeepLink(SESSION_FIXTURES[1].calendarAddLink, 'session', SESSION_FIXTURES[1].title)"><span class="itin-sess-time">Nov 11, 14:30</span><span class="itin-sess-title"></span></div>
+              <div class="itin-sess-row" id="is-3" onclick="openDeepLink(SESSION_FIXTURES[2].calendarAddLink, 'session', SESSION_FIXTURES[2].title)"><span class="itin-sess-time">Nov 11, 15:30</span><span class="itin-sess-title"></span></div>
+              <div class="itin-sess-row" id="is-4" onclick="openDeepLink(SESSION_FIXTURES[3].calendarAddLink, 'session', SESSION_FIXTURES[3].title)"><span class="itin-sess-time">Nov 12, 10:00</span><span class="itin-sess-title"></span></div>
+            </div>
+          </div>
+
+          <!-- Enrichment 4: Reminders section (S7) — 160ms ease-out; pills stagger in at 80ms -->
+          <div id="itin-reminders" class="itin-section itin-section-reminders">
+            <div class="itin-section-inner">
+              <div class="itin-section-heading">🔔 Reminders (2)</div>
+              <div class="itin-rem-pills">
+                <div class="itin-rem-pill" id="ip-1"><span class="itin-rem-time">Nov 9, 20:00</span><span class="itin-rem-text">Pack + check-in opens</span></div>
+                <div class="itin-rem-pill" id="ip-2"><span class="itin-rem-time">Nov 10, 05:30</span><span class="itin-rem-text">Leave for SFO (Lyft ~35 min)</span></div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /itinCard -->
+
+        <!-- Chat area: Jeevy bubbles + option cards appear as flow advances -->
+        <div id="travelChat" class="travel-chat"></div>
+      </div>
+    </div><!-- /travelResult -->
+  </main>
+</div>
+
+<script>
+'use strict';
+
+// ── State ──
+let activeSection = 'concierge';
+const actionTabs = [];
+let lastConciergeVerb = '';
+let lastConciergeText = '';
+const conciergeDemos = {
+  book_reservation: {
+    text: 'Book a table for 2 at La Cicchetteria tomorrow at 7pm'
+  },
+  schedule_meeting: {
+    text: 'Schedule a meeting with Alice about Q2 roadmap next Tuesday at 2pm'
+  },
+  plan_my_day: {
+    text: `9am - Team standup
+10am - Code review for PR #42
+12pm - Lunch
+1pm - Design sync for Concierge UI
+3pm - Work on database migration
+4pm - 1-1 with manager`
+  },
+  remind_me: {
+    text: 'Follow up with Bob about contract review'
+  },
+  errand_request: {
+    text: 'Pick up dry cleaning at the corner shop, then schedule a haircut appointment'
+  }
+};
+
+// ── Overlap detection (strict: boundary-touch is not a conflict) ──
+function eventsOverlap(s1Iso, e1Iso, s2Iso, e2Iso) {
+  const s1 = new Date(s1Iso).getTime();
+  const e1 = new Date(e1Iso).getTime();
+  const s2 = new Date(s2Iso).getTime();
+  const e2 = new Date(e2Iso).getTime();
+  return s1 < e2 && s2 < e1;
+}
+
+// Calendar events fixture — known events fetched at flow start
+const CALENDAR_FIXTURE = [
+  {
+    id: 'gcal-allhands-q4',
+    title: 'All-Hands Q4',
+    startIso: '2026-11-11T14:00:00Z',
+    endIso: '2026-11-11T15:30:00Z',
+    attendeeCount: 12,
+    organizerEmail: 'alex.chen@example.com'
+  }
+];
+
+// Conference session fixtures for S5 demo (with calendar deep links)
+const SESSION_FIXTURES = [
+  {
+    id: 'WS2026-K01',
+    title: 'The Age of Ambient AI',
+    speaker: 'Keynote',
+    startIso: '2026-11-10T09:30:00Z',
+    endIso: '2026-11-10T10:15:00Z',
+    room: 'Altice Arena Stage 1',
+    calendarAddLink: 'webcal://calendar.websummit.net/add?session=WS2026-K01&title=Age%20of%20Ambient%20AI&date=20261110&time=0930'
+  },
+  {
+    id: 'WS2026-K05',
+    title: 'Building Trust in AI Systems',
+    speaker: 'Panel',
+    startIso: '2026-11-11T14:30:00Z',
+    endIso: '2026-11-11T15:15:00Z',
+    room: 'Centre Stage',
+    calendarAddLink: 'webcal://calendar.websummit.net/add?session=WS2026-K05&title=Trust%20in%20AI&date=20261111&time=1430'
+  },
+  {
+    id: 'WS2026-K08',
+    title: 'Open Source AI: The Next Wave',
+    speaker: 'Meta AI Research',
+    startIso: '2026-11-11T15:30:00Z',
+    endIso: '2026-11-11T16:15:00Z',
+    room: 'Future Stage',
+    calendarAddLink: 'webcal://calendar.websummit.net/add?session=WS2026-K08&title=Open%20Source%20AI&date=20261111&time=1530'
+  },
+  {
+    id: 'WS2026-K12',
+    title: 'Scaling Reliability in Production AI',
+    speaker: 'Engineering Track',
+    startIso: '2026-11-12T10:00:00Z',
+    endIso: '2026-11-12T10:45:00Z',
+    room: 'Workshop Hall B',
+    calendarAddLink: 'webcal://calendar.websummit.net/add?session=WS2026-K12&title=Scaling%20Reliability&date=20261112&time=1000'
+  }
+];
+
+// Day-of-plan fixture for S9 demo (matches soloTravelFixture.dayOfPlan)
+const DAY_PLAN_FIXTURE = {
+  rankedPlan: [
+    { time: '06:00',      task: 'Wake up + final packing',                     priority: 'high' },
+    { time: '06:45',      task: 'Order Lyft to SFO (35 min, Terminal 2)',       priority: 'high' },
+    { time: '07:20',      task: 'Arrive SFO — Delta Sky Club check-in',         priority: 'high' },
+    { time: '09:00',      task: 'Board UA88 — Seat 4A Business',                priority: 'high' },
+    { time: '10:10',      task: 'Wheels up SFO → LIS (10.5h flight)',           priority: 'medium' },
+    { time: '17:45 WET',  task: 'Land Lisbon — hotel transfer (taxi ~25 min)',  priority: 'high' },
+    { time: '19:30 WET',  task: 'Check in: Bairro Alto Hotel',                  priority: 'medium' },
+    { time: '20:00 WET',  task: 'Web Summit welcome reception (optional)',       priority: 'low' }
+  ],
+  rationale: 'Critical path: Lyft at 06:45 is the latest safe departure. International check-in closes 90 min before departure (22:10). Sky Club access allows lounge time if early.'
+};
+
+// Flight fixture with deep links
+const FLIGHT_FIXTURES = {
+  outbound: {
+    id: 'UA88-out',
+    airline: 'Delta',
+    flightNo: 'UA88',
+    route: 'SFO → LIS',
+    departure: 'Nov 9, 22:10 PST',
+    arrival: 'Nov 10, 17:45 WET',
+    duration: 'Direct',
+    seat: 'Business 4A',
+    calendarAddLink: 'webcal://calendar.delta.com/add?flight=UA88&date=20261109&seat=4A'
+  },
+  return: {
+    id: 'UA89-ret',
+    airline: 'Delta',
+    flightNo: 'UA89',
+    route: 'LIS → SFO',
+    departure: 'Nov 12, 09:30 WET',
+    arrival: 'Nov 12, 12:15 PST',
+    duration: 'Direct',
+    seat: 'Business 4A',
+    calendarAddLink: 'webcal://calendar.delta.com/add?flight=UA89&date=20261112&seat=4A'
+  }
+};
+
+// Hotel fixture with deep link
+const HOTEL_FIXTURE = {
+  id: 'BAH-LIS',
+  name: 'Bairro Alto Hotel',
+  brand: 'Marriott Bonvoy',
+  address: 'Rua da Bica de Duarte Belo 60, 1200-075 Lisbon',
+  checkin: 'Nov 10',
+  checkout: 'Nov 12',
+  roomType: 'Superior King Room',
+  view: 'City View',
+  calendarAddLink: 'https://www.marriott.com/en-us/hotels/lisbh-bairro-alto-hotel-lisbon/rooms/?groupId=BAH-WEB-2026&utm_source=concierge'
+};
+
+function fmtSessionTime(startIso, endIso) {
+  const startOpts = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' };
+  const endOpts = { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' };
+  const s = new Date(startIso).toLocaleString('en-US', startOpts);
+  const e = new Date(endIso).toLocaleTimeString('en-US', endOpts);
+  return s + '–' + e + ' UTC';
+}
+
+function renderS5Demo(sessions, calEvents) {
+  const sessionConflicts = sessions.map(sess => {
+    const hit = calEvents.find(ev =>
+      eventsOverlap(sess.startIso, sess.endIso, ev.startIso, ev.endIso)
+    );
+    return { session: sess, conflict: hit || null };
+  });
+
+  const hasConflicts = sessionConflicts.some(sc => sc.conflict !== null);
+
+  const rowsHtml = sessionConflicts.map((sc, i) => {
+    const conflictBadge = sc.conflict
+      ? `<span class="badge-conflict">⚠ Conflicts with "${esc(sc.conflict.title)}"</span>`
+      : '';
+    return `
+      <div class="session-row" style="animation-delay:${i * 50}ms">
+        <input type="checkbox" class="session-row-check" checked>
+        <div class="session-row-body">
+          <div class="session-row-header">
+            <div class="session-row-title">${esc(sc.session.title)}</div>
+            ${conflictBadge}
+          </div>
+          <div class="session-row-meta">${esc(sc.session.speaker)} · ${esc(fmtSessionTime(sc.session.startIso, sc.session.endIso))} · ${esc(sc.session.room)}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  let s6Html = '';
+  if (hasConflicts) {
+    const cards = sessionConflicts
+      .filter(sc => sc.conflict !== null)
+      .map(sc => renderS6ConflictCard(sc.session, sc.conflict))
+      .join('');
+    s6Html = `
+      <div class="s6-section">
+        <div class="s6-header">⚠ One session overlaps an existing meeting:</div>
+        ${cards}
+      </div>`;
+  }
+
+  return `
+    <div class="section-title" style="margin-bottom:10px">S5 — Conference Sessions (Web Summit 2026)</div>
+    <div class="banner banner-info" style="margin-bottom:14px">
+      <span class="banner-icon">ℹ</span>
+      <div class="banner-body">I found ${sessions.length} sessions you're registered for at Web Summit. Add them to your calendar?</div>
+    </div>
+    <div class="session-rows-list">${rowsHtml}</div>
+    <div style="margin-top:12px">
+      <button class="btn btn-primary" style="font-size:13px">Add to Calendar</button>
+    </div>
+    ${s6Html}`;
+}
+
+function renderS6ConflictCard(session, calEvent) {
+  const cardId = 'conflict-' + session.id;
+  return `
+    <div class="conflict-card" id="${esc(cardId)}">
+      <div class="conflict-card-inner">
+        <div class="conflict-pair">
+          <div class="conflict-event-box">
+            <div class="conflict-box-label">Existing meeting</div>
+            <div class="conflict-box-title">${esc(calEvent.title)}</div>
+            <div class="conflict-box-meta">${esc(fmtSessionTime(calEvent.startIso, calEvent.endIso))} · ${calEvent.attendeeCount} attendees</div>
+          </div>
+          <div class="conflict-session-box">
+            <div class="conflict-box-label">Conference session</div>
+            <div class="conflict-box-title">${esc(session.title)}</div>
+            <div class="conflict-box-meta">${esc(fmtSessionTime(session.startIso, session.endIso))}</div>
+          </div>
+        </div>
+        <div class="conflict-card-actions">
+          <button class="btn btn-warn" onclick="moveMeeting(${JSON.stringify(cardId)}, ${JSON.stringify(session.title)}, ${JSON.stringify(calEvent.title)})">[Move the meeting]</button>
+          <button class="btn btn-neutral" onclick="resolveConflict(${JSON.stringify(cardId)})">[Keep session, skip meeting note]</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function resolveConflict(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  card.style.opacity = '0';
+  setTimeout(() => {
+    card.style.maxHeight = '0';
+    card.style.marginBottom = '0';
+  }, 200);
+}
+
+async function moveMeeting(cardId, sessionTitle, eventTitle) {
+  const url = document.getElementById('conciergeUrl').value.trim();
+  const userId = document.getElementById('globalUserId').value.trim() || 'test-ceo';
+  const token = document.getElementById('conciergeToken').value.trim();
+  const card = document.getElementById(cardId);
+  if (!card) return;
+
+  const actionsEl = card.querySelector('.conflict-card-actions');
+  if (actionsEl) actionsEl.innerHTML = '<span style="font-size:12px;color:var(--text3)">Rescheduling…</span>';
+
+  const text = `Reschedule "${eventTitle}" due to conference conflict with "${sessionTitle}". Find next available slot within same week, avoid mornings.`;
+  const payload = { userId, verbId: 'schedule_meeting', text };
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+    const data = await res.json();
+    const mp = data.result?.payload ?? data.result ?? data;
+    const slots = Array.isArray(mp.proposedSlots) ? mp.proposedSlots : [];
+    const firstSlot = slots[0];
+    const isConfident = data.isConfident !== false && mp.isConfident !== false;
+    const slotLabel = firstSlot ? (firstSlot.label || firstSlot.iso || 'proposed slot') : 'proposed slot';
+    const verifyHtml = !isConfident ? ' <span style="color:var(--warn);font-weight:600">⚠ Verify</span>' : '';
+    if (actionsEl) {
+      actionsEl.innerHTML = `<span style="font-size:12px;color:var(--success)">✓ Proposed: ${esc(slotLabel)}${verifyHtml}</span>`;
+    }
+    setTimeout(() => resolveConflict(cardId), 1500);
+  } catch (err) {
+    if (actionsEl) {
+      actionsEl.innerHTML = `
+        <span style="font-size:12px;color:var(--err)">Failed: ${esc(err.message)}</span>
+        <button class="btn btn-warn" onclick="moveMeeting(${JSON.stringify(cardId)}, ${JSON.stringify(sessionTitle)}, ${JSON.stringify(eventTitle)})">Retry</button>`;
+    }
+  }
+}
+
+// ── Section switching ──
+function switchSection(section, btn) {
+  const prev = activeSection;
+  activeSection = section;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('pane-' + section).classList.add('active');
+  // Travel tab toggles result area visibility
+  if (section === 'travel') {
+    document.getElementById('resultArea').style.display = 'none';
+    document.getElementById('travelResult').style.display = 'block';
+    document.getElementById('sendBtn').disabled = true;
+    if (!travelState.initialized) startTravelDemo();
+  } else {
+    document.getElementById('resultArea').style.display = 'block';
+    document.getElementById('travelResult').style.display = 'none';
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+// ── Tab management ──
+function autoFillDomain() {
+  const url = document.getElementById('newTabUrl').value;
+  try {
+    const d = new URL(url).hostname;
+    if (d) document.getElementById('newTabDomain').value = d;
+  } catch {}
+}
+
+function addActionTab() {
+  const title = document.getElementById('newTabTitle').value.trim();
+  const url = document.getElementById('newTabUrl').value.trim();
+  let domain = document.getElementById('newTabDomain').value.trim();
+  if (!title || !url) { alert('Tab title and URL are required.'); return; }
+  if (!domain) {
+    try { domain = new URL(url).hostname; } catch {}
+  }
+  if (!domain) { alert('Could not extract domain from URL.'); return; }
+  actionTabs.push({ tabId: 'tab-' + (actionTabs.length + 1), title, url, domain });
+  document.getElementById('newTabTitle').value = '';
+  document.getElementById('newTabUrl').value = '';
+  document.getElementById('newTabDomain').value = '';
+  renderActionTabs();
+}
+
+function removeActionTab(idx) {
+  actionTabs.splice(idx, 1);
+  renderActionTabs();
+}
+
+function renderActionTabs() {
+  const el = document.getElementById('actionTabsList');
+  if (actionTabs.length === 0) {
+    el.innerHTML = '<div class="tabs-empty">No tabs added yet.</div>';
+    return;
+  }
+  el.innerHTML = actionTabs.map((t, i) => `
+    <div class="tab-chip">
+      <div class="tab-chip-info">
+        <div class="tab-chip-title">${esc(t.title)}</div>
+        <div class="tab-chip-domain">${esc(t.domain)}</div>
+        <div class="tab-chip-url">${esc(t.url)}</div>
+      </div>
+      <button class="btn btn-danger" onclick="removeActionTab(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function loadDemoTabs() {
+  actionTabs.length = 0;
+  const demos = [
+    { tabId: 'd1', title: 'GitHub PR #42: calendar sync fix', url: 'https://github.com/jeevy-ai/concierge/pull/42', domain: 'github.com' },
+    { tabId: 'd2', title: 'Google Calendar – Q2 Planning Kickoff', url: 'https://calendar.google.com/calendar/event?eid=abc123', domain: 'calendar.google.com' },
+    { tabId: 'd3', title: 'Gmail – Meeting request from Alice', url: 'https://mail.google.com/mail/u/0/#inbox/xyz', domain: 'mail.google.com' },
+    { tabId: 'd4', title: 'Notion – Q2 Roadmap', url: 'https://notion.so/Q2-Roadmap-abc123', domain: 'notion.so' },
+    { tabId: 'd5', title: 'Zoom – Upcoming meetings dashboard', url: 'https://zoom.us/meeting', domain: 'zoom.us' },
+  ];
+  actionTabs.push(...demos);
+  renderActionTabs();
+}
+
+function onActionChange() {
+  const id = document.getElementById('actionId').value;
+  const conciergeVerbs = ['schedule_meeting', 'plan_my_day', 'remind_me', 'errand_request', 'book_reservation'];
+  const isConcierge = conciergeVerbs.includes(id);
+
+  // Show/hide secondary fields and tabs section
+  const secondaryFields = document.getElementById('secondaryFieldsSection');
+  const tabsHr = document.getElementById('tabsHr');
+  const tabsTitle = document.getElementById('tabsTitle');
+  const tabsList = document.getElementById('actionTabsList');
+  const tabsSection = tabsList.parentElement;
+
+  if (isConcierge) {
+    secondaryFields.style.display = 'block';
+    tabsHr.style.display = 'none';
+    tabsTitle.style.display = 'none';
+    // Hide all tab-related fields
+    const tabFields = tabsSection.querySelectorAll('.field');
+    tabFields.forEach(f => f.style.display = 'none');
+    tabsList.style.display = 'none';
+    const btnRow = tabsSection.querySelector('.btn-row');
+    if (btnRow) btnRow.style.display = 'none';
+  } else {
+    secondaryFields.style.display = 'none';
+    tabsHr.style.display = 'block';
+    tabsTitle.style.display = 'block';
+    // Show all tab-related fields
+    const tabFields = tabsSection.querySelectorAll('.field');
+    tabFields.forEach(f => f.style.display = 'block');
+    tabsList.style.display = 'block';
+    const btnRow = tabsSection.querySelector('.btn-row');
+    if (btnRow) btnRow.style.display = 'flex';
+  }
+
+  // Show/hide individual secondary field
+  document.querySelectorAll('[id^="field-"]').forEach(el => el.style.display = 'none');
+  if (isConcierge) {
+    const field = document.getElementById('field-' + id);
+    if (field) field.style.display = 'block';
+  }
+
+  // Show compare_tabs hint
+  document.getElementById('compare-hint').style.display = id === 'compare_tabs' ? 'block' : 'none';
+}
+
+function onConciergeVerbChange() {
+  const verb = document.getElementById('conciergeVerb').value;
+  const fieldsSection = document.getElementById('conciergeFieldsSection');
+  if (!verb) {
+    fieldsSection.style.display = 'none';
+    return;
+  }
+  document.querySelectorAll('[id^="concierge-"]').forEach(el => el.style.display = 'none');
+  const verbField = document.getElementById('concierge-' + verb);
+  if (verbField) verbField.style.display = 'block';
+  fieldsSection.style.display = 'block';
+}
+
+function loadConciergeDemo() {
+  const verb = document.getElementById('conciergeVerb').value;
+  if (!verb) {
+    showError('Select a verb first.');
+    return;
+  }
+  const demo = conciergeDemos[verb];
+  if (!demo) return;
+
+  document.getElementById('conciergeReservationText').value = '';
+  document.getElementById('conciergeReservationDateTime').value = '';
+  document.getElementById('conciergeMeetingRequest').value = '';
+  document.getElementById('conciergeDayPlanText').value = '';
+  document.getElementById('conciergeReminderSubject').value = '';
+  document.getElementById('conciergeReminderContact').value = '';
+  document.getElementById('conciergeErrandText').value = '';
+
+  switch (verb) {
+    case 'book_reservation':
+      document.getElementById('conciergeReservationText').value = demo.text;
+      break;
+    case 'schedule_meeting':
+      document.getElementById('conciergeMeetingRequest').value = demo.text;
+      // Render S5/S6 flow demo directly — shows overlap detection in action
+      document.getElementById('resultArea').innerHTML = `
+        <div class="result-card">
+          <div class="result-header">
+            <span class="result-title">S5 / S6 — Conference Session Sync &amp; Conflict Resolution</span>
+            <span class="badge badge-source-det">Demo</span>
+          </div>
+          <div class="result-body">
+            ${renderS5Demo(SESSION_FIXTURES, CALENDAR_FIXTURE)}
+          </div>
+        </div>`;
+      break;
+    case 'plan_my_day':
+      document.getElementById('conciergeDayPlanText').value = demo.text;
+      break;
+    case 'remind_me':
+      document.getElementById('conciergeReminderSubject').value = demo.text;
+      break;
+    case 'errand_request':
+      document.getElementById('conciergeErrandText').value = demo.text;
+      break;
+  }
+}
+
+async function sendConcierge() {
+  const url = document.getElementById('conciergeUrl').value.trim();
+  const token = document.getElementById('conciergeToken').value.trim();
+  const userId = document.getElementById('globalUserId').value.trim();
+  const verb = document.getElementById('conciergeVerb').value;
+
+  if (!url) return showError('API Endpoint is required.');
+  if (!userId) return showError('User ID is required. Set it in the header.');
+  if (!verb) return showError('Select a verb.');
+
+  let text = '';
+  switch (verb) {
+    case 'book_reservation':
+      text = document.getElementById('conciergeReservationText').value.trim();
+      if (!text) return showError('Reservation request is required.');
+      break;
+    case 'schedule_meeting':
+      text = document.getElementById('conciergeMeetingRequest').value.trim();
+      if (!text) return showError('Meeting request is required.');
+      break;
+    case 'plan_my_day':
+      text = document.getElementById('conciergeDayPlanText').value.trim();
+      if (!text) return showError('Calendar/inbox paste is required.');
+      break;
+    case 'remind_me':
+      text = document.getElementById('conciergeReminderSubject').value.trim();
+      if (!text) return showError('Reminder subject is required.');
+      break;
+    case 'errand_request':
+      text = document.getElementById('conciergeErrandText').value.trim();
+      if (!text) return showError('Errand description is required.');
+      break;
+  }
+
+  lastConciergeVerb = verb;
+  lastConciergeText = text;
+  const payload = { userId, verbId: verb, text };
+  showLoading('Running ' + verb + '…');
+  setSendDisabled(true);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    setSendDisabled(false);
+    if (!response.ok || data.error) {
+      showErrorResponse(data);
+    } else {
+      showConciergeResult(verb, data);
+    }
+  } catch (err) {
+    setSendDisabled(false);
+    showError('Request failed: ' + err.message);
+  }
+}
+
+// ── Verb response processing (§3 mapping + §4 confidence rules) ──
+
+function shouldAskClarification(data) {
+  return !data.isConfident || data.confidence < 0.7;
+}
+
+function verbVerifyBadge(data) {
+  if (data.isConfident === false) {
+    return '<span class="badge badge-verify">⚠ Verify</span>';
+  }
+  return '';
+}
+
+const CLARIFY_QUESTIONS = {
+  book_reservation: "I'm not certain of the best option here — can you clarify your preferences (e.g. departure time, hotel chain)?",
+  remind_me:        "I'm not fully certain about this reminder — could you clarify the timing or recipient?",
+  plan_my_day:      "I'm not fully certain about the best plan — could you share any additional constraints or priorities?",
+  errand_request:   "I'm not certain about all the details — could you clarify any specifics about this errand?"
+};
+
+function clarifyingQuestionPanel(verb, data) {
+  // S5/S6 (schedule_meeting) use badge only — no clarifying question
+  if (!shouldAskClarification(data) || verb === 'schedule_meeting') return '';
+  const q = CLARIFY_QUESTIONS[verb] || "I'm not fully confident in this result — could you clarify your request?";
+  return `<div class="clarify-panel">
+    <div class="clarify-question">⚠ ${esc(q)}</div>
+    <div class="clarify-input-row">
+      <input class="clarify-input" type="text" id="clarifyAnswer" placeholder="Your clarification…"
+        onkeydown="if(event.key==='Enter')submitClarification('${verb}')">
+      <button class="btn btn-ghost" style="flex-shrink:0" onclick="submitClarification('${verb}')">Re-run</button>
+    </div>
+  </div>`;
+}
+
+async function submitClarification(verb) {
+  const answer = document.getElementById('clarifyAnswer')?.value?.trim();
+  if (!answer) return;
+  const augmented = lastConciergeText + '. Additional context: ' + answer;
+  switch (verb) {
+    case 'book_reservation':  document.getElementById('conciergeReservationText').value = augmented; break;
+    case 'schedule_meeting':  document.getElementById('conciergeMeetingRequest').value  = augmented; break;
+    case 'plan_my_day':       document.getElementById('conciergeDayPlanText').value     = augmented; break;
+    case 'remind_me':         document.getElementById('conciergeReminderSubject').value = augmented; break;
+    case 'errand_request':    document.getElementById('conciergeErrandText').value      = augmented; break;
+  }
+  await sendConcierge();
+}
+
+function showConciergeResult(verb, data) {
+  const payload = data.result?.payload ?? data.result ?? data;
+  let content = '';
+
+  switch (verb) {
+    case 'book_reservation':  content = renderReservation(payload); break;
+    case 'schedule_meeting':  content = renderMeeting(payload); break;
+    case 'plan_my_day':       content = renderDayPlan(payload); break;
+    case 'remind_me':         content = renderReminder(payload); break;
+    case 'errand_request':    content = renderErrand(payload); break;
+    default:                  content = `<pre class="raw-json-pre">${esc(JSON.stringify(payload, null, 2))}</pre>`;
+  }
+
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <span class="result-title">${esc(verb)}</span>
+        ${resultMeta(data)}
+        ${verbVerifyBadge(data)}
+      </div>
+      <div class="result-body">
+        ${warningsBanner(data)}
+        ${content}
+        ${clarifyingQuestionPanel(verb, data)}
+        ${metaRow(data)}
+      </div>
+    </div>
+    ${rawJsonSection(data)}`;
+}
+
+// ── Recap demo ──
+function loadDemoRecap() {
+  const userId = document.getElementById('globalUserId').value || 'test-ux';
+  const payload = {
+    userId,
+    intentWindows: [
+      {
+        windowId: 'w1',
+        startedAt: '2026-05-21T08:00:00Z',
+        endedAt: '2026-05-21T09:30:00Z',
+        tabs: [
+          { title: 'GitHub PR #42', url: 'https://github.com/jeevy-ai/concierge/pull/42', domain: 'github.com' },
+          { title: 'Linear – YOU-536', url: 'https://linear.app/jeevy/issue/YOU-536', domain: 'linear.app' },
+        ]
+      },
+      {
+        windowId: 'w2',
+        startedAt: '2026-05-21T10:00:00Z',
+        endedAt: '2026-05-21T11:00:00Z',
+        tabs: [
+          { title: 'Figma – Concierge UI', url: 'https://figma.com/file/abc', domain: 'figma.com' },
+          { title: 'Notion – Design notes', url: 'https://notion.so/design-notes', domain: 'notion.so' },
+        ]
+      },
+      {
+        windowId: 'w3',
+        startedAt: '2026-05-21T11:30:00Z',
+        endedAt: '2026-05-21T12:00:00Z',
+        tabs: [
+          { title: 'Google Meet – Standup', url: 'https://meet.google.com/abc-def-ghi', domain: 'meet.google.com' },
+        ]
+      }
+    ]
+  };
+  document.getElementById('recapJson').value = JSON.stringify(payload, null, 2);
+}
+
+// ── Send ──
+async function handleSend() {
+  if (activeSection === 'concierge') {
+    await sendConcierge();
+  } else if (activeSection === 'actions') {
+    await sendAction();
+  } else {
+    await sendRecap();
+  }
+}
+
+async function sendAction() {
+  const url = document.getElementById('actionUrl').value.trim();
+  const token = document.getElementById('actionToken').value.trim();
+  const userId = document.getElementById('globalUserId').value.trim();
+  const actionId = document.getElementById('actionId').value;
+  const contextHint = document.getElementById('contextHint').value.trim();
+
+  if (!url) return showError('API Endpoint is required.');
+  if (!userId) return showError('User ID is required. Set it in the header.');
+  if (!actionId) return showError('Select an action.');
+
+  const conciergeVerbs = ['schedule_meeting', 'plan_my_day', 'remind_me', 'errand_request', 'book_reservation'];
+  const isConcierge = conciergeVerbs.includes(actionId);
+
+  if (isConcierge) {
+    // For concierge verbs, validate required secondary fields
+    let requestText = '';
+    switch (actionId) {
+      case 'schedule_meeting':
+        requestText = document.getElementById('meetingRequest').value.trim();
+        if (!requestText) return showError('Meeting request is required.');
+        break;
+      case 'plan_my_day':
+        requestText = document.getElementById('dayPlanText').value.trim();
+        if (!requestText) return showError('Today\'s goals are required.');
+        break;
+      case 'remind_me':
+        const subject = document.getElementById('reminderSubject').value.trim();
+        if (!subject) return showError('Reminder subject is required.');
+        requestText = subject;
+        break;
+      case 'errand_request':
+        requestText = document.getElementById('errandText').value.trim();
+        if (!requestText) return showError('Errand description is required.');
+        break;
+      case 'book_reservation':
+        const venue = document.getElementById('reservationVenue').value.trim();
+        const datetime = document.getElementById('reservationDateTime').value;
+        const partySize = document.getElementById('partySize').value;
+        if (!venue) return showError('Venue is required.');
+        if (!datetime) return showError('Date & time is required.');
+        requestText = `${partySize} people at ${venue} on ${datetime}`;
+        break;
+    }
+    const payload = { userId, actionId, requestText, ...(contextHint ? { contextHint } : {}) };
+    showLoading('Running ' + actionId + '…');
+    setSendDisabled(true);
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+      const data = await res.json();
+      setSendDisabled(false);
+      if (!res.ok || data.error) {
+        showErrorResponse(data);
+      } else {
+        showActionResult(data);
+      }
+    } catch (err) {
+      setSendDisabled(false);
+      showError('Request failed: ' + err.message);
+    }
+  } else {
+    // For existing actions, tabs are required
+    if (actionTabs.length === 0) return showError('Add at least one tab.');
+    if (actionId === 'compare_tabs' && actionTabs.length < 2) return showError('compare_tabs requires at least 2 tabs.');
+
+    const payload = { userId, actionId, tabs: actionTabs, ...(contextHint ? { contextHint } : {}) };
+    showLoading('Running ' + actionId + '…');
+    setSendDisabled(true);
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+      const data = await res.json();
+      setSendDisabled(false);
+      if (!res.ok || data.error) {
+        showErrorResponse(data);
+      } else {
+        showActionResult(data);
+      }
+    } catch (err) {
+      setSendDisabled(false);
+      showError('Request failed: ' + err.message);
+    }
+  }
+}
+
+async function sendRecap() {
+  const url = document.getElementById('recapUrl').value.trim();
+  const token = document.getElementById('recapToken').value.trim();
+  const jsonText = document.getElementById('recapJson').value.trim();
+
+  if (!url) return showError('API Endpoint is required.');
+  if (!jsonText) return showError('Provide intent windows JSON.');
+
+  let payload;
+  try {
+    payload = JSON.parse(jsonText);
+  } catch (e) {
+    return showError('Invalid JSON: ' + e.message);
+  }
+
+  const userId = document.getElementById('globalUserId').value.trim();
+  if (userId && !payload.userId) payload.userId = userId;
+
+  showLoading('Running recap…');
+  setSendDisabled(true);
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+    const data = await res.json();
+    setSendDisabled(false);
+    if (!res.ok || data.error) {
+      showErrorResponse(data);
+    } else {
+      showRecapResult(data);
+    }
+  } catch (err) {
+    setSendDisabled(false);
+    showError('Request failed: ' + err.message);
+  }
+}
+
+// ── UI helpers ──
+function setSendDisabled(disabled) {
+  document.getElementById('sendBtn').disabled = disabled;
+}
+
+function showLoading(msg) {
+  document.getElementById('resultArea').innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>${esc(msg)}</p>
+    </div>`;
+}
+
+function showError(msg) {
+  document.getElementById('resultArea').innerHTML = `
+    <div class="banner banner-err">
+      <span class="banner-icon">⚠</span>
+      <div class="banner-body"><strong>Error</strong>${esc(msg)}</div>
+    </div>`;
+}
+
+function showErrorResponse(data) {
+  const err = data.error || {};
+  const code = err.code || 'UNKNOWN';
+  const message = err.message || JSON.stringify(data);
+  const retryable = err.retryable;
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <span class="result-title">Error</span>
+        <span class="badge" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err-border)">${esc(code)}</span>
+        ${retryable ? '<span class="badge badge-confidence">retryable</span>' : ''}
+      </div>
+      <div class="result-body">
+        <div class="banner banner-err">
+          <span class="banner-icon">⚠</span>
+          <div class="banner-body">${esc(message)}</div>
+        </div>
+        ${data.requestId ? `<div class="request-id">Request ID: ${esc(data.requestId)}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+// ── Result renderers ──
+function resultMeta(data) {
+  const conf = data.confidence;
+  const pct = Math.round(conf * 100);
+  const isLow = data.warnings && data.warnings.some(w => w.code === 'LOW_CONFIDENCE');
+  const sourceBadge = data.source === 'llm'
+    ? '<span class="badge badge-source-llm">LLM</span>'
+    : '<span class="badge badge-source-det">Deterministic</span>';
+  const confBadge = isLow
+    ? `<span class="badge badge-low-conf">Confidence ${pct}% — low</span>`
+    : `<span class="badge badge-confidence">Confidence ${pct}%</span>`;
+  return sourceBadge + confBadge;
+}
+
+function warningsBanner(data) {
+  if (!data.warnings || data.warnings.length === 0) return '';
+  const relevant = data.warnings.filter(w => w.code !== 'LOW_CONFIDENCE');
+  const hasLow = data.warnings.some(w => w.code === 'LOW_CONFIDENCE');
+  let html = '';
+  if (hasLow) {
+    html += `<div class="banner banner-warn">
+      <span class="banner-icon">⚠</span>
+      <div class="banner-body"><strong>Low confidence — review before acting</strong>The model is not highly confident in this result. Double-check before using.</div>
+    </div>`;
+  }
+  if (relevant.length > 0) {
+    html += `<div class="banner banner-info">
+      <span class="banner-icon">ℹ</span>
+      <div class="banner-body"><strong>Warnings</strong><ul>${relevant.map(w => `<li>${esc(w.message || String(w))}</li>`).join('')}</ul></div>
+    </div>`;
+  }
+  return html;
+}
+
+function metaRow(data) {
+  const at = data.generatedAt ? new Date(data.generatedAt).toLocaleTimeString() : '';
+  return `<div class="meta-row" style="margin-top:12px">
+    ${at ? `<span>Generated ${at}</span>` : ''}
+    ${data.requestId ? `<span>ID: <code>${esc(data.requestId.slice(0,8))}…</code></span>` : ''}
+  </div>`;
+}
+
+function showActionResult(data) {
+  const payload = (data.result && data.result.payload) || {};
+  const actionId = data.actionId || '';
+  let content = '';
+
+  switch (actionId) {
+    case 'summarize_email':   content = renderEmail(payload); break;
+    case 'outline_doc':       content = renderOutline(payload); break;
+    case 'bullet_slides':     content = renderSlides(payload); break;
+    case 'compare_tabs':      content = renderCompare(payload); break;
+    case 'research_brief':    content = renderBrief(payload); break;
+    case 'regroup_windows':   content = renderGroups(payload); break;
+    case 'schedule_meeting':  content = renderMeeting(payload); break;
+    case 'plan_my_day':       content = renderDayPlan(payload); break;
+    case 'remind_me':         content = renderReminder(payload); break;
+    case 'errand_request':    content = renderErrand(payload); break;
+    case 'book_reservation':  content = renderReservation(payload); break;
+    default:                  content = `<pre class="raw-json-pre">${esc(JSON.stringify(payload, null, 2))}</pre>`;
+  }
+
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <span class="result-title">${esc(actionId)}</span>
+        ${resultMeta(data)}
+      </div>
+      <div class="result-body">
+        ${warningsBanner(data)}
+        ${content}
+        ${metaRow(data)}
+      </div>
+    </div>
+    ${rawJsonSection(data)}`;
+}
+
+function showRecapResult(data) {
+  const clusters = data.clusters || [];
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <span class="result-title">Recap</span>
+        <span class="badge badge-source-${data.source === 'llm' ? 'llm' : 'det'}">${data.source === 'llm' ? 'LLM' : 'Deterministic'}</span>
+        <span class="badge badge-confidence">${clusters.length} cluster${clusters.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="result-body">
+        ${clusters.length === 0 ? '<p style="color:var(--text3)">No clusters returned.</p>' : ''}
+        ${clusters.map(c => renderCluster(c)).join('')}
+        ${data.warnings && data.warnings.length ? `<div class="banner banner-info" style="margin-top:12px"><span class="banner-icon">ℹ</span><div class="banner-body"><ul>${data.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div></div>` : ''}
+        ${metaRow(data)}
+      </div>
+    </div>
+    ${rawJsonSection(data)}`;
+}
+
+// ── Per-action renderers ──
+function renderEmail(p) {
+  const subject = p.subject || '';
+  const body = p.body || '';
+  const recipients = Array.isArray(p.recipients) ? p.recipients : [];
+  return `
+    <div class="email-field">
+      <div class="email-label">Subject</div>
+      <div class="email-subject">${esc(subject)}</div>
+    </div>
+    ${recipients.length ? `<div class="email-field">
+      <div class="email-label">Recipients</div>
+      <div class="recipients">${recipients.map(r => `<span class="recipient-chip">${esc(r)}</span>`).join('')}</div>
+    </div>` : ''}
+    <div class="email-field">
+      <div class="email-label">Body</div>
+      <div class="email-value">${esc(body)}</div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn btn-ghost" style="font-size:12px" onclick="copyText(${JSON.stringify(body)})">Copy body</button>
+    </div>`;
+}
+
+function renderOutline(p) {
+  const title = p.title || '';
+  const sections = Array.isArray(p.sections) ? p.sections : [];
+  return `
+    <div class="outline-title">${esc(title)}</div>
+    ${sections.map(s => `
+      <div class="outline-section">
+        <div class="outline-heading">${esc(s.heading || '')}</div>
+        <ul class="outline-bullets">
+          ${(s.bullets || []).map(b => `<li>${esc(b)}</li>`).join('')}
+        </ul>
+      </div>`).join('')}
+    ${p.markdown ? `<div style="margin-top:14px">
+      <button class="btn btn-ghost" style="font-size:12px" onclick="copyText(${JSON.stringify(p.markdown)})">Copy markdown</button>
+    </div>` : ''}`;
+}
+
+function renderSlides(p) {
+  const clusters = Array.isArray(p.clusters) ? p.clusters : [];
+  const copyAll = p.copyAll || '';
+  return `
+    ${clusters.map((c, i) => `
+      <div class="slide-cluster">
+        <div class="slide-title"><span class="slide-num">${i + 1}</span>${esc(c.title || '')}</div>
+        <ul class="slide-bullets">
+          ${(c.bullets || []).map(b => `<li>${esc(b)}</li>`).join('')}
+        </ul>
+      </div>`).join('')}
+    ${copyAll ? `<div class="copy-all-area">
+      <button class="btn btn-ghost copy-all-btn" onclick="copyText(${JSON.stringify(copyAll)})">Copy all slides</button>
+    </div>` : ''}`;
+}
+
+function renderCompare(p) {
+  const columns = Array.isArray(p.columns) ? p.columns : [];
+  const rows = Array.isArray(p.rows) ? p.rows : [];
+  if (columns.length === 0) return '<p style="color:var(--text3)">No comparison data.</p>';
+  return `
+    <div class="table-overflow">
+      <table class="compare-table">
+        <thead><tr>${columns.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(r => `<tr>${(r.cells || []).map(cell => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <div class="export-btns">
+      ${p.markdown ? `<button class="btn btn-ghost" style="font-size:12px" onclick="copyText(${JSON.stringify(p.markdown)})">Copy markdown table</button>` : ''}
+      ${p.csv ? `<button class="btn btn-ghost" style="font-size:12px" onclick="copyText(${JSON.stringify(p.csv)})">Copy CSV</button>` : ''}
+    </div>`;
+}
+
+function renderBrief(p) {
+  const title = p.title || '';
+  const overview = p.overview || '';
+  const sources = Array.isArray(p.sources) ? p.sources : [];
+  const questions = Array.isArray(p.openQuestions) ? p.openQuestions : [];
+  return `
+    <div class="brief-title">${esc(title)}</div>
+    <div class="brief-overview">${esc(overview)}</div>
+    ${sources.length ? `<div class="section-title">Sources</div>
+    <ul class="brief-sources">
+      ${sources.map(s => `<li>
+        <div class="source-title">${esc(s.title || '')}</div>
+        <div class="source-url">${esc(s.url || '')}</div>
+        <div class="source-summary">${esc(s.summary || '')}</div>
+      </li>`).join('')}
+    </ul>` : ''}
+    ${questions.length ? `<div class="section-title" style="margin-top:8px">Open Questions</div>
+    <ol class="open-questions" style="margin-left:18px">
+      ${questions.map(q => `<li>${esc(q)}</li>`).join('')}
+    </ol>` : ''}`;
+}
+
+function renderGroups(p) {
+  const groups = Array.isArray(p.groups) ? p.groups : [];
+  return groups.map(g => `
+    <div class="group-card">
+      <div class="group-name">${esc(g.name || g.groupId || '')}</div>
+      <div class="group-rationale">${esc(g.rationale || '')}</div>
+      <div class="group-tabs">
+        ${(g.tabIds || []).map(id => `<span class="tab-id-chip">${esc(String(id))}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function renderCluster(c) {
+  const actionClass = { resume: 'cluster-action-resume', archive: 'cluster-action-archive', ignore: 'cluster-action-ignore' }[c.suggestedAction] || '';
+  const confPct = Math.round((c.confidence || 0) * 100);
+  const confColor = c.confidence >= 0.7 ? 'var(--success)' : c.confidence >= 0.4 ? 'var(--warn)' : 'var(--err)';
+  return `
+    <div class="cluster-card">
+      <div class="cluster-header">
+        <div style="flex:1">
+          <div class="cluster-headline">${esc(c.headline || '')}</div>
+        </div>
+        <span class="cluster-label">${esc(c.label || '')}</span>
+        <span class="badge ${actionClass}" style="border-radius:4px">${esc(c.suggestedAction || '')}</span>
+      </div>
+      <div class="cluster-summary">${esc(c.summary || '')}</div>
+      <div class="cluster-footer">
+        <div class="cluster-conf">
+          <div class="conf-bar"><div class="conf-fill" style="width:${confPct}%;background:${confColor}"></div></div>
+          ${confPct}%
+        </div>
+        <span>Windows: ${(c.intentWindowIds || []).join(', ')}</span>
+      </div>
+    </div>`;
+}
+
+// ── Concierge result renderers ──
+function renderMeeting(p) {
+  const attendee = p.attendee || '';
+  const slots = Array.isArray(p.proposedSlots) ? p.proposedSlots : [];
+  const invite = p.draftInvite || '';
+  return `
+    <div class="email-field">
+      <div class="email-label">Attendee</div>
+      <div class="email-value">${esc(attendee)}</div>
+    </div>
+    ${slots.length ? `<div class="email-field">
+      <div class="email-label">Proposed Slots</div>
+      <ul style="list-style:disc;margin-left:20px">
+        ${slots.map(s => `<li>${esc(s.label || s.iso)}</li>`).join('')}
+      </ul>
+    </div>` : ''}
+    <div class="email-field">
+      <div class="email-label">Draft Invite</div>
+      <div class="email-value">${esc(invite)}</div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn btn-ghost" style="font-size:12px" onclick="copyText(${JSON.stringify(invite)})">Copy invite</button>
+    </div>`;
+}
+
+function renderDayPlan(p) {
+  const plan = Array.isArray(p.rankedPlan) ? p.rankedPlan : [];
+  const rationale = p.rationale || '';
+  const priorityColor = { high: 'var(--err)', medium: 'var(--warn)', low: 'var(--text3)' };
+  return `
+    ${plan.map(item => `
+      <div style="margin-bottom:12px;padding:10px;background:var(--surface2);border-radius:6px">
+        <div style="font-weight:600;color:var(--text);margin-bottom:4px">${esc(item.time)} — ${esc(item.task)}</div>
+        <div style="font-size:11px;color:${priorityColor[item.priority] || 'var(--text3)'}">Priority: ${esc(item.priority)}</div>
+      </div>`).join('')}
+    <div style="margin-top:14px;padding:10px;background:var(--accent-light);border-left:3px solid var(--accent);border-radius:4px">
+      <div style="font-size:12px;font-weight:600;color:var(--accent-dark);margin-bottom:4px">Rationale</div>
+      <div style="font-size:13px;color:var(--accent-dark)">${esc(rationale)}</div>
+    </div>`;
+}
+
+function renderReminder(p) {
+  const subject = p.subject || '';
+  const contact = p.contact || '';
+  const dueAt = p.dueAt || '';
+  const ack = p.ack || '';
+  const dueTime = dueAt ? new Date(dueAt).toLocaleString('en-US', { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+  return `
+    <div class="email-field">
+      <div class="email-label">Subject</div>
+      <div class="email-value">${esc(subject)}</div>
+    </div>
+    <div class="email-field">
+      <div class="email-label">Contact / Recipient</div>
+      <div class="email-value">${esc(contact)}</div>
+    </div>
+    <div class="email-field">
+      <div class="email-label">Due At</div>
+      <div class="email-value">${esc(dueTime)}</div>
+    </div>
+    <div style="margin-top:14px;padding:10px;background:var(--success-bg);border-left:3px solid var(--success);border-radius:4px">
+      <div style="font-size:12px;font-weight:600;color:var(--success);margin-bottom:4px">Confirmation</div>
+      <div style="font-size:13px;color:var(--success)">${esc(ack)}</div>
+    </div>`;
+}
+
+function renderErrand(p) {
+  const summary = p.summary || '';
+  const checklist = Array.isArray(p.checklist) ? p.checklist : [];
+  const nextActions = Array.isArray(p.nextActions) ? p.nextActions : [];
+  return `
+    <div style="margin-bottom:14px;padding:10px;background:var(--surface2);border-radius:6px">
+      <div style="font-size:13px;color:var(--text);line-height:1.6">${esc(summary)}</div>
+    </div>
+    ${checklist.length ? `<div class="section-title">Checklist</div>
+    <ul style="list-style:disc;margin-left:20px;margin-bottom:14px">
+      ${checklist.map(item => `<li style="margin-bottom:4px">${esc(item)}</li>`).join('')}
+    </ul>` : ''}
+    ${nextActions.length ? `<div style="padding:10px;background:var(--accent-light);border-left:3px solid var(--accent);border-radius:4px">
+      <div style="font-size:12px;font-weight:600;color:var(--accent-dark);margin-bottom:6px">Next Steps</div>
+      <ul style="list-style:disc;margin-left:20px">
+        ${nextActions.map(action => `<li style="font-size:13px;color:var(--text);margin-bottom:3px">${esc(action)}</li>`).join('')}
+      </ul>
+    </div>` : ''}`;
+}
+
+function renderReservation(p) {
+  const venue = p.venue || '';
+  const slot = p.slot || '';
+  const partySize = p.partySize || '';
+  const fallbacks = Array.isArray(p.fallbacks) ? p.fallbacks : [];
+  const calLink = p.calendarAddLink || '';
+  return `
+    <div class="email-field">
+      <div class="email-label">Venue</div>
+      <div class="email-value">${esc(venue)}</div>
+    </div>
+    <div class="email-field">
+      <div class="email-label">Reservation Time</div>
+      <div class="email-value">${esc(slot)}</div>
+    </div>
+    <div class="email-field">
+      <div class="email-label">Party Size</div>
+      <div class="email-value">${esc(String(partySize))} people</div>
+    </div>
+    ${fallbacks.length ? `<div class="email-field">
+      <div class="email-label">Fallback Options</div>
+      <ul style="list-style:disc;margin-left:20px">
+        ${fallbacks.map(f => `<li>${esc(f)}</li>`).join('')}
+      </ul>
+    </div>` : ''}
+    <div style="margin-top:12px">
+      ${calLink ? `<button class="btn btn-primary" style="font-size:12px" onclick="window.open(${JSON.stringify(calLink)},'_blank')">Add to Calendar</button>` : ''}
+    </div>`;
+}
+
+// ── Raw JSON toggle ──
+function rawJsonSection(data) {
+  const id = 'raw-' + Math.random().toString(36).slice(2, 7);
+  return `<div class="result-card" style="margin-top:8px">
+    <div class="result-header" style="cursor:pointer" onclick="toggleRaw('${id}')">
+      <span class="result-title" style="font-size:12px;color:var(--text3)">Raw JSON response</span>
+      <span id="${id}-arrow" style="color:var(--text3);font-size:12px">▶ show</span>
+    </div>
+    <div id="${id}" style="display:none;padding:14px">
+      <pre class="raw-json-pre">${esc(JSON.stringify(data, null, 2))}</pre>
+    </div>
+  </div>`;
+}
+
+function toggleRaw(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById(id + '-arrow');
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+  arrow.textContent = visible ? '▶ show' : '▼ hide';
+}
+
+// ── Utilities ──
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const el = document.createElement('div');
+    el.textContent = 'Copied!';
+    Object.assign(el.style, { position:'fixed', bottom:'24px', right:'24px', background:'#1a202c', color:'white', padding:'8px 14px', borderRadius:'6px', fontSize:'13px', zIndex:9999, transition:'opacity 0.3s' });
+    document.body.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 1500);
+  });
+}
+
+// ── Deep link handler (S8 itinerary taps + S5 calendar links) ──
+// Opens flight, hotel, and session calendar/booking links in new tab
+function openDeepLink(url, type, label) {
+  if (!url) {
+    console.warn('Deep link missing for', type, label);
+    return;
+  }
+  // Use window.open for better app/calendar handling with webcal:// schemes
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+// ── Travel Flow State Machine ──
+// Implements 5 enrichment points per YOU-603 §5 / §3
+// Key invariants:
+//   - No full-card re-render when section added (DOM is pre-rendered; class toggled only)
+//   - Existing sections never re-animate (revealedSections Set gates all reveal calls)
+//   - S8 completion pulse fires exactly once (pulseFired flag)
+const travelState = {
+  initialized: false,
+  step: -1,          // current step index (0–5 maps to S1/S3/S4/S5/S7/S8)
+  pulseFired: false,
+  revealedSections: new Set(),
+  s9TimerId: null    // setTimeout handle for S9 06:00 trigger; cleared on reset
+};
+
+const TRAVEL_STEP_LABELS = [
+  'S1 — Trip detected',
+  'S3 — Flight selection',
+  'S4 — Hotel selection',
+  'S5 — Session sync',
+  'S7 — Reminders',
+  'S8 — Complete'
+];
+const TRAVEL_DOT_IDS = ['dot-s1','dot-s3','dot-s4','dot-s5','dot-s7','dot-s8'];
+
+function travelUpdateIndicator(step) {
+  const lbl = document.getElementById('travelStepLabel');
+  if (lbl) lbl.textContent = step >= 0 ? TRAVEL_STEP_LABELS[step] : '—';
+  TRAVEL_DOT_IDS.forEach((id, i) => {
+    const d = document.getElementById(id);
+    if (!d) return;
+    d.className = 'step-dot';
+    if (i < step) d.classList.add('dot-done');
+    else if (i === step) d.classList.add('dot-active');
+  });
+}
+
+function travelAppendChat(html) {
+  const chat = document.getElementById('travelChat');
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  while (tmp.firstChild) chat.appendChild(tmp.firstChild);
+}
+
+function travelAnimIn(id, delay) {
+  setTimeout(() => {
+    const el = typeof id === 'string' ? document.getElementById(id) : id;
+    if (el) el.classList.add('entered');
+  }, delay || 0);
+}
+
+// Core enrichment point reveal — idempotent, no re-animation
+function itinReveal(sectionName) {
+  if (travelState.revealedSections.has(sectionName)) return;
+  travelState.revealedSections.add(sectionName);
+  const el = document.getElementById('itin-' + sectionName);
+  if (el) el.classList.add('revealed');
+}
+
+// S8 completion: status badge + border → success, pulse fires once
+function itinComplete() {
+  if (travelState.pulseFired) return;
+  travelState.pulseFired = true;
+  const card = document.getElementById('itinCard');
+  const badge = document.getElementById('itinStatus');
+  // Status badge: token(color.neutral.subtle) → token(color.success.subtle) 200ms
+  badge.textContent = 'Trip ready ✓';
+  badge.classList.add('itin-status-done');
+  // Border: accent.border → success.border 300ms (via CSS transition on itin-complete class)
+  card.classList.add('itin-complete');
+  // Card pulse: scale(1)→scale(1.01)→scale(1) 240ms ease-in-out — fires once only
+  setTimeout(() => {
+    card.classList.add('itin-pulse');
+    card.addEventListener('animationend', () => card.classList.remove('itin-pulse'), { once: true });
+  }, 200); // small delay so border transition is visible first
+}
+
+function startTravelDemo() {
+  travelState.initialized = true;
+  travelState.step = 0;
+  travelUpdateIndicator(0);
+  // S1: card stub fade-in 80ms after Jeevy bubble appears
+  // Show Jeevy butler nudge bubble first
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap">
+      <div class="jeevy-bubble" id="s1-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">
+          I noticed you have <strong>Web Summit 2026 in Lisbon</strong> on Nov 10–11.
+          Want me to handle flights, hotel, and calendar sync?
+        </div>
+      </div>
+      <div class="chat-btns" id="s1-btns">
+        <button class="btn btn-primary" onclick="travelS1Accept()">Set it up</button>
+        <button class="btn btn-ghost" onclick="travelS1Dismiss()">Not now</button>
+      </div>
+    </div>`);
+  // Bubble slides in: 220ms cubic-bezier per spec S1 motion
+  travelAnimIn('s1-bubble', 80);
+  // Buttons fade in 100ms after bubble (spec: "Buttons fade in 100ms after card")
+  travelAnimIn('s1-btns', 300);
+  // Itinerary card stub fade-in: opacity 0→1, 180ms ease-out, 80ms after Jeevy bubble
+  setTimeout(() => {
+    document.getElementById('itinCard').classList.add('itin-visible');
+  }, 160); // 80ms after bubble starts animating
+}
+
+function travelS1Accept() {
+  document.getElementById('s1-btns').querySelectorAll('button').forEach(b => b.disabled = true);
+  // Advance to S3 after brief pause
+  setTimeout(() => {
+    travelState.step = 1;
+    travelUpdateIndicator(1);
+    travelShowS3();
+  }, 350);
+}
+
+function travelS1Dismiss() {
+  document.getElementById('s1-btns').querySelectorAll('button').forEach(b => b.disabled = true);
+  travelAppendChat(`<div style="font-size:12px;color:var(--text3);padding:2px 0">Flow dismissed. Itinerary stub persists.</div>`);
+}
+
+function travelShowS3() {
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap" id="s3-wrap">
+      <div class="jeevy-bubble" id="s3-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">Here are the best options for <strong>SFO → LIS</strong> on Nov 9:</div>
+      </div>
+      <div id="s3-cards">
+        <div class="opt-card" id="fc-1" onclick="travelSelectFlight(1)">
+          <div class="opt-card-title">✈ Delta UA88 — SFO → LIS (Direct)</div>
+          <div class="opt-card-meta">Nov 9, 22:10 PST → Nov 10, 17:45 WET · 10h 35m</div>
+          <span class="opt-card-badge">Business · Aisle 4A</span>
+          <button class="sel-btn">Select</button>
+        </div>
+        <div class="opt-card" id="fc-2" onclick="travelSelectFlight(2)">
+          <div class="opt-card-title">✈ Delta UA88 — SFO → JFK → LIS (1 stop)</div>
+          <div class="opt-card-meta">Nov 9, 14:30 PST → Nov 10, 18:30 WET · 13h 00m</div>
+          <span class="opt-card-badge">Business · Aisle 5B</span>
+          <button class="sel-btn">Select</button>
+        </div>
+        <div class="opt-card" id="fc-3" onclick="travelSelectFlight(3)">
+          <div class="opt-card-title">✈ TAP Air Portugal TP236 — SFO → LIS</div>
+          <div class="opt-card-meta">Nov 9, 23:45 PST → Nov 10, 19:30 WET · 10h 45m</div>
+          <span class="opt-card-badge">Business · Window 3A</span>
+          <button class="sel-btn">Select</button>
+        </div>
+      </div>
+    </div>`);
+  travelAnimIn('s3-bubble', 60);
+  // Cards stagger: 0ms, 60ms, 120ms per spec
+  [1,2,3].forEach((n, i) => {
+    setTimeout(() => {
+      const c = document.getElementById('fc-' + n);
+      if (c) { c.style.transition = `opacity 180ms ease-out ${i*60}ms, transform 180ms ease-out ${i*60}ms`; c.classList.add('entered'); }
+    }, 200);
+  });
+}
+
+function travelSelectFlight(num) {
+  for (let i = 1; i <= 3; i++) {
+    const c = document.getElementById('fc-' + i);
+    if (!c) continue;
+    c.onclick = null;
+    if (i === num) c.classList.add('opt-selected');
+    else c.classList.add('opt-faded'); // unchosen: opacity 1→0.4 120ms linear per spec
+  }
+  // Enrichment point 1: flight section max-height 0→auto, 200ms ease-out, 80ms delay
+  // (80ms delay is baked into CSS transition-delay on .itin-section-flight)
+  itinReveal('flight');
+  setTimeout(() => {
+    travelState.step = 2;
+    travelUpdateIndicator(2);
+    travelShowS4();
+  }, 500);
+}
+
+function travelShowS4() {
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap" id="s4-wrap">
+      <div class="jeevy-bubble" id="s4-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">Here are hotels near the venue for <strong>Nov 10–12</strong>:</div>
+      </div>
+      <div id="s4-cards">
+        <div class="opt-card" id="hc-1" onclick="travelSelectHotel(1)">
+          <div class="opt-card-title">🏨 Bairro Alto Hotel — Marriott Bonvoy</div>
+          <div class="opt-card-meta">Rua da Bica de Duarte Belo 60 · 3.2km from venue</div>
+          <span class="opt-card-badge">Superior King · €520/night</span>
+          <div style="font-size:12px;color:var(--warn);margin-top:6px">⚠ 3.2km from venue — 8 min taxi</div>
+          <button class="sel-btn">Select</button>
+        </div>
+        <div class="opt-card" id="hc-2" onclick="travelSelectHotel(2)">
+          <div class="opt-card-title">🏨 Marriott Lisbon</div>
+          <div class="opt-card-meta">Avenida dos Combatentes 45 · 4.8km from venue</div>
+          <span class="opt-card-badge">Executive King · €480/night</span>
+          <button class="sel-btn">Select</button>
+        </div>
+      </div>
+    </div>`);
+  travelAnimIn('s4-bubble', 60);
+  [1,2].forEach((n, i) => {
+    setTimeout(() => {
+      const c = document.getElementById('hc-' + n);
+      if (c) { c.style.transition = `opacity 180ms ease-out ${i*60}ms, transform 180ms ease-out ${i*60}ms`; c.classList.add('entered'); }
+    }, 200);
+  });
+}
+
+function travelSelectHotel(num) {
+  for (let i = 1; i <= 2; i++) {
+    const c = document.getElementById('hc-' + i);
+    if (!c) continue;
+    c.onclick = null;
+    if (i === num) c.classList.add('opt-selected');
+    else c.classList.add('opt-faded');
+  }
+  // Enrichment point 2: hotel section max-height 0→auto, 200ms ease-out
+  itinReveal('hotel');
+  setTimeout(() => {
+    travelState.step = 3;
+    travelUpdateIndicator(3);
+    travelShowS5();
+  }, 450);
+}
+
+function travelShowS5() {
+  // Map demo sessions to fixture data for deep links
+  const sessions = SESSION_FIXTURES.map((fixture, i) => ({
+    id: 's' + (i+1),
+    time: fixture.startIso ? new Date(fixture.startIso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).replace(' ', ' ').split(' ').slice(0, 2).join(' ') + ' ' + new Date(fixture.startIso).toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',
+    title: fixture.title,
+    link: fixture.calendarAddLink
+  }));
+  const rows = sessions.map((s, i) => `
+    <div class="sess-confirm-row" id="scr-${i}">
+      <input type="checkbox" checked style="width:15px;height:15px;flex-shrink:0">
+      <span class="sess-time-chip">${s.time}</span>
+      <span style="font-size:13px;color:var(--text)">${s.title}</span>
+      ${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;margin-left:auto;flex-shrink:0">View in Calendar →</a>` : ''}
+    </div>`).join('');
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap" id="s5-wrap">
+      <div class="jeevy-bubble" id="s5-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">I found <strong>4 sessions</strong> you're registered for at Web Summit. Add to calendar?</div>
+      </div>
+      <div id="s5-sessions">
+        ${rows}
+        <div class="chat-btns entered" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="travelConfirmSessions()">Add to Calendar</button>
+        </div>
+      </div>
+    </div>`);
+  travelAnimIn('s5-bubble', 60);
+  // Session rows stagger: 50ms intervals per spec §3 S5 motion
+  for (let i = 0; i < 4; i++) {
+    setTimeout(() => travelAnimIn('scr-' + i), 200 + i * 50);
+  }
+}
+
+function travelConfirmSessions() {
+  const btn = document.querySelector('#s5-sessions .btn-primary');
+  if (btn) btn.disabled = true;
+  // Enrichment point 3: sessions section max-height 0→auto, 240ms ease-out
+  itinReveal('sessions');
+  // Populate session titles from fixtures (template literals not evaluated in static HTML)
+  for (let i = 0; i < 4; i++) {
+    const titleEl = document.querySelector(`#is-${i+1} .itin-sess-title`);
+    if (titleEl) titleEl.textContent = SESSION_FIXTURES[i].title;
+  }
+  // After section opens (~260ms), stagger session rows in itinerary card at 50ms intervals
+  setTimeout(() => {
+    ['is-1','is-2','is-3','is-4'].forEach((id, i) => {
+      setTimeout(() => travelAnimIn(id), i * 50);
+    });
+  }, 270);
+  setTimeout(() => {
+    travelState.step = 4;
+    travelUpdateIndicator(4);
+    travelShowS7();
+  }, 650);
+}
+
+function travelShowS7() {
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap" id="s7-wrap">
+      <div class="jeevy-bubble" id="s7-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">I've set up <strong>2 reminders</strong> for your trip:</div>
+      </div>
+      <div id="s7-reminders">
+        <div class="rem-confirm-pill" id="rcp-1">
+          <span style="font-size:16px">🔔</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent)">Nov 9, 20:00 PST</div>
+            <div style="font-size:12px;color:var(--text2)">Pack + online check-in opens (Delta UA88)</div>
+          </div>
+        </div>
+        <div class="rem-confirm-pill" id="rcp-2">
+          <span style="font-size:16px">🔔</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent)">Nov 10, 05:30 PST</div>
+            <div style="font-size:12px;color:var(--text2)">Leave for SFO — Lyft ~35 min to terminal</div>
+          </div>
+        </div>
+        <div class="chat-btns entered" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="travelConfirmReminders()">Confirm reminders</button>
+        </div>
+      </div>
+    </div>`);
+  travelAnimIn('s7-bubble', 60);
+  // Reminder pills: translateX(-12px)→0, 160ms ease-out, staggered 80ms per spec §3 S7
+  travelAnimIn('rcp-1', 200);
+  travelAnimIn('rcp-2', 280);
+}
+
+function travelConfirmReminders() {
+  const btn = document.querySelector('#s7-reminders .btn-primary');
+  if (btn) btn.disabled = true;
+  // Enrichment point 4: reminders section max-height 0→auto, 160ms ease-out
+  itinReveal('reminders');
+  // After section opens (~180ms), stagger pills at 80ms
+  setTimeout(() => {
+    travelAnimIn('ip-1', 0);
+    travelAnimIn('ip-2', 80);
+  }, 190);
+  // S8: complete — fires after reminders section fully visible
+  setTimeout(() => {
+    travelState.step = 5;
+    travelUpdateIndicator(5);
+    itinComplete();
+    // Completion Jeevy bubble
+    travelAppendChat(`
+      <div class="jeevy-bubble" id="s8-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">
+          ✓ <strong>Trip ready!</strong> Web Summit 2026 is all set.<br>
+          Flights, hotel, 4 sessions, and 2 reminders added to your calendar.
+        </div>
+      </div>`);
+    travelAnimIn('s8-bubble', 50);
+    // S9: schedule day-of plan for 06:00 local time on Nov 10 (departure day)
+    scheduleS9Timer();
+  }, 500);
+}
+
+// ── S9: day-of plan trigger (06:00 local time on departure day) ──
+
+function fireS9() {
+  const plan = DAY_PLAN_FIXTURE;
+  const blocks = plan.rankedPlan.map((item, i) => `
+    <div class="s9-block" id="s9-block-${i}">
+      <span class="s9-time">${esc(item.time)}</span>
+      <div>
+        <div class="s9-task">${esc(item.task)}</div>
+        <div class="s9-priority-${esc(item.priority)}">${esc(item.priority)}</div>
+      </div>
+    </div>`).join('');
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap" id="s9-wrap">
+      <div class="jeevy-bubble" id="s9-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">Good morning! Here's your <strong>day plan</strong> for Nov 10:</div>
+      </div>
+      <div id="s9-blocks">
+        ${blocks}
+        <button class="s9-rationale-toggle" onclick="toggleS9Rationale(this)">Why this order? ↓</button>
+        <div class="s9-rationale-text">${esc(plan.rationale)}</div>
+      </div>
+    </div>`);
+  travelAnimIn('s9-bubble', 60);
+  // Stagger time blocks: 40ms intervals, translateX(-8px)→0, opacity 0→1, 140ms ease-out
+  plan.rankedPlan.forEach((_, i) => {
+    setTimeout(() => travelAnimIn('s9-block-' + i), 200 + i * 40);
+  });
+}
+
+function toggleS9Rationale(btn) {
+  const wrap = btn.closest('#s9-blocks');
+  const rationale = wrap ? wrap.querySelector('.s9-rationale-text') : null;
+  if (!rationale) return;
+  const visible = rationale.classList.toggle('visible');
+  btn.textContent = visible ? 'Why this order? ↑' : 'Why this order? ↓';
+}
+
+// Schedule S9 for 06:00 local time on departure day (Nov 10, 2026).
+// Option A: in-memory only. If past 06:00 on page load, fires immediately.
+// Dev mode: ?triggerS9=true fires immediately after S8 (no real-time wait).
+function scheduleS9Timer() {
+  const devMode = new URLSearchParams(window.location.search).get('triggerS9') === 'true';
+  if (devMode) {
+    travelState.s9TimerId = setTimeout(fireS9, 800);
+    return;
+  }
+  const targetTime = new Date('2026-11-10');
+  targetTime.setHours(6, 0, 0, 0);
+  const delay = targetTime.getTime() - Date.now();
+  if (delay <= 0) {
+    // Already past 06:00 on departure day — fire immediately on load
+    travelState.s9TimerId = setTimeout(fireS9, 800);
+  } else {
+    travelState.s9TimerId = setTimeout(fireS9, delay);
+  }
+}
+
+function resetTravelDemo() {
+  // Cancel S9 timer if pending
+  if (travelState.s9TimerId) {
+    clearTimeout(travelState.s9TimerId);
+    travelState.s9TimerId = null;
+  }
+  // Reset state
+  travelState.initialized = false;
+  travelState.step = -1;
+  travelState.pulseFired = false;
+  travelState.revealedSections.clear();
+  // Reset itinerary card
+  const card = document.getElementById('itinCard');
+  card.classList.remove('itin-visible', 'itin-complete', 'itin-pulse');
+  document.getElementById('itinStatus').textContent = 'Planning…';
+  document.getElementById('itinStatus').classList.remove('itin-status-done');
+  ['flight','hotel','sessions','reminders'].forEach(n => {
+    document.getElementById('itin-' + n).classList.remove('revealed');
+  });
+  // Reset session rows and reminder pills
+  ['is-1','is-2','is-3','is-4'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('entered');
+  });
+  ['ip-1','ip-2'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('entered');
+  });
+  // Clear chat
+  document.getElementById('travelChat').innerHTML = '';
+  travelUpdateIndicator(-1);
+  // Restart
+  startTravelDemo();
+}
+
+// ── Init ──
+renderActionTabs();
+</script>
+</body>
+</html>
