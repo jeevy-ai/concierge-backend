@@ -603,6 +603,103 @@
       .map-pin { animation: none; transition: none; }
       .map-sheet, .s8-map-pane { transition: none; }
     }
+    /* ── Venue Detail Modal ── */
+    .venue-modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 500;
+    }
+    .venue-modal-backdrop.open { display: block; }
+    .venue-modal-wrap {
+      display: none; position: fixed; inset: 0;
+      z-index: 510; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .venue-modal-wrap.open { display: flex; }
+    .venue-modal-inner {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; width: 100%; max-width: 640px;
+      max-height: 90vh; overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 24px 48px rgba(0,0,0,.45);
+    }
+    .venue-modal-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px;
+      padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .venue-modal-title { font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
+    .venue-modal-subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .venue-modal-close {
+      background: none; border: none; color: var(--text2);
+      cursor: pointer; font-size: 18px; padding: 2px 6px;
+      border-radius: 4px; line-height: 1; flex-shrink: 0;
+    }
+    .venue-modal-close:hover { background: rgba(255,255,255,.08); }
+    .venue-modal-body {
+      display: flex; flex: 1; min-height: 0; overflow: hidden;
+    }
+    .venue-modal-details {
+      flex: 1; padding: 16px 20px; overflow-y: auto; min-width: 0;
+    }
+    .venue-modal-desc { font-size: 13px; color: var(--text2); margin-bottom: 12px; line-height: 1.5; }
+    .venue-detail-row {
+      display: flex; gap: 8px; padding: 7px 0;
+      border-bottom: 1px solid var(--border); font-size: 13px;
+    }
+    .venue-detail-row:last-child { border-bottom: none; }
+    .venue-detail-label { color: var(--text2); min-width: 90px; flex-shrink: 0; }
+    .venue-detail-value { color: var(--text); flex: 1; }
+    .venue-modal-map-col {
+      width: 260px; flex-shrink: 0; display: flex; flex-direction: column;
+      border-left: 1px solid var(--border); padding: 12px; gap: 8px;
+    }
+    .venue-modal-map {
+      height: 180px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+      background: #1a1a2e;
+    }
+    .venue-modal-gmaps {
+      font-size: 12px; color: var(--accent); text-decoration: none;
+      text-align: center; padding: 4px 0; display: block;
+    }
+    .venue-modal-gmaps:hover { text-decoration: underline; }
+    .venue-modal-footer {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 20px; border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .venue-alt-btn {
+      border: 1px solid var(--border); color: var(--text2);
+      background: transparent; border-radius: 6px;
+      padding: 6px 14px; font-size: 13px; cursor: pointer;
+    }
+    .venue-alt-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .venue-alternatives-panel {
+      display: none; padding: 12px 20px 4px;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .venue-alternatives-panel.open { display: block; }
+    .venue-alt-header { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
+    .venue-alt-card {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .venue-alt-card:last-child { border-bottom: none; }
+    .venue-alt-card-info { flex: 1; }
+    .venue-alt-card-name { font-weight: 600; color: var(--text); }
+    .venue-alt-card-meta { color: var(--text2); font-size: 12px; margin-top: 2px; }
+    .venue-alt-select {
+      background: transparent; border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text2); cursor: pointer;
+      font-size: 12px; padding: 3px 8px; flex-shrink: 0;
+    }
+    .venue-alt-select:hover { border-color: var(--accent); color: var(--accent); }
+    @media (max-width: 639px) {
+      .venue-modal-wrap { padding: 0; align-items: flex-end; }
+      .venue-modal-inner { max-height: 92vh; border-radius: 16px 16px 0 0; max-width: 100%; }
+      .venue-modal-body { flex-direction: column-reverse; overflow-y: auto; }
+      .venue-modal-map-col { width: 100%; border-left: none; border-bottom: 1px solid var(--border); }
+      .venue-modal-map { height: 140px; }
+    }
   </style>
 </head>
 <body>
@@ -1309,11 +1406,11 @@
                   <button id="is3-t" class="itin-section-btn" aria-expanded="true" onclick="toggleItinSection('is3')"><span class="dt-chevron" aria-hidden="true">▾</span></button>
                 </div>
                 <div id="is3-b" class="details-body open">
-                  <div class="itin-row" onclick="openDeepLink('webcal://marriott.com/calendar/add?hotel=bairro-alto&checkin=20261110&checkout=20261112')" style="cursor:pointer">
+                  <div class="itin-row" onclick="openVenueModal('hotel')" style="cursor:pointer">
                     <div class="itin-detail">
                       <strong>Bairro Alto Hotel · Marriott Bonvoy</strong>
                       <small>Rua da Bica de Duarte Belo 60, Lisbon</small>
-                      <small>Check-in: Nov 10 · Check-out: Nov 12 · Superior King</small>
+                      <small>Check-in: Nov 10 · Check-out: Nov 12 · Superior King · 4.3 ★</small>
                     </div>
                     <a href="webcal://marriott.com/calendar/add?hotel=bairro-alto&checkin=20261110&checkout=20261112" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-ghost" style="align-self:center" onclick="event.stopPropagation()">Add</a>
                   </div>
@@ -1353,10 +1450,10 @@
                   <button id="is5d-t" class="itin-section-btn" aria-expanded="true" onclick="toggleItinSection('is5d')"><span class="dt-chevron" aria-hidden="true">▾</span></button>
                 </div>
                 <div id="is5d-b" class="details-body open">
-                  <div class="itin-row" style="cursor:default">
+                  <div class="itin-row" onclick="openVenueModal('dinner')" style="cursor:pointer">
                     <div class="itin-detail">
                       <strong>Dinner · LX Factory area</strong>
-                      <small>Nov 11 · 20:00 WET</small>
+                      <small>Nov 11 · 20:00 WET · 4.5 ★</small>
                       <small>Restaurant reservation — Proposed</small>
                     </div>
                   </div>
@@ -1504,6 +1601,39 @@
     </div>
 
   </main>
+</div>
+
+<!-- ── Venue Detail Modal ── -->
+<div id="venue-modal-backdrop" class="venue-modal-backdrop" onclick="closeVenueModal()"></div>
+<div id="venue-modal-wrap" class="venue-modal-wrap" role="dialog" aria-modal="true" aria-labelledby="venue-modal-title" tabindex="-1">
+  <div class="venue-modal-inner">
+    <div class="venue-modal-header">
+      <div>
+        <div class="venue-modal-title" id="venue-modal-title"></div>
+        <div class="venue-modal-subtitle" id="venue-modal-subtitle"></div>
+      </div>
+      <button class="venue-modal-close" onclick="closeVenueModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="venue-modal-body">
+      <div class="venue-modal-details">
+        <p class="venue-modal-desc" id="venue-modal-desc"></p>
+        <div id="venue-modal-table"></div>
+      </div>
+      <div class="venue-modal-map-col">
+        <div class="venue-modal-map" id="venue-modal-map"></div>
+        <a id="venue-modal-gmaps" href="#" target="_blank" rel="noopener noreferrer" class="venue-modal-gmaps">Open in Google Maps →</a>
+      </div>
+    </div>
+    <div id="venue-alternatives-panel" class="venue-alternatives-panel">
+      <div class="venue-alt-header">Alternative options</div>
+      <div id="venue-alt-list"></div>
+    </div>
+    <div class="venue-modal-footer">
+      <button class="venue-alt-btn" id="venue-find-alt-btn" onclick="toggleVenueAlternatives()">Find alternatives →</button>
+      <span style="flex:1"></span>
+      <a id="venue-modal-cal-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="display:none;font-size:13px;padding:6px 14px">Open in Calendar →</a>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -2041,6 +2171,183 @@ function resetMapView() {
     padding: 40, maxZoom: 14, duration: 350,
     easing: function(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
   });
+}
+
+// ── Venue Detail Modal ──
+var VENUE_DATA = {
+  hotel: {
+    title: 'Bairro Alto Hotel',
+    subtitle: 'Marriott Bonvoy · Hotel · Confirmed',
+    address: 'Rua da Bica de Duarte Belo 60, Lisbon',
+    description: '5-star boutique hotel in the historic Bairro Alto neighbourhood. Rooftop bar with panoramic city views, concierge, and airport transfer service.',
+    details: [
+      { label: 'Check-in', value: 'Nov 10, 2026' },
+      { label: 'Check-out', value: 'Nov 12, 2026' },
+      { label: 'Room', value: 'Superior King · City View · Non-smoking' },
+      { label: 'Rating', value: '4.3 ★ on Google' },
+      { label: 'Distance', value: '3.2km from Altice Arena · ~8 min taxi' },
+      { label: 'Cancellation', value: 'Free until Nov 8 · 1-night penalty after' },
+      { label: 'Amenities', value: 'Free WiFi · Rooftop bar · Concierge · Airport transfer' },
+    ],
+    lat: 38.7094, lng: -9.1420,
+    calLink: 'webcal://marriott.com/calendar/add?hotel=bairro-alto&checkin=20261110&checkout=20261112',
+    type: 'hotel',
+    alternatives: [
+      { name: 'Marriott Lisbon', meta: '4.8km from Altice Arena · Deluxe King', rating: '4.1 ★' },
+      { name: 'The Lumiares Hotel', meta: '3.0km from Altice Arena · Apartment suite', rating: '4.6 ★' },
+    ]
+  },
+  dinner: {
+    title: 'Dinner · LX Factory area',
+    subtitle: 'Restaurant reservation · Proposed',
+    address: 'LX Factory, Rua Rodrigues de Faria 103, Lisbon',
+    description: 'Curated restaurant in Lisbon\'s LX Factory — an industrial-chic creative hub with vibrant nightlife, local cuisine, and riverside views.',
+    details: [
+      { label: 'Date', value: 'Nov 11, 2026 · 20:00 WET' },
+      { label: 'Rating', value: '4.5 ★ on Google' },
+      { label: 'Type', value: 'Casual dining · Portuguese cuisine' },
+      { label: 'Status', value: 'Proposed — booking not yet confirmed' },
+    ],
+    lat: 38.7100, lng: -9.1393,
+    calLink: null,
+    type: 'restaurant',
+    alternatives: [
+      { name: 'Solar dos Presuntos', meta: 'Traditional Portuguese · Downtown · 4.4 ★', rating: '4.4 ★' },
+      { name: 'Taberna da Rua das Flores', meta: 'Petiscos · Chiado · 4.5 ★', rating: '4.5 ★' },
+    ]
+  }
+};
+
+var venueModalMapInstance = null;
+var venueModalMapInited = false;
+var currentVenueId = null;
+
+function openVenueModal(venueId) {
+  var data = VENUE_DATA[venueId];
+  if (!data) return;
+  currentVenueId = venueId;
+
+  document.getElementById('venue-modal-title').textContent = data.title;
+  document.getElementById('venue-modal-subtitle').textContent = data.subtitle;
+  document.getElementById('venue-modal-desc').textContent = data.description;
+
+  var table = document.getElementById('venue-modal-table');
+  table.innerHTML = data.details.map(function(row) {
+    return '<div class="venue-detail-row"><span class="venue-detail-label">' + row.label + '</span><span class="venue-detail-value">' + row.value + '</span></div>';
+  }).join('');
+
+  var gmapsLink = document.getElementById('venue-modal-gmaps');
+  gmapsLink.href = 'https://www.google.com/maps/search/?api=1&query=' + data.lat + ',' + data.lng;
+
+  var calLink = document.getElementById('venue-modal-cal-link');
+  if (data.calLink) {
+    calLink.href = data.calLink;
+    calLink.style.display = '';
+  } else {
+    calLink.style.display = 'none';
+  }
+
+  // Reset alternatives panel
+  var altPanel = document.getElementById('venue-alternatives-panel');
+  altPanel.classList.remove('open');
+  var altBtn = document.getElementById('venue-find-alt-btn');
+  if (altBtn) altBtn.textContent = 'Find alternatives →';
+
+  document.getElementById('venue-modal-backdrop').classList.add('open');
+  var wrap = document.getElementById('venue-modal-wrap');
+  wrap.classList.add('open');
+  wrap.focus();
+
+  document.addEventListener('keydown', onVenueModalKeydown);
+
+  // Init or resize map inset for this venue
+  initVenueModalMap(data.lat, data.lng);
+}
+
+function closeVenueModal() {
+  document.getElementById('venue-modal-backdrop').classList.remove('open');
+  document.getElementById('venue-modal-wrap').classList.remove('open');
+  document.removeEventListener('keydown', onVenueModalKeydown);
+  currentVenueId = null;
+}
+
+function onVenueModalKeydown(e) {
+  if (e.key === 'Escape') closeVenueModal();
+}
+
+function toggleVenueAlternatives() {
+  var data = currentVenueId && VENUE_DATA[currentVenueId];
+  if (!data) return;
+  var panel = document.getElementById('venue-alternatives-panel');
+  var btn = document.getElementById('venue-find-alt-btn');
+  var isOpen = panel.classList.toggle('open');
+  if (btn) btn.textContent = isOpen ? 'Hide alternatives ↑' : 'Find alternatives →';
+
+  if (isOpen) {
+    var list = document.getElementById('venue-alt-list');
+    list.innerHTML = (data.alternatives || []).map(function(alt) {
+      return '<div class="venue-alt-card"><div class="venue-alt-card-info"><div class="venue-alt-card-name">' + alt.name + '</div><div class="venue-alt-card-meta">' + alt.meta + '</div></div><button class="venue-alt-select" onclick="selectAlternative(\'' + alt.name.replace(/'/g, "\\'") + '\')">Select</button></div>';
+    }).join('') || '<div style="color:var(--text2);font-size:13px">No alternatives available.</div>';
+  }
+}
+
+function selectAlternative(name) {
+  closeVenueModal();
+  // Flash the timeline row to indicate selection
+  var targetRow = document.querySelector('#s8-timeline [data-map-id="' + currentVenueId + '"]');
+  if (targetRow) { targetRow.classList.add('row-flash'); setTimeout(function() { targetRow.classList.remove('row-flash'); }, 400); }
+}
+
+function initVenueModalMap(lat, lng) {
+  var containerId = 'venue-modal-map';
+  // If existing instance, just fly to new position
+  if (venueModalMapInstance) {
+    venueModalMapInstance.setCenter([lng, lat]);
+    venueModalMapInstance.setZoom(15);
+    setTimeout(function() { venueModalMapInstance.resize(); }, 30);
+    return;
+  }
+  ensureMapLibre().then(function(ml) {
+    if (!ml) return;
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var map = new ml.Map({
+      container: containerId,
+      style: 'https://tiles.openfreemap.org/styles/dark',
+      center: [lng, lat],
+      zoom: 15,
+      interactive: false,
+      scrollZoom: false,
+      dragPan: false,
+      dragRotate: false,
+      doubleClickZoom: false,
+      touchZoomRotate: false,
+      keyboard: false
+    });
+    var onReady = function() {
+      var el = document.createElement('button');
+      el.className = 'map-pin pin-confirmed';
+      el.setAttribute('aria-label', 'Location');
+      el.setAttribute('tabindex', '-1');
+      el.style.pointerEvents = 'none';
+      var body = document.createElement('div');
+      body.className = 'pin-body';
+      var glyph = document.createElement('span');
+      glyph.className = 'pin-glyph';
+      glyph.textContent = '📍';
+      body.appendChild(glyph);
+      var stem = document.createElement('div');
+      stem.className = 'pin-stem';
+      el.appendChild(body);
+      el.appendChild(stem);
+      new ml.Marker({ element: el, anchor: 'bottom' }).setLngLat([lng, lat]).addTo(map);
+      venueModalMapInstance = map;
+    };
+    var readyPoll = setInterval(function() {
+      if (map.isStyleLoaded()) { clearInterval(readyPoll); onReady(); }
+    }, 100);
+    map.once('load', function() { clearInterval(readyPoll); onReady(); });
+  }).catch(function() {});
 }
 </script>
 </body>
