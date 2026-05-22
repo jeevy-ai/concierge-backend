@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runDailyAtRiskScan } from "./lib/save-interview.js";
 import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
+import { registerBillingRoutes } from "./routes/billing.js";
 import { registerCalendarWorkflowRoutes } from "./routes/calendar-workflow.js";
 import { registerDemoRoutes } from "./routes/demo.js";
 import { registerOutreachRoutes } from "./routes/outreach.js";
@@ -56,6 +57,9 @@ app.get("/api/actions", (c) => {
 
 // Stripe webhook — public but signature-verified
 registerStripeWebhookRoute(app);
+
+// Billing: Stripe Checkout + Customer Portal (Clerk-auth-gated)
+registerBillingRoutes(app);
 
 // Save-interview event ingestion (internal service-to-service, secret-gated)
 registerSaveInterviewRoutes(app);
