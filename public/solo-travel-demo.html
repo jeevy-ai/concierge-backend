@@ -810,21 +810,45 @@
         </div>
 
         <div class="btn-row">
-          <button class="btn btn-primary" onclick="confirmSessions()">Add to Calendar</button>
+          <button class="btn btn-primary" onclick="confirmSessions(this)">Add to Calendar</button>
         </div>
 
         <div id="s5-sync-confirm" style="display:none">
-          <div class="chat-bubble" style="animation-delay:0.1s">
+          <div class="chat-bubble">
             <div class="bubble-sender">Jeevy</div>
             <div class="bubble-text">
               6 events added to Alex Chen's calendar:
-              <ul class="cal-sync-list">
-                <li><span class="check">✓</span> Delta UA88 SFO→LIS (Nov 9, 22:10 – Nov 10, 17:45)</li>
-                <li><span class="check">✓</span> Delta UA89 LIS→SFO (Nov 12, 09:30 – Nov 12, 12:15)</li>
-                <li><span class="check">✓</span> The Age of Ambient AI (Nov 10, 9:30–10:15, Stage 1)</li>
-                <li><span class="check">✓</span> Future of Work keynote (Nov 10, 14:00–15:00, Centre Stage)</li>
-                <li><span class="check">✓</span> Product Strategy workshop (Nov 11, 10:00–11:30, Workshop Hall C)</li>
-                <li><span class="check">✓</span> Closing Keynote (Nov 11, 15:30–17:00, Centre Stage) <span style="color:var(--warn);font-size:11px">— conflict pending</span></li>
+              <ul class="cal-sync-list" id="cal-sync-items">
+                <li>
+                  <span class="check">✓</span>
+                  <span>Delta UA88 SFO→LIS (Nov 9, 22:10 – Nov 10, 17:45)</span>
+                  <a href="webcal://calendar.delta.com/add?flight=UA88&amp;date=20261109&amp;seat=4A" target="_blank" rel="noopener" class="cal-view-link">View in Calendar</a>
+                </li>
+                <li>
+                  <span class="check">✓</span>
+                  <span>Delta UA89 LIS→SFO (Nov 12, 09:30 – Nov 12, 12:15)</span>
+                  <a href="webcal://calendar.delta.com/add?flight=UA89&amp;date=20261112&amp;seat=4A" target="_blank" rel="noopener" class="cal-view-link">View in Calendar</a>
+                </li>
+                <li>
+                  <span class="check">✓</span>
+                  <span>The Age of Ambient AI (Nov 10, 09:30 – 10:15, Stage 1)</span>
+                  <a href="https://websummit.com/schedule/?session=WS2026-K01" target="_blank" rel="noopener" class="cal-view-link">View in Calendar</a>
+                </li>
+                <li>
+                  <span class="check">✓</span>
+                  <span>Future of Work keynote (Nov 10, 14:00 – 15:00, Centre Stage)</span>
+                  <a href="https://websummit.com/schedule/?session=WS2026-K02" target="_blank" rel="noopener" class="cal-view-link">View in Calendar</a>
+                </li>
+                <li>
+                  <span class="check">✓</span>
+                  <span>Product Strategy workshop (Nov 11, 10:00 – 11:30, Workshop Hall C)</span>
+                  <a href="https://websummit.com/schedule/?session=WS2026-W07" target="_blank" rel="noopener" class="cal-view-link">View in Calendar</a>
+                </li>
+                <li>
+                  <span class="check">✓</span>
+                  <span>Closing keynote (Nov 11, 15:30 – 17:00, Centre Stage)</span>
+                  <a href="https://websummit.com/schedule/?session=WS2026-K08" target="_blank" rel="noopener" class="cal-view-link">View in Calendar</a>
+                </li>
               </ul>
             </div>
           </div>
@@ -1234,9 +1258,26 @@ function selectHotel(n) {
 }
 
 // ── S5: Session confirm ──
-function confirmSessions() {
-  document.getElementById('s5-sync-confirm').style.display = 'block';
-  document.getElementById('s5-sync-confirm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+// Simulates Promise.all over 4 schedule_meeting calls; bubble appears only after all resolve.
+function confirmSessions(btn) {
+  btn.disabled = true;
+  btn.textContent = 'Syncing…';
+
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  Promise.all([delay(340), delay(520), delay(410), delay(680)]).then(() => {
+    btn.textContent = 'Synced ✓';
+
+    const container = document.getElementById('s5-sync-confirm');
+    container.style.display = 'block';
+
+    // Stagger items in after bubble animation settles (220ms per spec)
+    const items = container.querySelectorAll('.cal-sync-list li');
+    items.forEach((item, i) => {
+      setTimeout(() => item.classList.add('item-in'), 220 + i * 30);
+    });
+
+    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
 }
 
 // ── S6: Conflict resolution ──
