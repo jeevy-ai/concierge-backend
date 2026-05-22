@@ -3,6 +3,7 @@ import { withSentry } from "@sentry/cloudflare";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runDailyAtRiskScan } from "./lib/save-interview.js";
+import { runWeeklyReport } from "./lib/weekly-report.js";
 import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
 import { registerBillingRoutes } from "./routes/billing.js";
 import { registerCalendarWorkflowRoutes } from "./routes/calendar-workflow.js";
@@ -35,6 +36,8 @@ export type Env = {
   SENTRY_DSN?: string;
   GOOGLE_SERVICE_ACCOUNT_JSON?: string;
   INTAKE_SHEET_ID?: string;
+  // Weekly board report (YOU-323): Slack webhook (primary) or Resend email fallback
+  SLACK_WEBHOOK_URL?: string;
 };
 
 export type Variables = {
@@ -105,11 +108,34 @@ async function fetchClerkUserById(
 }
 
 /**
- * Cloudflare Cron trigger: nightly at-risk user scan.
- * Configured in wrangler.toml: [triggers] crons = ["0 2 * * *"]
+ * Cloudflare Cron triggers:
+ *   "0 2 * * *"  — nightly at-risk user scan (save-interview)
+ *   "0 7 * * 1"  — Monday 7am UTC (8am CET) weekly board metrics report (YOU-323)
  */
-async function scheduled(_event: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
-  const result = await runDailyAtRiskScan(
+async function scheduled(event: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+  // Monday weekly report: cron "0 7 * * 1"
+  const date = new Date(event.scheduledTime);
+  const isMonday = date.getUTCDay() === 1;
+  const isReportHour = date.getUTCHours() === 7;
+
+  if (isMonday && isReportHour) {
+    try {
+      const result = await runWeeklyReport({
+        STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY,
+        CONCIERGE_KV: env.CONCIERGE_KV,
+        INTERVIEWS_KV: env.INTERVIEWS_KV,
+        RESEND_API_KEY: env.RESEND_API_KEY,
+        FROM_EMAIL: env.FROM_EMAIL,
+        SLACK_WEBHOOK_URL: env.SLACK_WEBHOOK_URL,
+      });
+      console.log(`[weekly-report] posted via ${result.delivered} — paid=${result.metrics.billing.paidUsers} mrr=${result.metrics.billing.mrrCents}`);
+    } catch (err) {
+      console.error("[weekly-report] failed:", err);
+    }
+  }
+
+  // Nightly at-risk user scan (runs every night)
+  const scanResult = await runDailyAtRiskScan(
     {
       ENVIRONMENT: env.ENVIRONMENT,
       INTERVIEWS_KV: env.INTERVIEWS_KV,
@@ -122,7 +148,7 @@ async function scheduled(_event: ScheduledController, env: Env, _ctx: ExecutionC
     async (userId) => fetchClerkUserById(userId, env.CLERK_SECRET_KEY),
   );
 
-  console.log(`[save-interview] nightly scan: ${result.invited}/${result.processed} invited`);
+  console.log(`[save-interview] nightly scan: ${scanResult.invited}/${scanResult.processed} invited`);
 }
 
 export default withSentry(

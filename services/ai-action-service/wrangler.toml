@@ -20,9 +20,14 @@ FROM_EMAIL = "team@jeevy.ai"
 #   INTERNAL_API_SECRET   (shared secret for /internal/* routes)
 #   CLERK_SECRET_KEY      (Clerk secret key for user profile lookup in nightly cron)
 
-# Cron trigger: nightly at-risk user scan for save-interview outreach.
+# Cron triggers:
+#   "0 2 * * *"  — nightly at-risk user scan (save-interview outreach)
+#   "0 7 * * 1"  — Monday 7am UTC (8am CET) weekly board metrics report (YOU-323)
 [triggers]
-crons = ["0 2 * * *"]
+crons = ["0 2 * * *", "0 7 * * 1"]
+
+# Secrets (additional — set via `wrangler secret put <NAME>`):
+#   SLACK_WEBHOOK_URL   (optional; if set, weekly report posts to Slack; falls back to Resend email)
 
 # KV namespace for entitlement state.
 # Provisioned 2026-05-06 for YOU-296.
