@@ -11,7 +11,9 @@
     "deploy": "wrangler deploy"
   },
   "dependencies": {
+    "@jeevy/analytics": "workspace:*",
     "@jeevy/contracts": "workspace:*",
+    "@jeevy/entitlement": "workspace:*",
     "hono": "^4.6.20"
   },
   "devDependencies": {

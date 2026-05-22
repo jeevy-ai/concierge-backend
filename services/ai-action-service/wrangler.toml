@@ -5,23 +5,71 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "development"
-AUTH_MODE = "none"
-AUTH_BEARER_TOKEN = ""
-ANTHROPIC_API_KEY = ""
-ACTION_USE_LLM = "false"
-ANTHROPIC_TIMEOUT_MS = "7000"
-ANTHROPIC_SONNET_MODEL = "claude-sonnet-4-6"
-ANTHROPIC_HAIKU_MODEL = "claude-haiku-4-5-20251001"
+POSTHOG_HOST = "https://eu.i.posthog.com"
+# FROM_EMAIL should be a Resend-verified sender address, e.g. "team@jeevy.app"
+FROM_EMAIL = "team@jeevy.app"
+# CLERK_JWKS_URL is set per-environment via wrangler secret put or .dev.vars
 
-# Per-user dedup flag for first_value_delivered (one write per user ever).
-# Replace id/preview_id with real KV namespace IDs from `wrangler kv namespace create FIRST_VALUE_KV`.
+# Secrets (set via `wrangler secret put <NAME>`):
+#   CLERK_JWKS_URL
+#   STRIPE_WEBHOOK_SECRET
+#   STRIPE_SECRET_KEY
+#   POSTHOG_API_KEY       (staging key for dev/staging, prod key for production env)
+#   RESEND_API_KEY        (Resend API key for transactional email)
+#   SCHEDULING_LINK       (UXDesigner Calendly/Cal.com 20-min link, M-F 9am-5pm)
+#   INTERNAL_API_SECRET   (shared secret for /internal/* routes)
+#   CLERK_SECRET_KEY      (Clerk secret key for user profile lookup in nightly cron)
+
+# Cron trigger: nightly at-risk user scan for save-interview outreach.
+[triggers]
+crons = ["0 2 * * *"]
+
+# KV namespace for entitlement state.
+# Provisioned 2026-05-06 for YOU-296.
 [[kv_namespaces]]
-binding = "FIRST_VALUE_KV"
-id = "83b12c1704cd4feb85d1112816eaa5a2"
-preview_id = "83b12c1704cd4feb85d1112816eaa5a2"
+binding = "ENTITLEMENTS_KV"
+id = "5634d6240d2142ed9d70e078999d8031"
+preview_id = "5634d6240d2142ed9d70e078999d8031"
 
-# Time-series event store — queryable via Workers Analytics Engine SQL API.
-# Enable analytics_engine_datasets in the CF dashboard before deploying.
-[[analytics_engine_datasets]]
-binding = "CONCIERGE_ANALYTICS"
-dataset = "concierge_events"
+# KV namespace for save-interview state (last value events, NPS, dedup).
+# Provisioned 2026-05-20 for YOU-343.
+[[kv_namespaces]]
+binding = "INTERVIEWS_KV"
+id = "49051f56c5294cbb8751c7d4af6aa83f"
+preview_id = "49051f56c5294cbb8751c7d4af6aa83f"
+
+# --- Named environments ---
+# Deploy: `wrangler deploy --env staging` / `wrangler deploy --env production`
+# Secrets: `wrangler secret put POSTHOG_API_KEY --env staging` (after first deploy)
+
+[env.staging]
+name = "ai-action-service-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+POSTHOG_HOST = "https://eu.i.posthog.com"
+FROM_EMAIL = "team@jeevy.app"
+
+[[env.staging.kv_namespaces]]
+binding = "ENTITLEMENTS_KV"
+id = "fed8625627b042f0a07069d7bb03a5f1"
+
+[[env.staging.kv_namespaces]]
+binding = "INTERVIEWS_KV"
+id = "9e12aea1abcb4e668633abffee66b56c"
+
+[env.production]
+name = "ai-action-service-production"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+POSTHOG_HOST = "https://eu.i.posthog.com"
+FROM_EMAIL = "team@jeevy.app"
+
+[[env.production.kv_namespaces]]
+binding = "ENTITLEMENTS_KV"
+id = "f8c6bfb4943e436d8591691d22b7037b"
+
+[[env.production.kv_namespaces]]
+binding = "INTERVIEWS_KV"
+id = "68e68d7db26c4bda8c97bb222c3d9018"
