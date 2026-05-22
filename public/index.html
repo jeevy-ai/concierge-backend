@@ -658,6 +658,32 @@
     .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 200ms; display: inline-block; }
     .step-dot.dot-active { background: var(--accent); }
     .step-dot.dot-done   { background: var(--success); }
+    /* S9 day-plan time blocks — translateX(-8px)→0, opacity 0→1, 140ms ease-out, 40ms stagger */
+    .s9-block {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 10px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; margin-bottom: 8px; max-width: 480px;
+      opacity: 0; transform: translateX(-8px);
+      transition: opacity 140ms ease-out, transform 140ms ease-out;
+    }
+    .s9-block.entered { opacity: 1; transform: translateX(0); }
+    .s9-time { font-size: 11px; font-weight: 700; color: var(--accent); min-width: 72px; }
+    .s9-task { font-size: 13px; color: var(--text); }
+    .s9-priority-high  { color: var(--err); font-size: 10px; font-weight: 600; margin-top: 2px; }
+    .s9-priority-medium { color: var(--warn); font-size: 10px; font-weight: 600; margin-top: 2px; }
+    .s9-priority-low   { color: var(--text3); font-size: 10px; font-weight: 600; margin-top: 2px; }
+    .s9-rationale-toggle {
+      display: inline-block; margin-top: 6px; font-size: 12px;
+      color: var(--accent); text-decoration: underline; cursor: pointer;
+      background: none; border: none; padding: 0; font-family: inherit;
+    }
+    .s9-rationale-text {
+      display: none; margin-top: 8px; padding: 8px 10px;
+      background: var(--accent-light); border-left: 3px solid var(--accent);
+      border-radius: 4px; font-size: 12px; color: var(--accent-dark); line-height: 1.5;
+      max-width: 480px;
+    }
+    .s9-rationale-text.visible { display: block; }
   </style>
 </head>
 <body>
@@ -1125,6 +1151,21 @@ const SESSION_FIXTURES = [
     calendarAddLink: 'webcal://calendar.websummit.net/add?session=WS2026-K12&title=Scaling%20Reliability&date=20261112&time=1000'
   }
 ];
+
+// Day-of-plan fixture for S9 demo (matches soloTravelFixture.dayOfPlan)
+const DAY_PLAN_FIXTURE = {
+  rankedPlan: [
+    { time: '06:00',      task: 'Wake up + final packing',                     priority: 'high' },
+    { time: '06:45',      task: 'Order Lyft to SFO (35 min, Terminal 2)',       priority: 'high' },
+    { time: '07:20',      task: 'Arrive SFO — Delta Sky Club check-in',         priority: 'high' },
+    { time: '09:00',      task: 'Board UA88 — Seat 4A Business',                priority: 'high' },
+    { time: '10:10',      task: 'Wheels up SFO → LIS (10.5h flight)',           priority: 'medium' },
+    { time: '17:45 WET',  task: 'Land Lisbon — hotel transfer (taxi ~25 min)',  priority: 'high' },
+    { time: '19:30 WET',  task: 'Check in: Bairro Alto Hotel',                  priority: 'medium' },
+    { time: '20:00 WET',  task: 'Web Summit welcome reception (optional)',       priority: 'low' }
+  ],
+  rationale: 'Critical path: Lyft at 06:45 is the latest safe departure. International check-in closes 90 min before departure (22:10). Sky Club access allows lounge time if early.'
+};
 
 // Flight fixture with deep links
 const FLIGHT_FIXTURES = {
@@ -2243,7 +2284,8 @@ const travelState = {
   initialized: false,
   step: -1,          // current step index (0–5 maps to S1/S3/S4/S5/S7/S8)
   pulseFired: false,
-  revealedSections: new Set()
+  revealedSections: new Set(),
+  s9TimerId: null    // setTimeout handle for S9 06:00 trigger; cleared on reset
 };
 
 const TRAVEL_STEP_LABELS = [
@@ -2574,10 +2616,76 @@ function travelConfirmReminders() {
         </div>
       </div>`);
     travelAnimIn('s8-bubble', 50);
+    // S9: schedule day-of plan for 06:00 local time on Nov 10 (departure day)
+    scheduleS9Timer();
   }, 500);
 }
 
+// ── S9: day-of plan trigger (06:00 local time on departure day) ──
+
+function fireS9() {
+  const plan = DAY_PLAN_FIXTURE;
+  const blocks = plan.rankedPlan.map((item, i) => `
+    <div class="s9-block" id="s9-block-${i}">
+      <span class="s9-time">${esc(item.time)}</span>
+      <div>
+        <div class="s9-task">${esc(item.task)}</div>
+        <div class="s9-priority-${esc(item.priority)}">${esc(item.priority)}</div>
+      </div>
+    </div>`).join('');
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap" id="s9-wrap">
+      <div class="jeevy-bubble" id="s9-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">Good morning! Here's your <strong>day plan</strong> for Nov 10:</div>
+      </div>
+      <div id="s9-blocks">
+        ${blocks}
+        <button class="s9-rationale-toggle" onclick="toggleS9Rationale(this)">Why this order? ↓</button>
+        <div class="s9-rationale-text">${esc(plan.rationale)}</div>
+      </div>
+    </div>`);
+  travelAnimIn('s9-bubble', 60);
+  // Stagger time blocks: 40ms intervals, translateX(-8px)→0, opacity 0→1, 140ms ease-out
+  plan.rankedPlan.forEach((_, i) => {
+    setTimeout(() => travelAnimIn('s9-block-' + i), 200 + i * 40);
+  });
+}
+
+function toggleS9Rationale(btn) {
+  const wrap = btn.closest('#s9-blocks');
+  const rationale = wrap ? wrap.querySelector('.s9-rationale-text') : null;
+  if (!rationale) return;
+  const visible = rationale.classList.toggle('visible');
+  btn.textContent = visible ? 'Why this order? ↑' : 'Why this order? ↓';
+}
+
+// Schedule S9 for 06:00 local time on departure day (Nov 10, 2026).
+// Option A: in-memory only. If past 06:00 on page load, fires immediately.
+// Dev mode: ?triggerS9=true fires immediately after S8 (no real-time wait).
+function scheduleS9Timer() {
+  const devMode = new URLSearchParams(window.location.search).get('triggerS9') === 'true';
+  if (devMode) {
+    travelState.s9TimerId = setTimeout(fireS9, 800);
+    return;
+  }
+  const targetTime = new Date('2026-11-10');
+  targetTime.setHours(6, 0, 0, 0);
+  const delay = targetTime.getTime() - Date.now();
+  if (delay <= 0) {
+    // Already past 06:00 on departure day — fire immediately on load
+    travelState.s9TimerId = setTimeout(fireS9, 800);
+  } else {
+    travelState.s9TimerId = setTimeout(fireS9, delay);
+  }
+}
+
 function resetTravelDemo() {
+  // Cancel S9 timer if pending
+  if (travelState.s9TimerId) {
+    clearTimeout(travelState.s9TimerId);
+    travelState.s9TimerId = null;
+  }
   // Reset state
   travelState.initialized = false;
   travelState.step = -1;
