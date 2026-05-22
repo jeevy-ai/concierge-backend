@@ -36,6 +36,11 @@ export const AnalyticsEventName = {
   ACTIVATION_NTH_VALUE_DELIVERED: "activation_nth_value_delivered",
   // TTFV (W2.5a / YOU-453)
   CONCIERGE_ACTION_DELIVERED: "concierge.action.delivered",
+  // Landing v2 (W4.1 / YOU-630)
+  LANDING_SCROLL_DEPTH: "landing_scroll_depth",
+  LANDING_VIDEO_PLAYED: "landing_video_played",
+  LANDING_FAQ_EXPANDED: "landing_faq_expanded",
+  LANDING_WAITLIST_SUBMITTED: "landing_waitlist_submitted",
 } as const;
 
 export type AnalyticsEventName = (typeof AnalyticsEventName)[keyof typeof AnalyticsEventName];
@@ -180,6 +185,21 @@ export const analyticsEventSchemas = {
       plan: z.string().optional(),
       source_flow: z.string().optional(),
     }).optional(),
+  }),
+  [AnalyticsEventName.LANDING_SCROLL_DEPTH]: z.object({
+    depth_pct: z.number().int(),
+    section_id: z.string().optional(),
+  }),
+  [AnalyticsEventName.LANDING_VIDEO_PLAYED]: z.object({
+    video_id: z.string(),
+  }),
+  [AnalyticsEventName.LANDING_FAQ_EXPANDED]: z.object({
+    question_id: z.string(),
+    question_index: z.number().int(),
+  }),
+  [AnalyticsEventName.LANDING_WAITLIST_SUBMITTED]: z.object({
+    source: z.string(),
+    location: z.string(),
   }),
 } satisfies Record<AnalyticsEventName, z.ZodObject<z.ZodRawShape>>;
 
