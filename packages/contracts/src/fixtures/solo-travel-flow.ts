@@ -182,8 +182,7 @@ export const soloTravelFixture: SoloTravelFixture = {
           "Delta UA88 departure 14:30 (earlier, 1 stop via JFK)",
           "TAP Air Portugal TP236 SFO→LIS Nov 9 23:45 Business",
         ],
-        calendarAddLink:
-          "webcal://calendar.delta.com/add?flight=UA88&date=20261109&seat=4A",
+        calendarAddLink: "webcal://calendar.delta.com/add?flight=UA88&date=20261109&seat=4A",
       },
     },
     warnings: [],
@@ -204,8 +203,7 @@ export const soloTravelFixture: SoloTravelFixture = {
         partySize: 1,
         slot: "Seat 4A — Business Class, Aisle",
         fallbacks: ["Delta UA89 departure 18:00 (later option, direct)"],
-        calendarAddLink:
-          "webcal://calendar.delta.com/add?flight=UA89&date=20261112&seat=4A",
+        calendarAddLink: "webcal://calendar.delta.com/add?flight=UA89&date=20261112&seat=4A",
       },
     },
     warnings: [],
@@ -226,9 +224,7 @@ export const soloTravelFixture: SoloTravelFixture = {
         datetime: "2026-11-10T15:00:00+00:00",
         partySize: 1,
         slot: "Superior King Room — Non-smoking, City View",
-        fallbacks: [
-          "Marriott Lisbon — Avenida dos Combatentes 45 (4.8km from venue, higher tier)",
-        ],
+        fallbacks: ["Marriott Lisbon — Avenida dos Combatentes 45 (4.8km from venue, higher tier)"],
         calendarAddLink:
           "webcal://marriott.com/calendar/add?hotel=bairro-alto&checkin=20261110&checkout=20261112",
       },
@@ -414,7 +410,11 @@ export const soloTravelFixture: SoloTravelFixture = {
           { time: "07:20", task: "Arrive SFO — Delta Sky Club check-in", priority: "high" },
           { time: "09:00", task: "Board UA88 — Seat 4A Business", priority: "high" },
           { time: "10:10", task: "Wheels up SFO → LIS (10.5h flight)", priority: "medium" },
-          { time: "17:45 WET", task: "Land Lisbon — hotel transfer (taxi ~25 min)", priority: "high" },
+          {
+            time: "17:45 WET",
+            task: "Land Lisbon — hotel transfer (taxi ~25 min)",
+            priority: "high",
+          },
           { time: "19:30 WET", task: "Check in: Bairro Alto Hotel", priority: "medium" },
           { time: "20:00 WET", task: "Web Summit welcome reception (optional)", priority: "low" },
         ],
