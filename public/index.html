@@ -419,6 +419,82 @@
       .sidebar { max-height: none; position: static; border-right: none; border-bottom: 1px solid var(--border); }
       .identity-row input { width: 120px; }
     }
+
+    /* ── S5 session rows & conflict badge ── */
+    @keyframes session-row-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes conflict-pulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    .session-rows-list { margin-bottom: 16px; }
+    .session-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      animation: session-row-in 150ms ease-out both;
+    }
+    .session-row-check { margin-top: 2px; flex-shrink: 0; }
+    .session-row-body { flex: 1; min-width: 0; }
+    .session-row-header { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+    .session-row-title { font-weight: 600; font-size: 13px; color: var(--text); flex: 1; }
+    .session-row-meta { font-size: 12px; color: var(--text3); margin-top: 3px; }
+    .badge-conflict {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      color: var(--warn);
+      white-space: nowrap;
+      animation: conflict-pulse 280ms ease-in-out 1;
+      flex-shrink: 0;
+    }
+
+    /* ── S6 conflict cards ── */
+    .s6-section { margin-top: 20px; }
+    .s6-header { font-size: 13px; font-weight: 600; color: var(--warn); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .conflict-card {
+      border-left: 3px solid var(--warn-border);
+      background: var(--surface);
+      border: 1px solid var(--warn-border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      max-height: 500px;
+      opacity: 1;
+      transition: opacity 200ms ease-out, max-height 160ms ease-out, margin-bottom 160ms ease-out;
+      animation: session-row-in 150ms ease-out both;
+    }
+    .conflict-card-inner { padding: 14px; }
+    .conflict-pair { display: flex; gap: 10px; margin-bottom: 12px; }
+    .conflict-event-box, .conflict-session-box {
+      flex: 1;
+      padding: 8px 10px;
+      background: var(--surface2);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .conflict-box-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); margin-bottom: 4px; }
+    .conflict-box-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .conflict-box-meta { font-size: 12px; color: var(--text3); }
+    .conflict-card-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn-warn { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-border); font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn-warn:hover { background: var(--warn-border); }
+    .btn-neutral { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn-neutral:hover { background: var(--border); }
   </style>
 </head>
 <body>
@@ -729,6 +805,196 @@ const conciergeDemos = {
   }
 };
 
+// ── Overlap detection (strict: boundary-touch is not a conflict) ──
+function eventsOverlap(s1Iso, e1Iso, s2Iso, e2Iso) {
+  const s1 = new Date(s1Iso).getTime();
+  const e1 = new Date(e1Iso).getTime();
+  const s2 = new Date(s2Iso).getTime();
+  const e2 = new Date(e2Iso).getTime();
+  return s1 < e2 && s2 < e1;
+}
+
+// Calendar events fixture — known events fetched at flow start
+const CALENDAR_FIXTURE = [
+  {
+    id: 'gcal-allhands-q4',
+    title: 'All-Hands Q4',
+    startIso: '2026-11-11T14:00:00Z',
+    endIso: '2026-11-11T15:30:00Z',
+    attendeeCount: 12,
+    organizerEmail: 'alex.chen@example.com'
+  }
+];
+
+// Conference session fixtures for S5 demo
+const SESSION_FIXTURES = [
+  {
+    id: 'WS2026-K01',
+    title: 'The Age of Ambient AI',
+    speaker: 'Keynote',
+    startIso: '2026-11-10T09:30:00Z',
+    endIso: '2026-11-10T10:15:00Z',
+    room: 'Altice Arena Stage 1'
+  },
+  {
+    id: 'WS2026-K05',
+    title: 'Building Trust in AI Systems',
+    speaker: 'Panel',
+    startIso: '2026-11-11T14:30:00Z',
+    endIso: '2026-11-11T15:15:00Z',
+    room: 'Centre Stage'
+  },
+  {
+    id: 'WS2026-K08',
+    title: 'Open Source AI: The Next Wave',
+    speaker: 'Meta AI Research',
+    startIso: '2026-11-11T15:30:00Z',
+    endIso: '2026-11-11T16:15:00Z',
+    room: 'Future Stage'
+  },
+  {
+    id: 'WS2026-K12',
+    title: 'Scaling Reliability in Production AI',
+    speaker: 'Engineering Track',
+    startIso: '2026-11-12T10:00:00Z',
+    endIso: '2026-11-12T10:45:00Z',
+    room: 'Workshop Hall B'
+  }
+];
+
+function fmtSessionTime(startIso, endIso) {
+  const startOpts = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' };
+  const endOpts = { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' };
+  const s = new Date(startIso).toLocaleString('en-US', startOpts);
+  const e = new Date(endIso).toLocaleTimeString('en-US', endOpts);
+  return s + '–' + e + ' UTC';
+}
+
+function renderS5Demo(sessions, calEvents) {
+  const sessionConflicts = sessions.map(sess => {
+    const hit = calEvents.find(ev =>
+      eventsOverlap(sess.startIso, sess.endIso, ev.startIso, ev.endIso)
+    );
+    return { session: sess, conflict: hit || null };
+  });
+
+  const hasConflicts = sessionConflicts.some(sc => sc.conflict !== null);
+
+  const rowsHtml = sessionConflicts.map((sc, i) => {
+    const conflictBadge = sc.conflict
+      ? `<span class="badge-conflict">⚠ Conflicts with "${esc(sc.conflict.title)}"</span>`
+      : '';
+    return `
+      <div class="session-row" style="animation-delay:${i * 50}ms">
+        <input type="checkbox" class="session-row-check" checked>
+        <div class="session-row-body">
+          <div class="session-row-header">
+            <div class="session-row-title">${esc(sc.session.title)}</div>
+            ${conflictBadge}
+          </div>
+          <div class="session-row-meta">${esc(sc.session.speaker)} · ${esc(fmtSessionTime(sc.session.startIso, sc.session.endIso))} · ${esc(sc.session.room)}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  let s6Html = '';
+  if (hasConflicts) {
+    const cards = sessionConflicts
+      .filter(sc => sc.conflict !== null)
+      .map(sc => renderS6ConflictCard(sc.session, sc.conflict))
+      .join('');
+    s6Html = `
+      <div class="s6-section">
+        <div class="s6-header">⚠ One session overlaps an existing meeting:</div>
+        ${cards}
+      </div>`;
+  }
+
+  return `
+    <div class="section-title" style="margin-bottom:10px">S5 — Conference Sessions (Web Summit 2026)</div>
+    <div class="banner banner-info" style="margin-bottom:14px">
+      <span class="banner-icon">ℹ</span>
+      <div class="banner-body">I found ${sessions.length} sessions you're registered for at Web Summit. Add them to your calendar?</div>
+    </div>
+    <div class="session-rows-list">${rowsHtml}</div>
+    <div style="margin-top:12px">
+      <button class="btn btn-primary" style="font-size:13px">Add to Calendar</button>
+    </div>
+    ${s6Html}`;
+}
+
+function renderS6ConflictCard(session, calEvent) {
+  const cardId = 'conflict-' + session.id;
+  return `
+    <div class="conflict-card" id="${esc(cardId)}">
+      <div class="conflict-card-inner">
+        <div class="conflict-pair">
+          <div class="conflict-event-box">
+            <div class="conflict-box-label">Existing meeting</div>
+            <div class="conflict-box-title">${esc(calEvent.title)}</div>
+            <div class="conflict-box-meta">${esc(fmtSessionTime(calEvent.startIso, calEvent.endIso))} · ${calEvent.attendeeCount} attendees</div>
+          </div>
+          <div class="conflict-session-box">
+            <div class="conflict-box-label">Conference session</div>
+            <div class="conflict-box-title">${esc(session.title)}</div>
+            <div class="conflict-box-meta">${esc(fmtSessionTime(session.startIso, session.endIso))}</div>
+          </div>
+        </div>
+        <div class="conflict-card-actions">
+          <button class="btn btn-warn" onclick="moveMeeting(${JSON.stringify(cardId)}, ${JSON.stringify(session.title)}, ${JSON.stringify(calEvent.title)})">[Move the meeting]</button>
+          <button class="btn btn-neutral" onclick="resolveConflict(${JSON.stringify(cardId)})">[Keep session, skip meeting note]</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function resolveConflict(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  card.style.opacity = '0';
+  setTimeout(() => {
+    card.style.maxHeight = '0';
+    card.style.marginBottom = '0';
+  }, 200);
+}
+
+async function moveMeeting(cardId, sessionTitle, eventTitle) {
+  const url = document.getElementById('conciergeUrl').value.trim();
+  const userId = document.getElementById('globalUserId').value.trim() || 'test-ceo';
+  const token = document.getElementById('conciergeToken').value.trim();
+  const card = document.getElementById(cardId);
+  if (!card) return;
+
+  const actionsEl = card.querySelector('.conflict-card-actions');
+  if (actionsEl) actionsEl.innerHTML = '<span style="font-size:12px;color:var(--text3)">Rescheduling…</span>';
+
+  const text = `Reschedule "${eventTitle}" due to conference conflict with "${sessionTitle}". Find next available slot within same week, avoid mornings.`;
+  const payload = { userId, verbId: 'schedule_meeting', text };
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+    const data = await res.json();
+    const mp = data.result?.payload ?? data.result ?? data;
+    const slots = Array.isArray(mp.proposedSlots) ? mp.proposedSlots : [];
+    const firstSlot = slots[0];
+    const isConfident = data.isConfident !== false && mp.isConfident !== false;
+    const slotLabel = firstSlot ? (firstSlot.label || firstSlot.iso || 'proposed slot') : 'proposed slot';
+    const verifyHtml = !isConfident ? ' <span style="color:var(--warn);font-weight:600">⚠ Verify</span>' : '';
+    if (actionsEl) {
+      actionsEl.innerHTML = `<span style="font-size:12px;color:var(--success)">✓ Proposed: ${esc(slotLabel)}${verifyHtml}</span>`;
+    }
+    setTimeout(() => resolveConflict(cardId), 1500);
+  } catch (err) {
+    if (actionsEl) {
+      actionsEl.innerHTML = `
+        <span style="font-size:12px;color:var(--err)">Failed: ${esc(err.message)}</span>
+        <button class="btn btn-warn" onclick="moveMeeting(${JSON.stringify(cardId)}, ${JSON.stringify(sessionTitle)}, ${JSON.stringify(eventTitle)})">Retry</button>`;
+    }
+  }
+}
+
 // ── Section switching ──
 function switchSection(section, btn) {
   activeSection = section;
@@ -880,6 +1146,17 @@ function loadConciergeDemo() {
       break;
     case 'schedule_meeting':
       document.getElementById('conciergeMeetingRequest').value = demo.text;
+      // Render S5/S6 flow demo directly — shows overlap detection in action
+      document.getElementById('resultArea').innerHTML = `
+        <div class="result-card">
+          <div class="result-header">
+            <span class="result-title">S5 / S6 — Conference Session Sync &amp; Conflict Resolution</span>
+            <span class="badge badge-source-det">Demo</span>
+          </div>
+          <div class="result-body">
+            ${renderS5Demo(SESSION_FIXTURES, CALENDAR_FIXTURE)}
+          </div>
+        </div>`;
       break;
     case 'plan_my_day':
       document.getElementById('conciergeDayPlanText').value = demo.text;
