@@ -100,7 +100,7 @@ export function registerCalendarWorkflowRoutes(app: App): void {
     const adapter = new GoogleCalendarAdapter({ kv: kv_, forceError, sandbox });
 
     const emitter = c.env.SENTRY_DSN ? new SentryEventEmitter() : undefined;
-    const crmWriter = getCRMLiteWriter() || undefined;
+    const crmWriter = getCRMLiteWriter(c.env) || undefined;
 
     const final = await executeCalendarReschedule(
       kv_,

@@ -153,18 +153,20 @@ async function triggerAction(opts: { isTest: boolean; correlationId: string }): 
 }
 
 // §9.3 — Assert concierge.action.delivered event in Sentry
-// Looks up by correlation_id tag (event_id is a generated hex UUID, not the correlation_id)
+// Looks up via Issues endpoint (project:read on /events/ is not granted to org User Auth Tokens;
+// /issues/ works with the default org-scope user token). We find the matching issue by tag query,
+// then fetch its latest event for context/tag validation.
 async function assertSentryEvent(correlationId: string): Promise<unknown> {
   const authToken = requireEnv("SENTRY_AUTH_TOKEN");
   const org = requireEnv("SENTRY_ORG");
   const project = requireEnv("SENTRY_PROJECT");
 
-  // Retry up to 3 times — Sentry event propagation can take several seconds
+  // Retry up to 8 times — Sentry tag-search indexing can take 20–30s after ingest
   let lastError: Error | null = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    await sleep(3000);
+  for (let attempt = 1; attempt <= 8; attempt++) {
+    await sleep(5000);
 
-    const url = `https://sentry.io/api/0/projects/${org}/${project}/events/?query=${encodeURIComponent(`correlation_id:${correlationId}`)}&limit=1`;
+    const url = `https://sentry.io/api/0/projects/${org}/${project}/issues/?query=${encodeURIComponent(`correlation_id:${correlationId}`)}&limit=1`;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${authToken}` },
     });
@@ -172,27 +174,28 @@ async function assertSentryEvent(correlationId: string): Promise<unknown> {
     if (!res.ok) {
       throw new Error(
         `Sentry API error ${res.status}: ${await res.text()}\n` +
-        `(If 403: token may need project:read scope)`
+        `(If 403: token may need event:read or issue:read on this project)`
       );
     }
 
-    type SentryEventsResponse = Array<Record<string, unknown>> | { data: Array<Record<string, unknown>> };
-    const body = await res.json() as SentryEventsResponse;
-    const events = Array.isArray(body) ? body : body.data ?? [];
+    const issues = await res.json() as Array<Record<string, unknown>>;
 
-    if (events.length === 0) {
-      lastError = new Error(`Sentry event not found for correlationId=${correlationId} (attempt ${attempt}/3)`);
+    if (!Array.isArray(issues) || issues.length === 0) {
+      lastError = new Error(`Sentry issue not found for correlationId=${correlationId} (attempt ${attempt}/8)`);
       continue;
     }
 
-    // Fetch full event object by eventID for context validation
-    const eventId = (events[0] as Record<string, unknown>)["eventID"] as string | undefined
-      ?? (events[0] as Record<string, unknown>)["id"] as string;
-    const fullRes = await fetch(`https://sentry.io/api/0/projects/${org}/${project}/events/${eventId}/`, {
+    const issueId = issues[0]?.["id"] as string;
+    if (!issueId) {
+      throw new Error(`Sentry issue response missing id: ${JSON.stringify(issues[0])}`);
+    }
+
+    // Fetch latest event for this issue for context/tag validation
+    const fullRes = await fetch(`https://sentry.io/api/0/issues/${issueId}/events/latest/`, {
       headers: { Authorization: `Bearer ${authToken}` },
     });
     if (!fullRes.ok) {
-      throw new Error(`Sentry full event fetch error ${fullRes.status}: ${await fullRes.text()}`);
+      throw new Error(`Sentry latest event fetch error ${fullRes.status}: ${await fullRes.text()}`);
     }
     const event = await fullRes.json() as Record<string, unknown>;
 
@@ -218,7 +221,7 @@ async function assertSentryEvent(correlationId: string): Promise<unknown> {
     return event;
   }
 
-  throw lastError ?? new Error(`Sentry event not found for correlationId=${correlationId} after 3 attempts`);
+  throw lastError ?? new Error(`Sentry event not found for correlationId=${correlationId} after 8 attempts`);
 }
 
 // §9.4 + §9.6 — Verify CRM-lite row first_action_delivered_at + ttfv_hours

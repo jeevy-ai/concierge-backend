@@ -76,17 +76,20 @@ export class GoogleSheetsCRMLiteWriter implements CRMLiteWriter {
   }
 }
 
-export function getCRMLiteWriter(): CRMLiteWriter | null {
-  if (!process.env["GOOGLE_SERVICE_ACCOUNT_JSON"] || !process.env["INTAKE_SHEET_ID"]) {
+export function getCRMLiteWriter(env: {
+  GOOGLE_SERVICE_ACCOUNT_JSON?: string;
+  INTAKE_SHEET_ID?: string;
+}): CRMLiteWriter | null {
+  if (!env.GOOGLE_SERVICE_ACCOUNT_JSON || !env.INTAKE_SHEET_ID) {
     return null;
   }
 
   const serviceAccountJson = Buffer.from(
-    process.env["GOOGLE_SERVICE_ACCOUNT_JSON"],
+    env.GOOGLE_SERVICE_ACCOUNT_JSON,
     "base64",
   ).toString("utf-8");
 
   const credentials = JSON.parse(serviceAccountJson);
 
-  return new GoogleSheetsCRMLiteWriter(credentials, process.env["INTAKE_SHEET_ID"]);
+  return new GoogleSheetsCRMLiteWriter(credentials, env.INTAKE_SHEET_ID);
 }
