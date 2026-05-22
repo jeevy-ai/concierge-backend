@@ -48,7 +48,7 @@ export function StepSuccess({ value, onChange, onNext }: StepSuccessProps) {
         onChange={(e) => onChange(e.target.value)}
         onBlur={() => setTouched(true)}
         aria-label="Success criterion"
-        aria-describedby={showError ? "success-error" : "success-hint"}
+        aria-describedby={showError ? "success-format-hint success-error" : "success-hint success-format-hint"}
         aria-invalid={showError}
         placeholder="e.g. No more double-bookings, and I get 3 uninterrupted hours of deep work per day"
         className={[
@@ -60,6 +60,10 @@ export function StepSuccess({ value, onChange, onNext }: StepSuccessProps) {
           showError ? "border-red-400 bg-red-50" : "border-gray-200 bg-white",
         ].join(" ")}
       />
+
+      <p id="success-format-hint" className="mt-2 text-xs text-gray-400">
+        e.g. No more double-bookings, and I get 3 uninterrupted hours of deep work per day
+      </p>
 
       {showError && (
         <p id="success-error" role="alert" className="mt-2 text-sm text-red-600">
