@@ -975,14 +975,14 @@
           <div id="itin-flight" class="itin-section itin-section-flight">
             <div class="itin-section-inner">
               <div class="itin-section-heading">✈ Flights</div>
-              <div class="itin-flight-row" onclick="openDeepLink('${FLIGHT_FIXTURES.outbound.calendarAddLink}', 'flight', 'UA88')">
+              <div class="itin-flight-row" onclick="openDeepLink(FLIGHT_FIXTURES.outbound.calendarAddLink, 'flight', 'UA88')">
                 <div>
                   <div class="itin-flight-route">SFO → LIS</div>
                   <div class="itin-flight-info">Delta UA88 · Nov 9, 22:10 PST → Nov 10, 17:45 WET · Direct</div>
                 </div>
                 <span class="itin-flight-badge">Business 4A</span>
               </div>
-              <div class="itin-flight-row" onclick="openDeepLink('${FLIGHT_FIXTURES.return.calendarAddLink}', 'flight', 'UA89')">
+              <div class="itin-flight-row" onclick="openDeepLink(FLIGHT_FIXTURES.return.calendarAddLink, 'flight', 'UA89')">
                 <div>
                   <div class="itin-flight-route">LIS → SFO</div>
                   <div class="itin-flight-info">Delta UA89 · Nov 12, 09:30 WET → Nov 12, 12:15 PST · Direct</div>
@@ -995,7 +995,7 @@
           <!-- Enrichment 2: Hotel segment (S4) — 200ms ease-out -->
           <div id="itin-hotel" class="itin-section itin-section-hotel">
             <div class="itin-section-inner">
-              <div class="itin-hotel-section" onclick="openDeepLink('${HOTEL_FIXTURE.calendarAddLink}', 'hotel', 'Bairro Alto Hotel')">
+              <div class="itin-hotel-section" onclick="openDeepLink(HOTEL_FIXTURE.calendarAddLink, 'hotel', 'Bairro Alto Hotel')">
                 <div class="itin-hotel-name">Bairro Alto Hotel · Marriott Bonvoy</div>
                 <div class="itin-hotel-info">Rua da Bica de Duarte Belo 60, 1200-075 Lisbon</div>
                 <div class="itin-hotel-info">Check-in: Nov 10 &nbsp;·&nbsp; Check-out: Nov 12</div>
@@ -1008,10 +1008,10 @@
           <div id="itin-sessions" class="itin-section itin-section-sessions">
             <div class="itin-section-inner">
               <div class="itin-section-heading">📅 Conference Sessions (4)</div>
-              <div class="itin-sess-row" id="is-1" onclick="openDeepLink('${SESSION_FIXTURES[0].calendarAddLink}', 'session', '${SESSION_FIXTURES[0].title}')"><span class="itin-sess-time">Nov 10, 09:30</span><span class="itin-sess-title">The Age of Ambient AI</span></div>
-              <div class="itin-sess-row" id="is-2" onclick="openDeepLink('${SESSION_FIXTURES[1].calendarAddLink}', 'session', '${SESSION_FIXTURES[1].title}')"><span class="itin-sess-time">Nov 10, 14:00</span><span class="itin-sess-title">Future of Work keynote</span></div>
-              <div class="itin-sess-row" id="is-3" onclick="openDeepLink('${SESSION_FIXTURES[2].calendarAddLink}', 'session', '${SESSION_FIXTURES[2].title}')"><span class="itin-sess-time">Nov 11, 10:00</span><span class="itin-sess-title">Product Strategy workshop</span></div>
-              <div class="itin-sess-row" id="is-4" onclick="openDeepLink('${SESSION_FIXTURES[3].calendarAddLink}', 'session', '${SESSION_FIXTURES[3].title}')"><span class="itin-sess-time">Nov 11, 15:30</span><span class="itin-sess-title">Closing keynote</span></div>
+              <div class="itin-sess-row" id="is-1" onclick="openDeepLink(SESSION_FIXTURES[0].calendarAddLink, 'session', SESSION_FIXTURES[0].title)"><span class="itin-sess-time">Nov 10, 09:30</span><span class="itin-sess-title"></span></div>
+              <div class="itin-sess-row" id="is-2" onclick="openDeepLink(SESSION_FIXTURES[1].calendarAddLink, 'session', SESSION_FIXTURES[1].title)"><span class="itin-sess-time">Nov 11, 14:30</span><span class="itin-sess-title"></span></div>
+              <div class="itin-sess-row" id="is-3" onclick="openDeepLink(SESSION_FIXTURES[2].calendarAddLink, 'session', SESSION_FIXTURES[2].title)"><span class="itin-sess-time">Nov 11, 15:30</span><span class="itin-sess-title"></span></div>
+              <div class="itin-sess-row" id="is-4" onclick="openDeepLink(SESSION_FIXTURES[3].calendarAddLink, 'session', SESSION_FIXTURES[3].title)"><span class="itin-sess-time">Nov 12, 10:00</span><span class="itin-sess-title"></span></div>
             </div>
           </div>
 
@@ -2459,12 +2459,13 @@ function travelSelectHotel(num) {
 }
 
 function travelShowS5() {
-  const sessions = [
-    { id:'s1', time:'Nov 10, 09:30', title:'The Age of Ambient AI', link:SESSION_FIXTURES[0].calendarAddLink },
-    { id:'s2', time:'Nov 10, 14:00', title:'Future of Work keynote', link:SESSION_FIXTURES[1].calendarAddLink },
-    { id:'s3', time:'Nov 11, 10:00', title:'Product Strategy workshop', link:SESSION_FIXTURES[2].calendarAddLink },
-    { id:'s4', time:'Nov 11, 15:30', title:'Closing keynote', link:SESSION_FIXTURES[3].calendarAddLink }
-  ];
+  // Map demo sessions to fixture data for deep links
+  const sessions = SESSION_FIXTURES.map((fixture, i) => ({
+    id: 's' + (i+1),
+    time: fixture.startIso ? new Date(fixture.startIso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).replace(' ', ' ').split(' ').slice(0, 2).join(' ') + ' ' + new Date(fixture.startIso).toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',
+    title: fixture.title,
+    link: fixture.calendarAddLink
+  }));
   const rows = sessions.map((s, i) => `
     <div class="sess-confirm-row" id="scr-${i}">
       <input type="checkbox" checked style="width:15px;height:15px;flex-shrink:0">
@@ -2497,6 +2498,11 @@ function travelConfirmSessions() {
   if (btn) btn.disabled = true;
   // Enrichment point 3: sessions section max-height 0→auto, 240ms ease-out
   itinReveal('sessions');
+  // Populate session titles from fixtures (template literals not evaluated in static HTML)
+  for (let i = 0; i < 4; i++) {
+    const titleEl = document.querySelector(`#is-${i+1} .itin-sess-title`);
+    if (titleEl) titleEl.textContent = SESSION_FIXTURES[i].title;
+  }
   // After section opens (~260ms), stagger session rows in itinerary card at 50ms intervals
   setTimeout(() => {
     ['is-1','is-2','is-3','is-4'].forEach((id, i) => {
