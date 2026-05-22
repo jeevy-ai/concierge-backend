@@ -38,13 +38,13 @@ async function verifyRs256(token: string, key: CryptoKey): Promise<boolean> {
  */
 export async function verifyClerkJwt(token: string, jwksUri: string): Promise<ClerkClaims> {
   const header = decodeHeader(token);
-  const kid = typeof header.kid === "string" ? header.kid : undefined;
+  const kid = typeof header["kid"] === "string" ? header["kid"] : undefined;
 
   const res = await fetch(jwksUri);
   if (!res.ok) throw new Error(`JWKS fetch failed: ${res.status}`);
   const { keys } = (await res.json()) as { keys: JsonWebKeyWithKid[] };
 
-  const jwk = kid ? keys.find((k) => k.kid === kid) : keys[0];
+  const jwk = kid ? keys.find((k) => k["kid"] === kid) : keys[0];
   if (!jwk) throw new Error(`No matching JWK for kid=${kid ?? "any"}`);
 
   const cryptoKey = await crypto.subtle.importKey(
@@ -60,16 +60,16 @@ export async function verifyClerkJwt(token: string, jwksUri: string): Promise<Cl
 
   const claims = decodePayload(token);
   const now = Math.floor(Date.now() / 1000);
-  if (typeof claims.exp === "number" && claims.exp < now) {
+  if (typeof claims["exp"] === "number" && claims["exp"] < now) {
     throw new Error("JWT expired");
   }
-  if (typeof claims.sub !== "string") throw new Error("Missing sub claim");
+  if (typeof claims["sub"] !== "string") throw new Error("Missing sub claim");
 
   return {
-    sub: claims.sub,
-    ...(typeof claims.org_id === "string" ? { org_id: claims.org_id } : {}),
-    ...(typeof claims.org_role === "string" ? { org_role: claims.org_role } : {}),
-    exp: typeof claims.exp === "number" ? claims.exp : 0,
-    iat: typeof claims.iat === "number" ? claims.iat : 0,
+    sub: claims["sub"],
+    ...(typeof claims["org_id"] === "string" ? { org_id: claims["org_id"] } : {}),
+    ...(typeof claims["org_role"] === "string" ? { org_role: claims["org_role"] } : {}),
+    exp: typeof claims["exp"] === "number" ? claims["exp"] : 0,
+    iat: typeof claims["iat"] === "number" ? claims["iat"] : 0,
   };
 }
