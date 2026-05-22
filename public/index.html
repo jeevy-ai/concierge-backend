@@ -495,6 +495,169 @@
     .btn-warn:hover { background: var(--warn-border); }
     .btn-neutral { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
     .btn-neutral:hover { background: var(--border); }
+
+    /* ── Itinerary Card — progressive enrichment + animation system ── */
+    .itin-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      border: 2px solid var(--border);
+      overflow: hidden;
+      margin-bottom: 20px;
+      max-width: 560px;
+      opacity: 0;
+      transition: opacity 180ms ease-out, border-color 300ms ease-out;
+    }
+    .itin-card.itin-visible { opacity: 1; }
+    .itin-card.itin-complete { border-color: var(--success); }
+    @keyframes itinPulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.01); }
+    }
+    .itin-card.itin-pulse { animation: itinPulse 240ms ease-in-out; }
+
+    .itin-head { padding: 16px 18px 14px; }
+    .itin-status {
+      display: inline-block;
+      font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 100px; margin-bottom: 8px;
+      background: #edf2f7; color: #718096; border: 1px solid transparent;
+      transition: background 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out;
+    }
+    .itin-status.itin-status-done { background: var(--success-bg); color: var(--success); border-color: var(--success-border); }
+    .itin-head-title { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+    .itin-head-meta { font-size: 13px; color: var(--text3); }
+
+    /* Section grow — max-height trick; exact durations from spec §3 */
+    .itin-section { max-height: 0; overflow: hidden; }
+    .itin-section.revealed { max-height: 500px; }
+    /* S3 flight: 200ms ease-out, 80ms delay from selection */
+    .itin-section-flight    { transition: max-height 200ms ease-out 80ms; }
+    /* S4 hotel: 200ms ease-out */
+    .itin-section-hotel     { transition: max-height 200ms ease-out; }
+    /* S5 sessions: 240ms ease-out */
+    .itin-section-sessions  { transition: max-height 240ms ease-out; }
+    /* S7 reminders: 160ms ease-out */
+    .itin-section-reminders { transition: max-height 160ms ease-out; }
+
+    .itin-section-inner { padding: 12px 18px 14px; border-top: 1px solid var(--border); }
+    .itin-section-heading { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); margin-bottom: 10px; }
+    .itin-flight-row {
+      display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0;
+      cursor: pointer; transition: background 150ms; border-radius: 6px; margin: 0 -8px; padding: 8px;
+    }
+    .itin-flight-row:hover { background: rgba(90, 103, 216, 0.04); }
+    .itin-flight-row + .itin-flight-row { border-top: 1px solid var(--border); }
+    .itin-flight-route { font-weight: 700; font-size: 14px; }
+    .itin-flight-info { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .itin-flight-badge {
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+      background: var(--accent-light); color: var(--accent-dark);
+      padding: 2px 8px; border-radius: 4px; flex-shrink: 0; margin-left: 8px;
+    }
+    .itin-hotel-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .itin-hotel-info { font-size: 12px; color: var(--text3); margin-bottom: 2px; }
+    .itin-hotel-section {
+      cursor: pointer; padding: 8px; margin: 0 -8px; border-radius: 6px;
+      transition: background 150ms;
+    }
+    .itin-hotel-section:hover { background: rgba(90, 103, 216, 0.04); }
+    /* Session rows stagger in after section opens */
+    .itin-sess-row {
+      display: flex; gap: 12px; padding: 7px 8px;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 150ms ease-out, transform 150ms ease-out, background 150ms;
+      cursor: pointer; border-radius: 6px; margin: 0 -8px;
+    }
+    .itin-sess-row:hover { background: rgba(90, 103, 216, 0.04); }
+    .itin-sess-row + .itin-sess-row { border-top: 1px solid var(--border); }
+    .itin-sess-row.entered { opacity: 1; transform: translateY(0); }
+    .itin-sess-time { font-size: 11px; font-weight: 600; color: var(--text3); min-width: 88px; white-space: nowrap; }
+    .itin-sess-title { font-size: 13px; color: var(--text); font-weight: 500; }
+    /* Reminder pills stagger in */
+    .itin-rem-pills { display: flex; flex-direction: column; gap: 8px; }
+    .itin-rem-pill {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      opacity: 0; transform: translateX(-12px);
+      transition: opacity 160ms ease-out, transform 160ms ease-out;
+    }
+    .itin-rem-pill.entered { opacity: 1; transform: translateX(0); }
+    .itin-rem-time { font-size: 11px; font-weight: 700; color: var(--accent); min-width: 88px; }
+    .itin-rem-text { font-size: 12px; color: var(--text2); }
+
+    /* Travel flow chat area */
+    .travel-result-wrap { max-width: 560px; }
+    .travel-chat { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+    .jeevy-bubble-wrap { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+    /* Jeevy chat bubble: 220ms cubic-bezier(0.16,1,0.3,1) per spec §3 S1 */
+    .jeevy-bubble {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px 12px 12px 4px; padding: 12px 16px;
+      box-shadow: var(--shadow); max-width: 480px;
+      opacity: 0; transform: translateY(16px);
+    }
+    .jeevy-bubble.entered {
+      opacity: 1; transform: translateY(0);
+      transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1), transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .jeevy-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); margin-bottom: 5px; }
+    .jeevy-txt { font-size: 13px; color: var(--text); line-height: 1.6; }
+    .chat-btns { display: flex; gap: 8px; flex-wrap: wrap; opacity: 0; transition: opacity 120ms ease-out; }
+    .chat-btns.entered { opacity: 1; }
+    /* Option cards (flight / hotel) */
+    .opt-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 16px; cursor: pointer;
+      max-width: 480px; width: 100%; text-align: left;
+      opacity: 0; transform: translateY(10px);
+      transition: border-color 0.15s;
+    }
+    .opt-card.entered { opacity: 1; transform: translateY(0); }
+    .opt-card:hover:not(.opt-selected):not(.opt-faded) { border-color: var(--accent); }
+    .opt-card.opt-selected { border-color: var(--accent); background: var(--accent-light); cursor: default; }
+    .opt-card.opt-faded { opacity: 0.35; pointer-events: none; transition: opacity 120ms linear; }
+    .opt-card-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .opt-card-meta { font-size: 12px; color: var(--text3); }
+    .opt-card-badge {
+      display: inline-block; font-size: 11px; font-weight: 600;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 7px; margin-top: 6px; color: var(--text3);
+    }
+    .opt-card .sel-btn {
+      display: inline-block; margin-top: 10px; padding: 5px 14px;
+      background: var(--accent); color: white; border: none; border-radius: 6px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .opt-card .sel-btn:hover { background: var(--accent-dark); }
+    .opt-card.opt-selected .sel-btn, .opt-card.opt-faded .sel-btn { display: none; }
+    /* Session confirm rows */
+    .sess-confirm-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; margin-bottom: 8px; max-width: 480px;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 150ms ease-out, transform 150ms ease-out;
+    }
+    .sess-confirm-row.entered { opacity: 1; transform: translateY(0); }
+    .sess-time-chip {
+      font-size: 11px; font-weight: 600;
+      background: var(--accent-light); color: var(--accent-dark);
+      border-radius: 4px; padding: 2px 6px; white-space: nowrap;
+    }
+    /* Reminder confirm pills */
+    .rem-confirm-pill {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: 8px; max-width: 480px;
+      opacity: 0; transform: translateX(-12px);
+      transition: opacity 160ms ease-out, transform 160ms ease-out;
+    }
+    .rem-confirm-pill.entered { opacity: 1; transform: translateX(0); }
+    /* Step indicator dots */
+    .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 200ms; display: inline-block; }
+    .step-dot.dot-active { background: var(--accent); }
+    .step-dot.dot-done   { background: var(--success); }
   </style>
 </head>
 <body>
@@ -518,6 +681,7 @@
       <button class="tab-btn active" onclick="switchSection('concierge', this)">Concierge</button>
       <button class="tab-btn" onclick="switchSection('actions', this)">Actions</button>
       <button class="tab-btn" onclick="switchSection('recap', this)">Recap</button>
+      <button class="tab-btn" onclick="switchSection('travel', this)">Travel</button>
     </div>
 
     <!-- Concierge pane -->
@@ -754,6 +918,30 @@
       <button class="btn btn-ghost" onclick="loadDemoRecap()" style="margin-bottom:8px;font-size:12px;">Load demo intent windows</button>
     </div>
 
+    <!-- Travel pane -->
+    <div id="pane-travel" class="tab-pane">
+      <div class="section-title" style="margin-bottom:8px">Travel Flow Demo</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.6">
+        Alex Chen booking Web Summit 2026. Watch the itinerary card grow at each enrichment point.
+      </p>
+      <div style="margin-bottom:14px">
+        <div class="section-title" style="margin-bottom:6px">Progress</div>
+        <div id="travelStepLabel" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">—</div>
+        <div style="display:flex;gap:5px;align-items:center" id="travelDots">
+          <div class="step-dot" id="dot-s1" title="S1 — Butler nudge"></div>
+          <div class="step-dot" id="dot-s3" title="S3 — Flight"></div>
+          <div class="step-dot" id="dot-s4" title="S4 — Hotel"></div>
+          <div class="step-dot" id="dot-s5" title="S5 — Sessions"></div>
+          <div class="step-dot" id="dot-s7" title="S7 — Reminders"></div>
+          <div class="step-dot" id="dot-s8" title="S8 — Complete"></div>
+        </div>
+      </div>
+      <hr>
+      <div style="margin-top:12px">
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;font-size:12px" onclick="resetTravelDemo()">↺ Reset demo</button>
+      </div>
+    </div>
+
     <div class="send-area">
       <button class="btn btn-primary" id="sendBtn" onclick="handleSend()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -771,6 +959,78 @@
         <p style="margin-top:6px;font-size:12px;">Results appear here — structured, not raw JSON.</p>
       </div>
     </div>
+
+    <!-- Travel result: itinerary card + chat (hidden until Travel tab active) -->
+    <div id="travelResult" style="display:none">
+      <div class="travel-result-wrap">
+        <!-- Itinerary card — all 4 sections pre-rendered; revealed at enrichment points -->
+        <div id="itinCard" class="itin-card">
+          <div class="itin-head">
+            <div id="itinStatus" class="itin-status">Planning…</div>
+            <div class="itin-head-title">Web Summit 2026</div>
+            <div class="itin-head-meta">Lisbon, Portugal &middot; Nov 9–12, 2026</div>
+          </div>
+
+          <!-- Enrichment 1: Flight segment (S3) — 200ms ease-out, 80ms delay -->
+          <div id="itin-flight" class="itin-section itin-section-flight">
+            <div class="itin-section-inner">
+              <div class="itin-section-heading">✈ Flights</div>
+              <div class="itin-flight-row" onclick="openDeepLink('${FLIGHT_FIXTURES.outbound.calendarAddLink}', 'flight', 'UA88')">
+                <div>
+                  <div class="itin-flight-route">SFO → LIS</div>
+                  <div class="itin-flight-info">Delta UA88 · Nov 9, 22:10 PST → Nov 10, 17:45 WET · Direct</div>
+                </div>
+                <span class="itin-flight-badge">Business 4A</span>
+              </div>
+              <div class="itin-flight-row" onclick="openDeepLink('${FLIGHT_FIXTURES.return.calendarAddLink}', 'flight', 'UA89')">
+                <div>
+                  <div class="itin-flight-route">LIS → SFO</div>
+                  <div class="itin-flight-info">Delta UA89 · Nov 12, 09:30 WET → Nov 12, 12:15 PST · Direct</div>
+                </div>
+                <span class="itin-flight-badge">Business 4A</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enrichment 2: Hotel segment (S4) — 200ms ease-out -->
+          <div id="itin-hotel" class="itin-section itin-section-hotel">
+            <div class="itin-section-inner">
+              <div class="itin-hotel-section" onclick="openDeepLink('${HOTEL_FIXTURE.calendarAddLink}', 'hotel', 'Bairro Alto Hotel')">
+                <div class="itin-hotel-name">Bairro Alto Hotel · Marriott Bonvoy</div>
+                <div class="itin-hotel-info">Rua da Bica de Duarte Belo 60, 1200-075 Lisbon</div>
+                <div class="itin-hotel-info">Check-in: Nov 10 &nbsp;·&nbsp; Check-out: Nov 12</div>
+                <div class="itin-hotel-info">Superior King Room · City View</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enrichment 3: Sessions list (S5) — 240ms ease-out; rows stagger in at 50ms -->
+          <div id="itin-sessions" class="itin-section itin-section-sessions">
+            <div class="itin-section-inner">
+              <div class="itin-section-heading">📅 Conference Sessions (4)</div>
+              <div class="itin-sess-row" id="is-1" onclick="openDeepLink('${SESSION_FIXTURES[0].calendarAddLink}', 'session', '${SESSION_FIXTURES[0].title}')"><span class="itin-sess-time">Nov 10, 09:30</span><span class="itin-sess-title">The Age of Ambient AI</span></div>
+              <div class="itin-sess-row" id="is-2" onclick="openDeepLink('${SESSION_FIXTURES[1].calendarAddLink}', 'session', '${SESSION_FIXTURES[1].title}')"><span class="itin-sess-time">Nov 10, 14:00</span><span class="itin-sess-title">Future of Work keynote</span></div>
+              <div class="itin-sess-row" id="is-3" onclick="openDeepLink('${SESSION_FIXTURES[2].calendarAddLink}', 'session', '${SESSION_FIXTURES[2].title}')"><span class="itin-sess-time">Nov 11, 10:00</span><span class="itin-sess-title">Product Strategy workshop</span></div>
+              <div class="itin-sess-row" id="is-4" onclick="openDeepLink('${SESSION_FIXTURES[3].calendarAddLink}', 'session', '${SESSION_FIXTURES[3].title}')"><span class="itin-sess-time">Nov 11, 15:30</span><span class="itin-sess-title">Closing keynote</span></div>
+            </div>
+          </div>
+
+          <!-- Enrichment 4: Reminders section (S7) — 160ms ease-out; pills stagger in at 80ms -->
+          <div id="itin-reminders" class="itin-section itin-section-reminders">
+            <div class="itin-section-inner">
+              <div class="itin-section-heading">🔔 Reminders (2)</div>
+              <div class="itin-rem-pills">
+                <div class="itin-rem-pill" id="ip-1"><span class="itin-rem-time">Nov 9, 20:00</span><span class="itin-rem-text">Pack + check-in opens</span></div>
+                <div class="itin-rem-pill" id="ip-2"><span class="itin-rem-time">Nov 10, 05:30</span><span class="itin-rem-text">Leave for SFO (Lyft ~35 min)</span></div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /itinCard -->
+
+        <!-- Chat area: Jeevy bubbles + option cards appear as flow advances -->
+        <div id="travelChat" class="travel-chat"></div>
+      </div>
+    </div><!-- /travelResult -->
   </main>
 </div>
 
@@ -826,7 +1086,7 @@ const CALENDAR_FIXTURE = [
   }
 ];
 
-// Conference session fixtures for S5 demo
+// Conference session fixtures for S5 demo (with calendar deep links)
 const SESSION_FIXTURES = [
   {
     id: 'WS2026-K01',
@@ -834,7 +1094,8 @@ const SESSION_FIXTURES = [
     speaker: 'Keynote',
     startIso: '2026-11-10T09:30:00Z',
     endIso: '2026-11-10T10:15:00Z',
-    room: 'Altice Arena Stage 1'
+    room: 'Altice Arena Stage 1',
+    calendarAddLink: 'webcal://calendar.websummit.net/add?session=WS2026-K01&title=Age%20of%20Ambient%20AI&date=20261110&time=0930'
   },
   {
     id: 'WS2026-K05',
@@ -842,7 +1103,8 @@ const SESSION_FIXTURES = [
     speaker: 'Panel',
     startIso: '2026-11-11T14:30:00Z',
     endIso: '2026-11-11T15:15:00Z',
-    room: 'Centre Stage'
+    room: 'Centre Stage',
+    calendarAddLink: 'webcal://calendar.websummit.net/add?session=WS2026-K05&title=Trust%20in%20AI&date=20261111&time=1430'
   },
   {
     id: 'WS2026-K08',
@@ -850,7 +1112,8 @@ const SESSION_FIXTURES = [
     speaker: 'Meta AI Research',
     startIso: '2026-11-11T15:30:00Z',
     endIso: '2026-11-11T16:15:00Z',
-    room: 'Future Stage'
+    room: 'Future Stage',
+    calendarAddLink: 'webcal://calendar.websummit.net/add?session=WS2026-K08&title=Open%20Source%20AI&date=20261111&time=1530'
   },
   {
     id: 'WS2026-K12',
@@ -858,9 +1121,49 @@ const SESSION_FIXTURES = [
     speaker: 'Engineering Track',
     startIso: '2026-11-12T10:00:00Z',
     endIso: '2026-11-12T10:45:00Z',
-    room: 'Workshop Hall B'
+    room: 'Workshop Hall B',
+    calendarAddLink: 'webcal://calendar.websummit.net/add?session=WS2026-K12&title=Scaling%20Reliability&date=20261112&time=1000'
   }
 ];
+
+// Flight fixture with deep links
+const FLIGHT_FIXTURES = {
+  outbound: {
+    id: 'UA88-out',
+    airline: 'Delta',
+    flightNo: 'UA88',
+    route: 'SFO → LIS',
+    departure: 'Nov 9, 22:10 PST',
+    arrival: 'Nov 10, 17:45 WET',
+    duration: 'Direct',
+    seat: 'Business 4A',
+    calendarAddLink: 'webcal://calendar.delta.com/add?flight=UA88&date=20261109&seat=4A'
+  },
+  return: {
+    id: 'UA89-ret',
+    airline: 'Delta',
+    flightNo: 'UA89',
+    route: 'LIS → SFO',
+    departure: 'Nov 12, 09:30 WET',
+    arrival: 'Nov 12, 12:15 PST',
+    duration: 'Direct',
+    seat: 'Business 4A',
+    calendarAddLink: 'webcal://calendar.delta.com/add?flight=UA89&date=20261112&seat=4A'
+  }
+};
+
+// Hotel fixture with deep link
+const HOTEL_FIXTURE = {
+  id: 'BAH-LIS',
+  name: 'Bairro Alto Hotel',
+  brand: 'Marriott Bonvoy',
+  address: 'Rua da Bica de Duarte Belo 60, 1200-075 Lisbon',
+  checkin: 'Nov 10',
+  checkout: 'Nov 12',
+  roomType: 'Superior King Room',
+  view: 'City View',
+  calendarAddLink: 'https://www.marriott.com/en-us/hotels/lisbh-bairro-alto-hotel-lisbon/rooms/?groupId=BAH-WEB-2026&utm_source=concierge'
+};
 
 function fmtSessionTime(startIso, endIso) {
   const startOpts = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' };
@@ -997,11 +1300,23 @@ async function moveMeeting(cardId, sessionTitle, eventTitle) {
 
 // ── Section switching ──
 function switchSection(section, btn) {
+  const prev = activeSection;
   activeSection = section;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.getElementById('pane-' + section).classList.add('active');
+  // Travel tab toggles result area visibility
+  if (section === 'travel') {
+    document.getElementById('resultArea').style.display = 'none';
+    document.getElementById('travelResult').style.display = 'block';
+    document.getElementById('sendBtn').disabled = true;
+    if (!travelState.initialized) startTravelDemo();
+  } else {
+    document.getElementById('resultArea').style.display = 'block';
+    document.getElementById('travelResult').style.display = 'none';
+    document.getElementById('sendBtn').disabled = false;
+  }
 }
 
 // ── Tab management ──
@@ -1905,6 +2220,383 @@ function copyText(text) {
     document.body.appendChild(el);
     setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 1500);
   });
+}
+
+// ── Deep link handler (S8 itinerary taps + S5 calendar links) ──
+// Opens flight, hotel, and session calendar/booking links in new tab
+function openDeepLink(url, type, label) {
+  if (!url) {
+    console.warn('Deep link missing for', type, label);
+    return;
+  }
+  // Use window.open for better app/calendar handling with webcal:// schemes
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+// ── Travel Flow State Machine ──
+// Implements 5 enrichment points per YOU-603 §5 / §3
+// Key invariants:
+//   - No full-card re-render when section added (DOM is pre-rendered; class toggled only)
+//   - Existing sections never re-animate (revealedSections Set gates all reveal calls)
+//   - S8 completion pulse fires exactly once (pulseFired flag)
+const travelState = {
+  initialized: false,
+  step: -1,          // current step index (0–5 maps to S1/S3/S4/S5/S7/S8)
+  pulseFired: false,
+  revealedSections: new Set()
+};
+
+const TRAVEL_STEP_LABELS = [
+  'S1 — Trip detected',
+  'S3 — Flight selection',
+  'S4 — Hotel selection',
+  'S5 — Session sync',
+  'S7 — Reminders',
+  'S8 — Complete'
+];
+const TRAVEL_DOT_IDS = ['dot-s1','dot-s3','dot-s4','dot-s5','dot-s7','dot-s8'];
+
+function travelUpdateIndicator(step) {
+  const lbl = document.getElementById('travelStepLabel');
+  if (lbl) lbl.textContent = step >= 0 ? TRAVEL_STEP_LABELS[step] : '—';
+  TRAVEL_DOT_IDS.forEach((id, i) => {
+    const d = document.getElementById(id);
+    if (!d) return;
+    d.className = 'step-dot';
+    if (i < step) d.classList.add('dot-done');
+    else if (i === step) d.classList.add('dot-active');
+  });
+}
+
+function travelAppendChat(html) {
+  const chat = document.getElementById('travelChat');
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  while (tmp.firstChild) chat.appendChild(tmp.firstChild);
+}
+
+function travelAnimIn(id, delay) {
+  setTimeout(() => {
+    const el = typeof id === 'string' ? document.getElementById(id) : id;
+    if (el) el.classList.add('entered');
+  }, delay || 0);
+}
+
+// Core enrichment point reveal — idempotent, no re-animation
+function itinReveal(sectionName) {
+  if (travelState.revealedSections.has(sectionName)) return;
+  travelState.revealedSections.add(sectionName);
+  const el = document.getElementById('itin-' + sectionName);
+  if (el) el.classList.add('revealed');
+}
+
+// S8 completion: status badge + border → success, pulse fires once
+function itinComplete() {
+  if (travelState.pulseFired) return;
+  travelState.pulseFired = true;
+  const card = document.getElementById('itinCard');
+  const badge = document.getElementById('itinStatus');
+  // Status badge: token(color.neutral.subtle) → token(color.success.subtle) 200ms
+  badge.textContent = 'Trip ready ✓';
+  badge.classList.add('itin-status-done');
+  // Border: accent.border → success.border 300ms (via CSS transition on itin-complete class)
+  card.classList.add('itin-complete');
+  // Card pulse: scale(1)→scale(1.01)→scale(1) 240ms ease-in-out — fires once only
+  setTimeout(() => {
+    card.classList.add('itin-pulse');
+    card.addEventListener('animationend', () => card.classList.remove('itin-pulse'), { once: true });
+  }, 200); // small delay so border transition is visible first
+}
+
+function startTravelDemo() {
+  travelState.initialized = true;
+  travelState.step = 0;
+  travelUpdateIndicator(0);
+  // S1: card stub fade-in 80ms after Jeevy bubble appears
+  // Show Jeevy butler nudge bubble first
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap">
+      <div class="jeevy-bubble" id="s1-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">
+          I noticed you have <strong>Web Summit 2026 in Lisbon</strong> on Nov 10–11.
+          Want me to handle flights, hotel, and calendar sync?
+        </div>
+      </div>
+      <div class="chat-btns" id="s1-btns">
+        <button class="btn btn-primary" onclick="travelS1Accept()">Set it up</button>
+        <button class="btn btn-ghost" onclick="travelS1Dismiss()">Not now</button>
+      </div>
+    </div>`);
+  // Bubble slides in: 220ms cubic-bezier per spec S1 motion
+  travelAnimIn('s1-bubble', 80);
+  // Buttons fade in 100ms after bubble (spec: "Buttons fade in 100ms after card")
+  travelAnimIn('s1-btns', 300);
+  // Itinerary card stub fade-in: opacity 0→1, 180ms ease-out, 80ms after Jeevy bubble
+  setTimeout(() => {
+    document.getElementById('itinCard').classList.add('itin-visible');
+  }, 160); // 80ms after bubble starts animating
+}
+
+function travelS1Accept() {
+  document.getElementById('s1-btns').querySelectorAll('button').forEach(b => b.disabled = true);
+  // Advance to S3 after brief pause
+  setTimeout(() => {
+    travelState.step = 1;
+    travelUpdateIndicator(1);
+    travelShowS3();
+  }, 350);
+}
+
+function travelS1Dismiss() {
+  document.getElementById('s1-btns').querySelectorAll('button').forEach(b => b.disabled = true);
+  travelAppendChat(`<div style="font-size:12px;color:var(--text3);padding:2px 0">Flow dismissed. Itinerary stub persists.</div>`);
+}
+
+function travelShowS3() {
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap" id="s3-wrap">
+      <div class="jeevy-bubble" id="s3-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">Here are the best options for <strong>SFO → LIS</strong> on Nov 9:</div>
+      </div>
+      <div id="s3-cards">
+        <div class="opt-card" id="fc-1" onclick="travelSelectFlight(1)">
+          <div class="opt-card-title">✈ Delta UA88 — SFO → LIS (Direct)</div>
+          <div class="opt-card-meta">Nov 9, 22:10 PST → Nov 10, 17:45 WET · 10h 35m</div>
+          <span class="opt-card-badge">Business · Aisle 4A</span>
+          <button class="sel-btn">Select</button>
+        </div>
+        <div class="opt-card" id="fc-2" onclick="travelSelectFlight(2)">
+          <div class="opt-card-title">✈ Delta UA88 — SFO → JFK → LIS (1 stop)</div>
+          <div class="opt-card-meta">Nov 9, 14:30 PST → Nov 10, 18:30 WET · 13h 00m</div>
+          <span class="opt-card-badge">Business · Aisle 5B</span>
+          <button class="sel-btn">Select</button>
+        </div>
+        <div class="opt-card" id="fc-3" onclick="travelSelectFlight(3)">
+          <div class="opt-card-title">✈ TAP Air Portugal TP236 — SFO → LIS</div>
+          <div class="opt-card-meta">Nov 9, 23:45 PST → Nov 10, 19:30 WET · 10h 45m</div>
+          <span class="opt-card-badge">Business · Window 3A</span>
+          <button class="sel-btn">Select</button>
+        </div>
+      </div>
+    </div>`);
+  travelAnimIn('s3-bubble', 60);
+  // Cards stagger: 0ms, 60ms, 120ms per spec
+  [1,2,3].forEach((n, i) => {
+    setTimeout(() => {
+      const c = document.getElementById('fc-' + n);
+      if (c) { c.style.transition = `opacity 180ms ease-out ${i*60}ms, transform 180ms ease-out ${i*60}ms`; c.classList.add('entered'); }
+    }, 200);
+  });
+}
+
+function travelSelectFlight(num) {
+  for (let i = 1; i <= 3; i++) {
+    const c = document.getElementById('fc-' + i);
+    if (!c) continue;
+    c.onclick = null;
+    if (i === num) c.classList.add('opt-selected');
+    else c.classList.add('opt-faded'); // unchosen: opacity 1→0.4 120ms linear per spec
+  }
+  // Enrichment point 1: flight section max-height 0→auto, 200ms ease-out, 80ms delay
+  // (80ms delay is baked into CSS transition-delay on .itin-section-flight)
+  itinReveal('flight');
+  setTimeout(() => {
+    travelState.step = 2;
+    travelUpdateIndicator(2);
+    travelShowS4();
+  }, 500);
+}
+
+function travelShowS4() {
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap" id="s4-wrap">
+      <div class="jeevy-bubble" id="s4-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">Here are hotels near the venue for <strong>Nov 10–12</strong>:</div>
+      </div>
+      <div id="s4-cards">
+        <div class="opt-card" id="hc-1" onclick="travelSelectHotel(1)">
+          <div class="opt-card-title">🏨 Bairro Alto Hotel — Marriott Bonvoy</div>
+          <div class="opt-card-meta">Rua da Bica de Duarte Belo 60 · 3.2km from venue</div>
+          <span class="opt-card-badge">Superior King · €520/night</span>
+          <div style="font-size:12px;color:var(--warn);margin-top:6px">⚠ 3.2km from venue — 8 min taxi</div>
+          <button class="sel-btn">Select</button>
+        </div>
+        <div class="opt-card" id="hc-2" onclick="travelSelectHotel(2)">
+          <div class="opt-card-title">🏨 Marriott Lisbon</div>
+          <div class="opt-card-meta">Avenida dos Combatentes 45 · 4.8km from venue</div>
+          <span class="opt-card-badge">Executive King · €480/night</span>
+          <button class="sel-btn">Select</button>
+        </div>
+      </div>
+    </div>`);
+  travelAnimIn('s4-bubble', 60);
+  [1,2].forEach((n, i) => {
+    setTimeout(() => {
+      const c = document.getElementById('hc-' + n);
+      if (c) { c.style.transition = `opacity 180ms ease-out ${i*60}ms, transform 180ms ease-out ${i*60}ms`; c.classList.add('entered'); }
+    }, 200);
+  });
+}
+
+function travelSelectHotel(num) {
+  for (let i = 1; i <= 2; i++) {
+    const c = document.getElementById('hc-' + i);
+    if (!c) continue;
+    c.onclick = null;
+    if (i === num) c.classList.add('opt-selected');
+    else c.classList.add('opt-faded');
+  }
+  // Enrichment point 2: hotel section max-height 0→auto, 200ms ease-out
+  itinReveal('hotel');
+  setTimeout(() => {
+    travelState.step = 3;
+    travelUpdateIndicator(3);
+    travelShowS5();
+  }, 450);
+}
+
+function travelShowS5() {
+  const sessions = [
+    { id:'s1', time:'Nov 10, 09:30', title:'The Age of Ambient AI', link:SESSION_FIXTURES[0].calendarAddLink },
+    { id:'s2', time:'Nov 10, 14:00', title:'Future of Work keynote', link:SESSION_FIXTURES[1].calendarAddLink },
+    { id:'s3', time:'Nov 11, 10:00', title:'Product Strategy workshop', link:SESSION_FIXTURES[2].calendarAddLink },
+    { id:'s4', time:'Nov 11, 15:30', title:'Closing keynote', link:SESSION_FIXTURES[3].calendarAddLink }
+  ];
+  const rows = sessions.map((s, i) => `
+    <div class="sess-confirm-row" id="scr-${i}">
+      <input type="checkbox" checked style="width:15px;height:15px;flex-shrink:0">
+      <span class="sess-time-chip">${s.time}</span>
+      <span style="font-size:13px;color:var(--text)">${s.title}</span>
+      ${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;margin-left:auto;flex-shrink:0">View in Calendar →</a>` : ''}
+    </div>`).join('');
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap" id="s5-wrap">
+      <div class="jeevy-bubble" id="s5-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">I found <strong>4 sessions</strong> you're registered for at Web Summit. Add to calendar?</div>
+      </div>
+      <div id="s5-sessions">
+        ${rows}
+        <div class="chat-btns entered" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="travelConfirmSessions()">Add to Calendar</button>
+        </div>
+      </div>
+    </div>`);
+  travelAnimIn('s5-bubble', 60);
+  // Session rows stagger: 50ms intervals per spec §3 S5 motion
+  for (let i = 0; i < 4; i++) {
+    setTimeout(() => travelAnimIn('scr-' + i), 200 + i * 50);
+  }
+}
+
+function travelConfirmSessions() {
+  const btn = document.querySelector('#s5-sessions .btn-primary');
+  if (btn) btn.disabled = true;
+  // Enrichment point 3: sessions section max-height 0→auto, 240ms ease-out
+  itinReveal('sessions');
+  // After section opens (~260ms), stagger session rows in itinerary card at 50ms intervals
+  setTimeout(() => {
+    ['is-1','is-2','is-3','is-4'].forEach((id, i) => {
+      setTimeout(() => travelAnimIn(id), i * 50);
+    });
+  }, 270);
+  setTimeout(() => {
+    travelState.step = 4;
+    travelUpdateIndicator(4);
+    travelShowS7();
+  }, 650);
+}
+
+function travelShowS7() {
+  travelAppendChat(`
+    <div class="jeevy-bubble-wrap" id="s7-wrap">
+      <div class="jeevy-bubble" id="s7-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">I've set up <strong>2 reminders</strong> for your trip:</div>
+      </div>
+      <div id="s7-reminders">
+        <div class="rem-confirm-pill" id="rcp-1">
+          <span style="font-size:16px">🔔</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent)">Nov 9, 20:00 PST</div>
+            <div style="font-size:12px;color:var(--text2)">Pack + online check-in opens (Delta UA88)</div>
+          </div>
+        </div>
+        <div class="rem-confirm-pill" id="rcp-2">
+          <span style="font-size:16px">🔔</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent)">Nov 10, 05:30 PST</div>
+            <div style="font-size:12px;color:var(--text2)">Leave for SFO — Lyft ~35 min to terminal</div>
+          </div>
+        </div>
+        <div class="chat-btns entered" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="travelConfirmReminders()">Confirm reminders</button>
+        </div>
+      </div>
+    </div>`);
+  travelAnimIn('s7-bubble', 60);
+  // Reminder pills: translateX(-12px)→0, 160ms ease-out, staggered 80ms per spec §3 S7
+  travelAnimIn('rcp-1', 200);
+  travelAnimIn('rcp-2', 280);
+}
+
+function travelConfirmReminders() {
+  const btn = document.querySelector('#s7-reminders .btn-primary');
+  if (btn) btn.disabled = true;
+  // Enrichment point 4: reminders section max-height 0→auto, 160ms ease-out
+  itinReveal('reminders');
+  // After section opens (~180ms), stagger pills at 80ms
+  setTimeout(() => {
+    travelAnimIn('ip-1', 0);
+    travelAnimIn('ip-2', 80);
+  }, 190);
+  // S8: complete — fires after reminders section fully visible
+  setTimeout(() => {
+    travelState.step = 5;
+    travelUpdateIndicator(5);
+    itinComplete();
+    // Completion Jeevy bubble
+    travelAppendChat(`
+      <div class="jeevy-bubble" id="s8-bubble">
+        <div class="jeevy-lbl">Jeevy</div>
+        <div class="jeevy-txt">
+          ✓ <strong>Trip ready!</strong> Web Summit 2026 is all set.<br>
+          Flights, hotel, 4 sessions, and 2 reminders added to your calendar.
+        </div>
+      </div>`);
+    travelAnimIn('s8-bubble', 50);
+  }, 500);
+}
+
+function resetTravelDemo() {
+  // Reset state
+  travelState.initialized = false;
+  travelState.step = -1;
+  travelState.pulseFired = false;
+  travelState.revealedSections.clear();
+  // Reset itinerary card
+  const card = document.getElementById('itinCard');
+  card.classList.remove('itin-visible', 'itin-complete', 'itin-pulse');
+  document.getElementById('itinStatus').textContent = 'Planning…';
+  document.getElementById('itinStatus').classList.remove('itin-status-done');
+  ['flight','hotel','sessions','reminders'].forEach(n => {
+    document.getElementById('itin-' + n).classList.remove('revealed');
+  });
+  // Reset session rows and reminder pills
+  ['is-1','is-2','is-3','is-4'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('entered');
+  });
+  ['ip-1','ip-2'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('entered');
+  });
+  // Clear chat
+  document.getElementById('travelChat').innerHTML = '';
+  travelUpdateIndicator(-1);
+  // Restart
+  startTravelDemo();
 }
 
 // ── Init ──
