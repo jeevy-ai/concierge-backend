@@ -11,6 +11,7 @@
     "deploy": "wrangler deploy"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.57.0",
     "@jeevy/analytics": "workspace:*",
     "@jeevy/contracts": "workspace:*",
     "@jeevy/entitlement": "workspace:*",

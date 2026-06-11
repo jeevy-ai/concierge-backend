@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runDailyAtRiskScan } from "./lib/save-interview.js";
 import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
+import { registerConciergeItineraryRoute } from "./routes/concierge-itinerary.js";
 import { registerSaveInterviewRoutes } from "./routes/save-interview.js";
 import { registerStripeWebhookRoute } from "./routes/stripe-webhook.js";
 
@@ -22,6 +23,12 @@ export type Env = {
   FROM_EMAIL: string;
   INTERNAL_API_SECRET: string;
   CLERK_SECRET_KEY: string;
+  // AI provider keys for POST /concierge/itinerary (YOU-681 / YOU-686).
+  // Provider priority: ANTHROPIC_API_KEY → Anthropic; VERTEX_SA_JSON + GCP_PROJECT_ID → Gemini on Vertex.
+  ANTHROPIC_API_KEY?: string;
+  // Interim provider: Gemini on Vertex AI (active until Anthropic key is approved).
+  VERTEX_SA_JSON?: string;   // GCP service-account JSON blob
+  GCP_PROJECT_ID?: string;   // GCP project that has Vertex AI enabled
 };
 
 export type Variables = {
@@ -47,6 +54,9 @@ registerStripeWebhookRoute(app);
 
 // Save-interview event ingestion (internal service-to-service, secret-gated)
 registerSaveInterviewRoutes(app);
+
+// AI butler: conversational travel itinerary planner (YOU-681)
+registerConciergeItineraryRoute(app);
 
 // Protected routes require Clerk auth + active Stripe subscription
 const protected_ = app.use("/api/protected/*", clerkAuthMiddleware(), entitlementGuard());
