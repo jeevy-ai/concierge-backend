@@ -169,7 +169,7 @@ export async function callGeminiVertex(
     generation_config: { max_output_tokens: 2048 },
   };
 
-  const model = "gemini-2.0-flash-001";
+  const model = "gemini-2.5-flash";
   const url =
     `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}` +
     `/locations/us-central1/publishers/google/models/${model}:generateContent`;
