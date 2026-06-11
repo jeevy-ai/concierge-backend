@@ -264,7 +264,7 @@ body {
   margin-top: 12px;
   opacity: 0;
   transform: scale(0.9);
-  transition: opacity 0.2s, transform 0.2s;
+  transition: opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .ring-done-label.show { opacity: 1; transform: scale(1.0); }
 
@@ -588,20 +588,27 @@ svg.ring circle { transition: none; }
   animation: fadeIn 0.25s ease-out both;
 }
 
-/* ── Reduced motion ─────────────────────────────────────────────────────── */
+/* ── Reduced motion — keep opacity fades, skip translate/scale ───────────── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
   @keyframes fadeUp {
-    from { opacity: 0; transform: none; }
-    to   { opacity: 1; transform: none; }
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
   @keyframes staggerFadeUp {
-    from { opacity: 0; transform: none; }
-    to   { opacity: 1; transform: none; }
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
+  @keyframes scaleIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .ring-done-label {
+    transition: opacity 0.2s ease-out !important;
+    transform: scale(1.0) !important;
+  }
+  .expandable { transition: none !important; }
+  .toggle-thumb { transition: none !important; }
+  .toggle-track { transition: none !important; }
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
@@ -644,6 +651,36 @@ svg.ring circle { transition: none; }
   padding: 2px 7px;
   border-radius: 6px;
   margin-top: 3px;
+}
+
+/* ── Pill stagger — flight + hotel screens ──────────────────────────────── */
+#screen-s3 .pill,
+#screen-s4 .pill {
+  animation: scaleIn 150ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+#screen-s3 .pill:nth-child(1),
+#screen-s4 .pill:nth-child(1) { animation-delay: 80ms; }
+#screen-s3 .pill:nth-child(2),
+#screen-s4 .pill:nth-child(2) { animation-delay: 130ms; }
+#screen-s3 .pill:nth-child(3),
+#screen-s4 .pill:nth-child(3) { animation-delay: 180ms; }
+#screen-s3 .pill:nth-child(4) { animation-delay: 230ms; }
+
+/* ── Session row stagger ────────────────────────────────────────────────── */
+#screen-s5 .session-row {
+  animation: fadeIn 200ms ease-out both;
+}
+#screen-s5 .session-row:nth-child(1) { animation-delay: 80ms; }
+#screen-s5 .session-row:nth-child(2) { animation-delay: 120ms; }
+#screen-s5 .session-row:nth-child(3) { animation-delay: 160ms; }
+
+/* ── Ring draw — CSS 600ms ease-in-out ──────────────────────────────────── */
+@keyframes ringDraw {
+  from { stroke-dashoffset: 239; }
+  to   { stroke-dashoffset: 0; }
+}
+.ring-fg.animating {
+  animation: ringDraw 600ms ease-in-out both;
 }
 
 </style>
@@ -1117,6 +1154,11 @@ svg.ring circle { transition: none; }
     <div class="appbar-avatar">AL</div>
   </div>
 
+  <button class="back-btn" id="s8-back" onclick="go('screen-home-c')" style="visibility:hidden">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Done
+  </button>
+
   <div class="jeevy-msg anim-fadein" style="text-align: center; padding-top: 8px;">
     Your trip is ready.
     <span class="jeevy-msg-sub">Everything sorted. Here's your Web Summit itinerary.</span>
@@ -1240,9 +1282,61 @@ svg.ring circle { transition: none; }
   </div>
 
   <div class="flex-1"></div>
-  <div style="text-align: center; padding-bottom: 8px;">
+  <div style="text-align: center; padding-bottom: 8px; display: flex; gap: 8px; justify-content: center;">
     <button class="btn-ghost" style="width: auto; font-size: 13px;" onclick="go('screen-home-a')">← Restart demo</button>
+    <button class="btn-ghost" style="width: auto; font-size: 13px; color: var(--accent);" onclick="go('screen-s9')">Day-of demo →</button>
   </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN S9 — Day-of Nudge (departure day)
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-s9">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <div class="greeting anim-fadein">Good morning, Alex.</div>
+
+  <div class="anim-fadeup" style="animation-delay: 0.05s">
+    <div class="dayof-card">
+      <div class="dayof-title">✈ Today's the day</div>
+      <div class="dayof-time">22:10</div>
+      <div class="dayof-sub">United UA88 · SFO → Lisbon<br>Leave for airport by 19:00</div>
+    </div>
+  </div>
+
+  <div class="card anim-fadeup" style="animation-delay: 0.15s">
+    <div class="detail-row">
+      <span class="detail-label">Flight</span>
+      <span class="detail-value">UA88 · Gate B22</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Boarding</span>
+      <span class="detail-value">21:40 — 30 min before</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Seat</span>
+      <span class="detail-value">4A · Business · Aisle</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Hotel check-in</span>
+      <span class="detail-value">Nov 10, from 15:00</span>
+    </div>
+  </div>
+
+  <div class="card anim-fadeup" style="animation-delay: 0.22s">
+    <div style="font-size: 13px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">🎒 Packing reminder</div>
+    <div class="pack-item"><div class="pack-dot"></div>Passport checked</div>
+    <div class="pack-item"><div class="pack-dot"></div>EU adapter packed</div>
+    <div class="pack-item"><div class="pack-dot"></div>Confirmation codes saved offline</div>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <button class="btn-primary" onclick="go('screen-s8')">View full itinerary</button>
+  <button class="btn-ghost" onclick="go('screen-home-c')">← Back</button>
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════
@@ -1308,8 +1402,20 @@ svg.ring circle { transition: none; }
   }
 
   function startItinerary() {
+    const circle = document.getElementById('ring-progress');
+    const done   = document.getElementById('ring-done');
+    const cta    = document.getElementById('s8-cta');
+    const back   = document.getElementById('s8-back');
+    // Reset state for re-entry
+    circle.classList.remove('animating');
+    circle.style.strokeDashoffset = '';
+    done.classList.remove('show');
+    cta.disabled = true;
+    cta.style.opacity = '0.5';
+    back.style.visibility = 'hidden';
+    void circle.offsetHeight; // force reflow before re-adding class
     go('screen-s8');
-    animateRing();
+    requestAnimationFrame(() => requestAnimationFrame(() => animateRing()));
   }
 
   function animateRing() {
@@ -1317,48 +1423,33 @@ svg.ring circle { transition: none; }
     const pct    = document.getElementById('ring-pct');
     const done   = document.getElementById('ring-done');
     const cta    = document.getElementById('s8-cta');
-    const circ   = 239;
-    let progress = 0;
-    const steps  = [
-      { to: 25,  label: 'Booking flight…' },
-      { to: 55,  label: 'Booking hotel…' },
-      { to: 75,  label: 'Syncing sessions…' },
-      { to: 92,  label: 'Setting reminders…' },
-      { to: 100, label: 'Done!' },
-    ];
-    let stepIdx = 0;
+    const back   = document.getElementById('s8-back');
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       circle.style.strokeDashoffset = '0';
       pct.textContent = '';
       done.classList.add('show');
       cta.disabled = false;
       cta.style.opacity = '';
+      back.style.visibility = 'visible';
       return;
     }
 
-    const interval = setInterval(() => {
-      progress += 0.8;
-      if (progress > 100) progress = 100;
-      const offset = circ - (progress / 100) * circ;
-      circle.setAttribute('stroke-dashoffset', offset.toFixed(2));
+    pct.textContent = 'Booking flight…';
+    circle.classList.add('animating');
 
-      if (stepIdx < steps.length && progress >= steps[stepIdx].to) {
-        pct.textContent = steps[stepIdx].label;
-        stepIdx++;
-      }
-
-      if (progress >= 100) {
-        clearInterval(interval);
-        pct.textContent = '';
-        setTimeout(() => {
-          done.classList.add('show');
-          cta.disabled = false;
-          cta.style.opacity = '';
-        }, 150);
-      }
-    }, 16);
+    setTimeout(() => { pct.textContent = 'Booking hotel…'; },     150);
+    setTimeout(() => { pct.textContent = 'Syncing sessions…'; },  300);
+    setTimeout(() => { pct.textContent = 'Setting reminders…'; }, 450);
+    setTimeout(() => {
+      pct.textContent = '';
+      setTimeout(() => {
+        done.classList.add('show');
+        cta.disabled = false;
+        cta.style.opacity = '';
+        back.style.visibility = 'visible';
+      }, 100);
+    }, 600);
   }
 </script>
 
