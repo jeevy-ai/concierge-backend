@@ -1,6 +1,20 @@
+/**
+ * POST /concierge/itinerary — conversational travel itinerary endpoint.
+ *
+ * Provider selection (first match wins):
+ *   1. ANTHROPIC_API_KEY present → Anthropic Claude (desired end state)
+ *   2. VERTEX_SA_JSON + GCP_PROJECT_ID present → Gemini on Vertex AI (interim)
+ *   3. Neither → 503
+ *
+ * Swap to Claude: set ANTHROPIC_API_KEY via `wrangler secret put ANTHROPIC_API_KEY`
+ * and redeploy — no code change required.
+ */
+
 import Anthropic from "@anthropic-ai/sdk";
 import type { Hono } from "hono";
 import type { Env, Variables } from "../index.js";
+import { callGeminiVertex } from "../lib/vertex-gemini.js";
+import type { ChatMessage, Itinerary, RespondResult } from "../lib/itinerary-types.js";
 
 const SYSTEM_PROMPT = `You are an AI travel concierge butler. Help users plan detailed travel itineraries through warm, natural conversation.
 
@@ -70,48 +84,39 @@ const RESPOND_TOOL: Anthropic.Tool = {
   },
 };
 
-interface ItineraryItem {
-  time: string;
-  title: string;
-  detail: string;
-}
-
-interface ItineraryDay {
-  day: string;
-  items: ItineraryItem[];
-}
-
-interface Itinerary {
-  destination: string;
-  dates: string;
-  days: ItineraryDay[];
-  summary: string;
-}
-
-interface RespondToolInput {
-  reply: string;
-  itinerary: Itinerary | null;
-}
-
-interface RequestMessage {
-  role: "user" | "assistant";
-  content: string;
+async function callAnthropic(messages: ChatMessage[], apiKey: string): Promise<RespondResult> {
+  const client = new Anthropic({ apiKey });
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 2048,
+    system: SYSTEM_PROMPT,
+    messages,
+    tools: [RESPOND_TOOL],
+    tool_choice: { type: "tool", name: "respond" },
+  });
+  const toolUse = response.content.find((b) => b.type === "tool_use");
+  if (!toolUse || toolUse.type !== "tool_use") {
+    throw new Error("Unexpected response format from Anthropic");
+  }
+  return toolUse.input as RespondResult;
 }
 
 interface RequestBody {
-  messages: RequestMessage[];
+  messages: ChatMessage[];
 }
 
 export function registerConciergeItineraryRoute(
   app: Hono<{ Bindings: Env; Variables: Variables }>,
 ): void {
   app.post("/concierge/itinerary", async (c) => {
-    const apiKey = c.env?.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    const hasAnthropic = !!c.env?.ANTHROPIC_API_KEY;
+    const hasVertex = !!(c.env?.VERTEX_SA_JSON && c.env?.GCP_PROJECT_ID);
+
+    if (!hasAnthropic && !hasVertex) {
       return c.json(
         {
           error:
-            "AI butler not configured: ANTHROPIC_API_KEY missing. Contact support.",
+            "AI butler not configured: set ANTHROPIC_API_KEY or VERTEX_SA_JSON + GCP_PROJECT_ID.",
         },
         503,
       );
@@ -125,10 +130,7 @@ export function registerConciergeItineraryRoute(
     }
 
     if (!Array.isArray(body?.messages) || body.messages.length === 0) {
-      return c.json(
-        { error: "messages must be a non-empty array" },
-        400,
-      );
+      return c.json({ error: "messages must be a non-empty array" }, 400);
     }
 
     const invalidMsg = body.messages.find(
@@ -143,33 +145,25 @@ export function registerConciergeItineraryRoute(
       );
     }
 
-    const client = new Anthropic({ apiKey });
-
-    let response: Anthropic.Message;
+    let result: RespondResult;
     try {
-      response = await client.messages.create({
-        model: "claude-sonnet-4-6",
-        max_tokens: 2048,
-        system: SYSTEM_PROMPT,
-        messages: body.messages,
-        tools: [RESPOND_TOOL],
-        tool_choice: { type: "tool", name: "respond" },
-      });
+      if (hasAnthropic) {
+        result = await callAnthropic(body.messages, c.env.ANTHROPIC_API_KEY!);
+      } else {
+        result = await callGeminiVertex(
+          body.messages,
+          c.env.VERTEX_SA_JSON!,
+          c.env.GCP_PROJECT_ID!,
+          SYSTEM_PROMPT,
+        );
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error("[concierge-itinerary] Anthropic error:", message);
+      const provider = hasAnthropic ? "Anthropic" : "Vertex AI";
+      console.error(`[concierge-itinerary] ${provider} error:`, message);
       return c.json({ error: "AI service error", detail: message }, 502);
     }
 
-    const toolUse = response.content.find((b) => b.type === "tool_use");
-    if (!toolUse || toolUse.type !== "tool_use") {
-      return c.json({ error: "Unexpected response format from AI" }, 502);
-    }
-
-    const result = toolUse.input as RespondToolInput;
-    return c.json({
-      reply: result.reply,
-      itinerary: result.itinerary ?? null,
-    });
+    return c.json({ reply: result.reply, itinerary: result.itinerary ?? null });
   });
 }

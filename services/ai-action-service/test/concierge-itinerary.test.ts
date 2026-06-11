@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { app } from "../src/index.js";
 
 describe("POST /concierge/itinerary", () => {
-  it("returns 503 when ANTHROPIC_API_KEY is absent", async () => {
+  it("returns 503 when no AI provider is configured", async () => {
     const res = await app.request("/concierge/itinerary", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -10,7 +10,7 @@ describe("POST /concierge/itinerary", () => {
     });
     expect(res.status).toBe(503);
     const body = (await res.json()) as { error: string };
-    expect(body.error).toMatch(/ANTHROPIC_API_KEY/);
+    expect(body.error).toMatch(/not configured/);
   });
 
   it("returns 400 on missing messages field", async () => {

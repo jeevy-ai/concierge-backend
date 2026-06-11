@@ -23,8 +23,12 @@ export type Env = {
   FROM_EMAIL: string;
   INTERNAL_API_SECRET: string;
   CLERK_SECRET_KEY: string;
-  // Anthropic API key for concierge/itinerary endpoint (YOU-681)
+  // AI provider keys for POST /concierge/itinerary (YOU-681 / YOU-686).
+  // Provider priority: ANTHROPIC_API_KEY → Anthropic; VERTEX_SA_JSON + GCP_PROJECT_ID → Gemini on Vertex.
   ANTHROPIC_API_KEY?: string;
+  // Interim provider: Gemini on Vertex AI (active until Anthropic key is approved).
+  VERTEX_SA_JSON?: string;   // GCP service-account JSON blob
+  GCP_PROJECT_ID?: string;   // GCP project that has Vertex AI enabled
 };
 
 export type Variables = {
