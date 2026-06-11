@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Jeevy — Your AI Concierge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ── Design tokens ─────────────────────────────────────────────────────── */
+:root {
+  --bg:            #F7F6F2;
+  --text:          #1A1A1A;
+  --text-muted:    #6B6B6B;
+  --text-faint:    #9B9B9B;
+  --accent:        #5B4FE8;
+  --accent-light:  #EEECfC;
+  --accent-hover:  #4A3FD6;
+  --card-bg:       #FFFFFF;
+  --card-radius:   16px;
+  --card-shadow:   0 2px 12px rgba(0,0,0,0.07);
+  --card-shadow-l: 0 4px 24px rgba(0,0,0,0.10);
+  --pill-ok-bg:    #ECFDF5;
+  --pill-ok-text:  #059669;
+  --pill-warn-bg:  #FEF3C7;
+  --pill-warn-text:#D97706;
+  --ring-size:     88px;
+  --divider:       #EFEFEB;
+  --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Screens ────────────────────────────────────────────────────────────── */
+.screen {
+  display: none;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: 0 16px 40px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.screen.active { display: flex; }
+
+/* ── App bar ────────────────────────────────────────────────────────────── */
+.appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 8px;
+  flex-shrink: 0;
+}
+.appbar-logo {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+.appbar-logo span { color: var(--accent); }
+.appbar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+  margin-bottom: 12px;
+}
+.card-sm { padding: 16px; }
+
+/* ── Jeevy message ──────────────────────────────────────────────────────── */
+.jeevy-msg {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin: 28px 0 20px;
+  color: var(--text);
+}
+.jeevy-msg-sub {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* ── Pills ──────────────────────────────────────────────────────────────── */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--pill-ok-bg);
+  color: var(--pill-ok-text);
+  transform-origin: center;
+}
+.pill-warn {
+  background: var(--pill-warn-bg);
+  color: var(--pill-warn-text);
+}
+.pill-neutral {
+  background: #F3F2F9;
+  color: var(--accent);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, transform 0.1s;
+  margin-top: 8px;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-ghost {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  margin-top: 4px;
+  transition: color 0.15s;
+}
+.btn-ghost:hover { color: var(--text); }
+
+/* ── Divider ────────────────────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: var(--divider);
+  margin: 16px 0;
+}
+
+/* ── Detail rows ────────────────────────────────────────────────────────── */
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: 14px;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-label { color: var(--text-muted); font-size: 13px; }
+.detail-value { font-weight: 500; color: var(--text); }
+
+/* ── Chevron expand ─────────────────────────────────────────────────────── */
+.expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 12px;
+}
+.expand-btn svg { transition: transform 0.2s; }
+.expand-btn.open svg { transform: rotate(180deg); }
+.expandable { overflow: hidden; max-height: 0; transition: max-height 0.3s ease-out; }
+.expandable.open { max-height: 500px; }
+
+/* ── History strip ──────────────────────────────────────────────────────── */
+.history-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.history-item:last-child { border-bottom: none; }
+.history-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--pill-ok-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+/* ── Progress ring ──────────────────────────────────────────────────────── */
+.ring-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 0 20px;
+}
+.ring-label {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-top: 14px;
+  font-weight: 500;
+}
+.ring-done-label {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 12px;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.ring-done-label.show { opacity: 1; transform: scale(1.0); }
+
+svg.ring circle { transition: none; }
+
+/* ── Session card ───────────────────────────────────────────────────────── */
+.session-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--divider);
+}
+.session-row:last-child { border-bottom: none; }
+.session-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--divider);
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.session-check.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.session-time { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+.session-star { font-size: 14px; }
+
+/* ── Packing list ───────────────────────────────────────────────────────── */
+.pack-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  font-size: 14px;
+  border-bottom: 1px solid var(--divider);
+}
+.pack-item:last-child { border-bottom: none; }
+.pack-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── Itinerary timeline ─────────────────────────────────────────────────── */
+.itin-day {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 16px 0 8px;
+}
+.itin-row {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: 14px;
+  align-items: flex-start;
+}
+.itin-row:last-child { border-bottom: none; }
+.itin-time {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  width: 44px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.itin-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.itin-desc { flex: 1; }
+.itin-desc strong { display: block; font-weight: 600; }
+.itin-desc span { color: var(--text-muted); font-size: 13px; }
+
+/* ── Conflict banner ────────────────────────────────────────────────────── */
+.conflict-banner {
+  background: #FEF9EC;
+  border: 1px solid #FDE68A;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #92400E;
+  margin-bottom: 12px;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.25s ease-out, opacity 0.25s ease-out, padding 0.25s ease-out;
+}
+.conflict-banner.show {
+  max-height: 80px;
+  opacity: 1;
+}
+
+/* ── Conflict toggle ────────────────────────────────────────────────────── */
+.conflict-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-size: 14px;
+}
+.toggle-track {
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: #E5E7EB;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-track.on { background: var(--accent); }
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  transition: transform 0.2s;
+}
+.toggle-track.on .toggle-thumb { transform: translateX(18px); }
+
+/* ── Preference row ─────────────────────────────────────────────────────── */
+.pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: 14px;
+}
+.pref-row:last-child { border-bottom: none; }
+.pref-name { color: var(--text-muted); font-size: 13px; }
+.pref-val { font-weight: 600; }
+.pref-edit {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.pref-edit:hover { background: var(--accent-light); }
+
+/* ── Flight option cards ────────────────────────────────────────────────── */
+.flight-card {
+  border: 2px solid var(--divider);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: var(--card-bg);
+}
+.flight-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91,79,232,0.1);
+}
+.flight-route {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.flight-arrow { color: var(--text-faint); font-size: 16px; }
+.flight-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.flight-selected-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* ── Day-of card ────────────────────────────────────────────────────────── */
+.dayof-card {
+  background: var(--accent);
+  border-radius: var(--card-radius);
+  padding: 24px 20px;
+  color: white;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.dayof-title {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+.dayof-time {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.dayof-sub {
+  font-size: 14px;
+  opacity: 0.85;
+  margin-top: 8px;
+}
+
+/* ── State C — trip card ────────────────────────────────────────────────── */
+.trip-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+.trip-card:hover { box-shadow: var(--card-shadow-l); }
+.trip-card-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.trip-card-text strong { display: block; font-weight: 700; font-size: 16px; }
+.trip-card-text span { font-size: 13px; color: var(--text-muted); }
+.trip-card-arrow { margin-left: auto; color: var(--text-faint); }
+
+/* ── Greeting ───────────────────────────────────────────────────────────── */
+.greeting {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 32px 0 4px;
+}
+.greeting-sub {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+/* ── Back button ────────────────────────────────────────────────────────── */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 8px;
+  transition: color 0.15s;
+}
+.back-btn:hover { color: var(--text); }
+
+/* ── Spacer ─────────────────────────────────────────────────────────────── */
+.flex-1 { flex: 1; }
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(60px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1.0); }
+}
+@keyframes staggerFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.anim-fadeup {
+  animation: fadeUp 0.3s ease-out both;
+}
+.anim-fadein {
+  animation: fadeIn 0.25s ease-out both;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: none; }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes staggerFadeUp {
+    from { opacity: 0; transform: none; }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (min-width: 640px) {
+  .screen {
+    padding: 0 24px 60px;
+    padding-top: 0;
+  }
+  .jeevy-msg { font-size: 26px; }
+  .greeting { font-size: 30px; }
+}
+
+/* ── Skeleton (unused in prototype, kept for reference) ─────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #EFEFEB 25%, #E5E4DF 50%, #EFEFEB 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 8px;
+  height: 16px;
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* ── Ring SVG ───────────────────────────────────────────────────────────── */
+.ring-svg {
+  transform: rotate(-90deg);
+}
+.ring-bg { fill: none; stroke: #EFEFEB; }
+.ring-fg { fill: none; stroke: var(--accent); stroke-linecap: round; }
+
+/* ── Confirm number ─────────────────────────────────────────────────────── */
+.confirm-num {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  background: #F0EFFA;
+  color: var(--accent);
+  padding: 2px 7px;
+  border-radius: 6px;
+  margin-top: 3px;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN 0 — HOME STATE A (active nudge)
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen active" id="screen-home-a">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <div class="greeting">Good morning, Alex.</div>
+
+  <div class="anim-fadeup" style="animation-delay: 0.05s">
+    <div class="card" style="border-left: 3px solid var(--accent)">
+      <div style="font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;">
+        ✈&nbsp; Needs your attention
+      </div>
+      <div style="font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px;">
+        Web Summit 2026 · Lisbon
+      </div>
+      <div style="font-size: 14px; color: var(--text-muted);">Nov 9–12 · 151 days away · Flight unbooked</div>
+    </div>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <button class="btn-primary" onclick="go('screen-s1')">Set it up</button>
+  <button class="btn-ghost" onclick="go('screen-home-b')">Not now</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN 0B — HOME STATE B (ambient ready)
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-home-b">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <div class="greeting">Good morning, Alex.</div>
+  <div class="greeting-sub">Nothing needs handling right now.<br>I'll let you know when something comes up.</div>
+
+  <div style="margin-top: 8px;">
+    <div class="history-label">Past actions (3)</div>
+    <div class="history-item">
+      <div class="history-check">✓</div>
+      <div>
+        <div style="font-size: 14px; color: var(--text-muted);">Web Summit 2026 — skipped</div>
+        <div style="font-size: 12px; color: var(--text-faint);">today</div>
+      </div>
+    </div>
+    <div class="history-item">
+      <div class="history-check">✓</div>
+      <div>
+        <div style="font-size: 14px; color: var(--text-muted);">Sarah meeting rescheduled</div>
+        <div style="font-size: 12px; color: var(--text-faint);">Oct 28</div>
+      </div>
+    </div>
+    <div class="history-item">
+      <div class="history-check">✓</div>
+      <div>
+        <div style="font-size: 14px; color: var(--text-muted);">Oslo reminder set</div>
+        <div style="font-size: 12px; color: var(--text-faint);">Oct 20</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <button class="btn-primary" onclick="go('screen-home-a')" style="background: #F0EFFA; color: var(--accent);">← Back to home</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN S1 — Butler Nudge
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-s1">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <div class="jeevy-msg anim-fadeup">
+    I noticed you have Web Summit 2026 in Lisbon.<br>
+    <span class="jeevy-msg-sub">Nov 9–12. Flight isn't booked yet. Want me to handle the whole trip?</span>
+  </div>
+
+  <div class="card anim-fadeup" style="animation-delay: 0.1s">
+    <div style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Here's what I'll set up:</div>
+    <div class="detail-row">
+      <span class="detail-label">✈ Flight</span>
+      <span class="detail-value">SFO → Lisbon, round-trip</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">🏨 Hotel</span>
+      <span class="detail-value">Near Web Summit venue</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">📅 Sessions</span>
+      <span class="detail-value">Sync to your calendar</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">🔔 Reminders</span>
+      <span class="detail-value">Packing + departure</span>
+    </div>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <button class="btn-primary" onclick="go('screen-s2')">Set it up</button>
+  <button class="btn-ghost" onclick="go('screen-home-b')">Not now</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN S2 — Preferences Confirm
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-s2">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <button class="back-btn" onclick="go('screen-s1')">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Back
+  </button>
+
+  <div class="jeevy-msg anim-fadeup">
+    Your travel preferences look right to me.
+    <span class="jeevy-msg-sub">Tap any row to update before I search.</span>
+  </div>
+
+  <div class="card anim-fadeup" style="animation-delay: 0.08s">
+    <div class="pref-row">
+      <div>
+        <div class="pref-name">Airline</div>
+        <div class="pref-val">United Airlines</div>
+      </div>
+      <button class="pref-edit">Edit</button>
+    </div>
+    <div class="pref-row">
+      <div>
+        <div class="pref-name">Cabin</div>
+        <div class="pref-val">Business</div>
+      </div>
+      <button class="pref-edit">Edit</button>
+    </div>
+    <div class="pref-row">
+      <div>
+        <div class="pref-name">Seat</div>
+        <div class="pref-val">Aisle</div>
+      </div>
+      <button class="pref-edit">Edit</button>
+    </div>
+    <div class="pref-row">
+      <div>
+        <div class="pref-name">Hotel chain</div>
+        <div class="pref-val">Marriott</div>
+      </div>
+      <button class="pref-edit">Edit</button>
+    </div>
+    <div class="pref-row">
+      <div>
+        <div class="pref-name">Max hotel distance to venue</div>
+        <div class="pref-val">1.5 km</div>
+      </div>
+      <button class="pref-edit">Edit</button>
+    </div>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <button class="btn-primary" onclick="go('screen-s3')">Looks right — find flights</button>
+  <button class="btn-ghost" onclick="go('screen-home-b')">Not now</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN S3 — Flight Selection
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-s3">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <button class="back-btn" onclick="go('screen-s2')">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Back
+  </button>
+
+  <div class="jeevy-msg anim-fadeup">
+    I found the best match for you.
+    <span class="jeevy-msg-sub">Business, direct, aisle — exactly your preferences.</span>
+  </div>
+
+  <div id="flight-1" class="flight-card selected anim-fadeup" style="animation-delay: 0.08s" onclick="selectFlight(1)">
+    <div class="flight-selected-badge">⭐ Best match</div>
+    <div class="flight-route">SFO <span class="flight-arrow">→</span> LIS</div>
+    <div class="flight-meta">United UA88 · Nov 9, 22:10 · 11h 20m · Direct</div>
+    <div class="pills" style="margin-top: 10px;">
+      <span class="pill">Aisle ✓</span>
+      <span class="pill">Business ✓</span>
+      <span class="pill">Direct ✓</span>
+      <span class="pill">United ✓</span>
+    </div>
+    <div class="divider"></div>
+    <div class="flight-route" style="margin-top: 0;">LIS <span class="flight-arrow">→</span> SFO</div>
+    <div class="flight-meta">United UA89 · Nov 12, 18:45 · 11h 05m · Direct</div>
+    <div style="margin-top: 8px; font-size: 15px; font-weight: 700;">$3,840 round-trip</div>
+  </div>
+
+  <button class="expand-btn" id="alt-toggle" onclick="toggleAlt()">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    See alternative
+  </button>
+  <div class="expandable" id="alt-flights">
+    <div id="flight-2" class="flight-card" style="margin-top: 10px;" onclick="selectFlight(2)">
+      <div class="flight-route">SFO <span class="flight-arrow">→</span> LIS</div>
+      <div class="flight-meta">Lufthansa LH432 · Nov 9, 16:30 · 14h 10m via FRA</div>
+      <div class="pills" style="margin-top: 10px;">
+        <span class="pill">Aisle ✓</span>
+        <span class="pill">Business ✓</span>
+        <span class="pill pill-warn">Via Frankfurt</span>
+      </div>
+      <div style="margin-top: 8px; font-size: 15px; font-weight: 700;">$3,290 round-trip</div>
+    </div>
+  </div>
+
+  <div class="flex-1" style="min-height: 24px;"></div>
+
+  <button class="btn-primary" onclick="go('screen-s4')">Confirm this flight</button>
+  <button class="btn-ghost" onclick="go('screen-home-b')">Not now</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN S4 — Hotel Selection
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-s4">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <button class="back-btn" onclick="go('screen-s3')">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Back
+  </button>
+
+  <div class="jeevy-msg anim-fadeup">
+    One hotel matches your criteria.
+    <span class="jeevy-msg-sub">Marriott, 0.4 km from the venue. 14,000 Bonvoy points.</span>
+  </div>
+
+  <div class="card anim-fadeup" style="animation-delay: 0.08s">
+    <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">Bairro Alto Hotel</div>
+    <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Praça Luís de Camões 2, Lisbon · 5-star</div>
+    <div class="pills">
+      <span class="pill">Marriott ✓</span>
+      <span class="pill">0.4 km to venue ✓</span>
+      <span class="pill pill-neutral">14k points</span>
+    </div>
+    <div class="divider"></div>
+    <div class="detail-row">
+      <span class="detail-label">Check-in</span>
+      <span class="detail-value">Nov 9, from 15:00</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Check-out</span>
+      <span class="detail-value">Nov 12, 11:00</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Room</span>
+      <span class="detail-value">Deluxe King, city view</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Total</span>
+      <span class="detail-value" style="color: var(--text); font-weight: 700;">€1,080 (3 nights)</span>
+    </div>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <button class="btn-primary" onclick="go('screen-s5')">Confirm hotel</button>
+  <button class="btn-ghost" onclick="go('screen-home-b')">Not now</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN S5 — Session Sync
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-s5">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <button class="back-btn" onclick="go('screen-s4')">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Back
+  </button>
+
+  <div class="jeevy-msg anim-fadeup">
+    Which sessions should I add to your calendar?
+    <span class="jeevy-msg-sub">I highlighted the one most relevant to your work.</span>
+  </div>
+
+  <div class="card anim-fadeup" style="animation-delay: 0.08s">
+
+    <div class="session-row" onclick="toggleSession('sess1')">
+      <div class="session-check checked" id="sess1">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="flex: 1">
+        <div style="font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          The Future of AI in Enterprise
+          <span class="session-star">⭐</span>
+        </div>
+        <div class="session-time">Nov 10 · 10:00–11:30 · Stage 1</div>
+        <div class="pills" style="margin-top: 6px;"><span class="pill pill-neutral">Recommended</span></div>
+      </div>
+    </div>
+
+    <div class="session-row" onclick="toggleSession('sess2')">
+      <div class="session-check checked" id="sess2">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="flex: 1">
+        <div style="font-size: 14px; font-weight: 600;">Startup Pitch Competition</div>
+        <div class="session-time">Nov 11 · 09:00–12:00 · PITCH Stage</div>
+      </div>
+    </div>
+
+    <div class="session-row" id="sess3-row" onclick="toggleSession('sess3')">
+      <div class="session-check checked" id="sess3">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="flex: 1">
+        <div style="font-size: 14px; font-weight: 600;">Web3 and the Open Internet</div>
+        <div class="session-time">Nov 11 · 14:00–15:00 · Stage 2</div>
+        <div class="pills" style="margin-top: 6px;"><span class="pill pill-warn">⚠ Conflict detected</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="flex-1"></div>
+
+  <button class="btn-primary" onclick="go('screen-s6')">Sync these sessions</button>
+  <button class="btn-ghost" onclick="go('screen-s7')">Skip sessions</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN S6 — Conflict Resolution
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-s6">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <button class="back-btn" onclick="go('screen-s5')">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Back
+  </button>
+
+  <div class="jeevy-msg anim-fadeup">
+    One conflict to resolve.
+    <span class="jeevy-msg-sub">A session overlaps your existing Team Sync. Which takes priority?</span>
+  </div>
+
+  <div class="card anim-fadeup" style="animation-delay: 0.08s">
+    <div style="font-size: 13px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Nov 11, 14:00–15:00</div>
+
+    <div class="conflict-toggle">
+      <div>
+        <div style="font-size: 15px; font-weight: 600;">Web3 and the Open Internet</div>
+        <div style="font-size: 13px; color: var(--text-muted);">Conference session · Stage 2</div>
+      </div>
+      <div class="toggle-track on" id="toggle-session" onclick="flipConflict()">
+        <div class="toggle-thumb"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="conflict-toggle">
+      <div>
+        <div style="font-size: 15px; font-weight: 600; color: var(--text-muted); text-decoration: line-through;" id="conflict-existing-label">Team Sync</div>
+        <div style="font-size: 13px; color: var(--text-faint);">Existing calendar event</div>
+      </div>
+      <div class="toggle-track" id="toggle-existing" onclick="flipConflict()">
+        <div class="toggle-thumb"></div>
+      </div>
+    </div>
+
+    <div class="conflict-banner show" id="conflict-warning">
+      ⚠ The Web3 session will be added; Team Sync will be kept but marked as conflicting.
+    </div>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <button class="btn-primary" onclick="go('screen-s7')">Got it — keep this choice</button>
+  <button class="btn-ghost" onclick="go('screen-s5')">← Back to sessions</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN S7 — Reminder Setup
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-s7">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <button class="back-btn" onclick="go('screen-s6')">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Back
+  </button>
+
+  <div class="jeevy-msg anim-fadeup">
+    Almost done. A few reminders to set.
+    <span class="jeevy-msg-sub">I'll remind you what to pack and when to leave for the airport.</span>
+  </div>
+
+  <div class="card anim-fadeup" style="animation-delay: 0.08s">
+    <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">🔔 Departure reminder</div>
+    <div class="detail-row">
+      <span class="detail-label">When</span>
+      <span class="detail-value">Nov 9, 18:30</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Message</span>
+      <span class="detail-value" style="font-size: 13px;">Leave by 19:00 for SFO · UA88 22:10</span>
+    </div>
+  </div>
+
+  <div class="card anim-fadeup" style="animation-delay: 0.15s">
+    <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">🎒 Packing list</div>
+    <div class="pack-item"><div class="pack-dot"></div>Passport + travel visa</div>
+    <div class="pack-item"><div class="pack-dot"></div>EU power adapter</div>
+    <div class="pack-item"><div class="pack-dot"></div>Business cards</div>
+    <div class="pack-item"><div class="pack-dot"></div>Formal attire (3 days)</div>
+    <div class="pack-item"><div class="pack-dot"></div>Laptop + charger</div>
+    <div class="pack-item"><div class="pack-dot"></div>Noise-cancelling headphones</div>
+    <div class="expandable" id="pack-extra">
+      <div class="pack-item"><div class="pack-dot"></div>Power bank</div>
+      <div class="pack-item"><div class="pack-dot"></div>Phone charger cable</div>
+    </div>
+    <button class="expand-btn" id="pack-toggle" onclick="togglePack()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Show 2 more
+    </button>
+  </div>
+
+  <div class="flex-1"></div>
+
+  <button class="btn-primary" onclick="startItinerary()">Set reminders — I'm ready</button>
+  <button class="btn-ghost" onclick="startItinerary()">Skip reminders</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN S8 — Itinerary Card (the peak moment)
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-s8">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <div class="jeevy-msg anim-fadein" style="text-align: center; padding-top: 8px;">
+    Your trip is ready.
+    <span class="jeevy-msg-sub">Everything sorted. Here's your Web Summit itinerary.</span>
+  </div>
+
+  <div class="ring-wrap">
+    <svg class="ring-svg" width="88" height="88" viewBox="0 0 88 88">
+      <circle class="ring-bg" cx="44" cy="44" r="38" stroke-width="7"/>
+      <circle class="ring-fg" cx="44" cy="44" r="38" stroke-width="7"
+        stroke-dasharray="239"
+        stroke-dashoffset="239"
+        id="ring-progress"/>
+    </svg>
+    <div class="ring-label" id="ring-pct">Setting up…</div>
+    <div class="ring-done-label" id="ring-done">✈ Trip ready</div>
+  </div>
+
+  <div class="card anim-fadein" style="animation-delay: 0.1s">
+    <div class="itin-day">Sunday, Nov 9</div>
+    <div class="itin-row">
+      <div class="itin-time">22:10</div>
+      <div class="itin-icon">✈</div>
+      <div class="itin-desc">
+        <strong>Depart SFO — United UA88</strong>
+        <span>Direct to LIS · Business, Aisle · 11h 20m</span>
+        <div class="confirm-num">UA Confirmation: XQJR42</div>
+      </div>
+    </div>
+
+    <div class="itin-day">Monday, Nov 10</div>
+    <div class="itin-row">
+      <div class="itin-time">09:30</div>
+      <div class="itin-icon">🏨</div>
+      <div class="itin-desc">
+        <strong>Arrive — Bairro Alto Hotel</strong>
+        <span>Praça Luís de Camões 2 · Check-in from 15:00</span>
+        <div class="confirm-num">Marriott #: MB-8811927</div>
+      </div>
+    </div>
+    <div class="itin-row">
+      <div class="itin-time">10:00</div>
+      <div class="itin-icon">🎤</div>
+      <div class="itin-desc">
+        <strong>The Future of AI in Enterprise</strong>
+        <span>Stage 1 · 10:00–11:30</span>
+      </div>
+    </div>
+
+    <div class="itin-day">Tuesday, Nov 11</div>
+    <div class="itin-row">
+      <div class="itin-time">09:00</div>
+      <div class="itin-icon">🏆</div>
+      <div class="itin-desc">
+        <strong>Startup Pitch Competition</strong>
+        <span>PITCH Stage · 09:00–12:00</span>
+      </div>
+    </div>
+    <div class="itin-row">
+      <div class="itin-time">14:00</div>
+      <div class="itin-icon">🎤</div>
+      <div class="itin-desc">
+        <strong>Web3 and the Open Internet</strong>
+        <span>Stage 2 · 14:00–15:00</span>
+      </div>
+    </div>
+
+    <div class="itin-day">Wednesday, Nov 12</div>
+    <div class="itin-row">
+      <div class="itin-time">11:00</div>
+      <div class="itin-icon">🏨</div>
+      <div class="itin-desc">
+        <strong>Check out — Bairro Alto Hotel</strong>
+        <span>Latest checkout 11:00</span>
+      </div>
+    </div>
+    <div class="itin-row">
+      <div class="itin-time">18:45</div>
+      <div class="itin-icon">✈</div>
+      <div class="itin-desc">
+        <strong>Depart LIS — United UA89</strong>
+        <span>Direct to SFO · Business · 11h 05m</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1" style="min-height: 16px;"></div>
+
+  <button class="btn-primary" id="s8-cta" onclick="go('screen-home-c')" disabled style="opacity: 0.5;">Add to Calendar</button>
+  <button class="btn-ghost" onclick="go('screen-home-c')">Share itinerary</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SCREEN HOME-C — Return loop (trip confirmed)
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-home-c">
+  <div class="appbar">
+    <div class="appbar-logo">Jeevy<span>.</span></div>
+    <div class="appbar-avatar">AL</div>
+  </div>
+
+  <div class="greeting">Good morning, Alex.</div>
+
+  <div class="trip-card anim-fadeup" onclick="go('screen-s8')">
+    <div class="trip-card-icon">✈</div>
+    <div class="trip-card-text">
+      <strong>Web Summit 2026</strong>
+      <span>Lisbon · Nov 9–12 · All set. Tap for full itinerary.</span>
+    </div>
+    <div class="trip-card-arrow">›</div>
+  </div>
+
+  <div style="margin-top: 24px;">
+    <div class="history-label">Concierge actions (1 this month)</div>
+    <div class="history-item">
+      <div class="history-check">✓</div>
+      <div>
+        <div style="font-size: 14px; color: var(--text-muted);">Web Summit 2026 — trip ready</div>
+        <div style="font-size: 12px; color: var(--text-faint);">today</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1"></div>
+  <div style="text-align: center; padding-bottom: 8px;">
+    <button class="btn-ghost" style="width: auto; font-size: 13px;" onclick="go('screen-home-a')">← Restart demo</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     JavaScript
+     ════════════════════════════════════════════════════════════════════ -->
+<script>
+  function go(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(id);
+    if (target) {
+      target.classList.add('active');
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function toggleAlt() {
+    const el = document.getElementById('alt-flights');
+    const btn = document.getElementById('alt-toggle');
+    const open = el.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    btn.querySelector('svg').style.transform = open ? 'rotate(180deg)' : '';
+  }
+
+  function selectFlight(n) {
+    document.getElementById('flight-1').classList.toggle('selected', n === 1);
+    document.getElementById('flight-2').classList.toggle('selected', n === 2);
+  }
+
+  function toggleSession(id) {
+    const el = document.getElementById(id);
+    const checked = el.classList.toggle('checked');
+    el.innerHTML = checked
+      ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      : '';
+  }
+
+  function flipConflict() {
+    const ts = document.getElementById('toggle-session');
+    const te = document.getElementById('toggle-existing');
+    const sessionOn = ts.classList.contains('on');
+    if (sessionOn) {
+      ts.classList.remove('on');
+      te.classList.add('on');
+      document.getElementById('conflict-existing-label').style.textDecoration = '';
+      document.getElementById('conflict-warning').textContent =
+        '⚠ Team Sync will be kept; Web3 session will be skipped.';
+    } else {
+      ts.classList.add('on');
+      te.classList.remove('on');
+      document.getElementById('conflict-existing-label').style.textDecoration = 'line-through';
+      document.getElementById('conflict-warning').textContent =
+        '⚠ The Web3 session will be added; Team Sync will be kept but marked as conflicting.';
+    }
+  }
+
+  function togglePack() {
+    const el = document.getElementById('pack-extra');
+    const btn = document.getElementById('pack-toggle');
+    const open = el.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    btn.querySelector('svg').style.transform = open ? 'rotate(180deg)' : '';
+    btn.childNodes[1].textContent = open ? ' Show less' : ' Show 2 more';
+  }
+
+  function startItinerary() {
+    go('screen-s8');
+    animateRing();
+  }
+
+  function animateRing() {
+    const circle = document.getElementById('ring-progress');
+    const pct    = document.getElementById('ring-pct');
+    const done   = document.getElementById('ring-done');
+    const cta    = document.getElementById('s8-cta');
+    const circ   = 239;
+    let progress = 0;
+    const steps  = [
+      { to: 25,  label: 'Booking flight…' },
+      { to: 55,  label: 'Booking hotel…' },
+      { to: 75,  label: 'Syncing sessions…' },
+      { to: 92,  label: 'Setting reminders…' },
+      { to: 100, label: 'Done!' },
+    ];
+    let stepIdx = 0;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) {
+      circle.style.strokeDashoffset = '0';
+      pct.textContent = '';
+      done.classList.add('show');
+      cta.disabled = false;
+      cta.style.opacity = '';
+      return;
+    }
+
+    const interval = setInterval(() => {
+      progress += 0.8;
+      if (progress > 100) progress = 100;
+      const offset = circ - (progress / 100) * circ;
+      circle.setAttribute('stroke-dashoffset', offset.toFixed(2));
+
+      if (stepIdx < steps.length && progress >= steps[stepIdx].to) {
+        pct.textContent = steps[stepIdx].label;
+        stepIdx++;
+      }
+
+      if (progress >= 100) {
+        clearInterval(interval);
+        pct.textContent = '';
+        setTimeout(() => {
+          done.classList.add('show');
+          cta.disabled = false;
+          cta.style.opacity = '';
+        }, 150);
+      }
+    }, 16);
+  }
+</script>
+
+</body>
+</html>
