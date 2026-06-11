@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runDailyAtRiskScan } from "./lib/save-interview.js";
 import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
+import { registerConciergeItineraryRoute } from "./routes/concierge-itinerary.js";
 import { registerSaveInterviewRoutes } from "./routes/save-interview.js";
 import { registerStripeWebhookRoute } from "./routes/stripe-webhook.js";
 
@@ -22,6 +23,8 @@ export type Env = {
   FROM_EMAIL: string;
   INTERNAL_API_SECRET: string;
   CLERK_SECRET_KEY: string;
+  // Anthropic API key for concierge/itinerary endpoint (YOU-681)
+  ANTHROPIC_API_KEY?: string;
 };
 
 export type Variables = {
@@ -47,6 +50,9 @@ registerStripeWebhookRoute(app);
 
 // Save-interview event ingestion (internal service-to-service, secret-gated)
 registerSaveInterviewRoutes(app);
+
+// AI butler: conversational travel itinerary planner (YOU-681)
+registerConciergeItineraryRoute(app);
 
 // Protected routes require Clerk auth + active Stripe subscription
 const protected_ = app.use("/api/protected/*", clerkAuthMiddleware(), entitlementGuard());

@@ -19,6 +19,7 @@ FROM_EMAIL = "team@jeevy.app"
 #   SCHEDULING_LINK       (UXDesigner Calendly/Cal.com 20-min link, M-F 9am-5pm)
 #   INTERNAL_API_SECRET   (shared secret for /internal/* routes)
 #   CLERK_SECRET_KEY      (Clerk secret key for user profile lookup in nightly cron)
+#   ANTHROPIC_API_KEY     (Anthropic API key for POST /concierge/itinerary — YOU-681)
 
 # Cron trigger: nightly at-risk user scan for save-interview outreach.
 [triggers]
