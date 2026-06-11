@@ -16,6 +16,13 @@ interface ServiceAccount {
   token_uri?: string;
 }
 
+// Module-level token cache — persists for the lifetime of the isolate (warm requests).
+// Not shared across cold starts, but eliminates the token exchange on repeat calls.
+let _tokenCache: { token: string; expiresAt: number } | null = null;
+
+const VERTEX_TIMEOUT_MS = 25_000;
+const TOKEN_TIMEOUT_MS = 5_000;
+
 function uint8ArrayToBase64url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) {
@@ -49,6 +56,11 @@ async function importRsaPrivateKey(pem: string): Promise<CryptoKey> {
 
 async function fetchAccessToken(sa: ServiceAccount): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
+
+  if (_tokenCache && _tokenCache.expiresAt > now + 60) {
+    return _tokenCache.token;
+  }
+
   const header = strToBase64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const tokenUri = sa.token_uri ?? "https://oauth2.googleapis.com/token";
   const payload = strToBase64url(
@@ -73,12 +85,15 @@ async function fetchAccessToken(sa: ServiceAccount): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+    signal: AbortSignal.timeout(TOKEN_TIMEOUT_MS),
   });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`GCP token exchange failed (${res.status}): ${text}`);
   }
-  const data = (await res.json()) as { access_token: string };
+  const data = (await res.json()) as { access_token: string; expires_in?: number };
+  const expiresIn = data.expires_in ?? 3600;
+  _tokenCache = { token: data.access_token, expiresAt: now + expiresIn };
   return data.access_token;
 }
 
@@ -174,18 +189,37 @@ export async function callGeminiVertex(
     `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}` +
     `/locations/us-central1/publishers/google/models/${model}:generateContent`;
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
+  const fetchHeaders = {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+  };
+  const fetchBody = JSON.stringify(requestBody);
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Vertex AI error (${res.status}): ${text}`);
+  let res: Response | null = null;
+  for (let attempt = 0; attempt <= 1; attempt++) {
+    if (attempt > 0) {
+      // Refresh token before retry in case it was the issue
+      _tokenCache = null;
+      const freshToken = await fetchAccessToken(sa);
+      fetchHeaders.Authorization = `Bearer ${freshToken}`;
+      await new Promise<void>((r) => setTimeout(r, 1000));
+    }
+    res = await fetch(url, {
+      method: "POST",
+      headers: fetchHeaders,
+      body: fetchBody,
+      signal: AbortSignal.timeout(VERTEX_TIMEOUT_MS),
+    });
+    // Retry on 429 (quota) or 5xx (transient)
+    if (res.status === 429 || res.status >= 500) {
+      if (attempt < 1) continue;
+    }
+    break;
+  }
+
+  if (!res || !res.ok) {
+    const text = await res?.text() ?? "no response";
+    throw new Error(`Vertex AI error (${res?.status ?? 0}): ${text}`);
   }
 
   const data = (await res.json()) as GeminiResponse;
