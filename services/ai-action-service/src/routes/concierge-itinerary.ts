@@ -134,13 +134,12 @@ const RESPOND_TOOL: Anthropic.Tool = {
 // ---------------------------------------------------------------------------
 
 async function callAnthropic(messages: ChatMessage[], apiKey: string): Promise<RespondResult> {
-  const enriched = await injectFetchedUrls(messages);
   const client = new Anthropic({ apiKey });
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 2048,
     system: SYSTEM_PROMPT,
-    messages: enriched.map((m) => ({ role: m.role, content: m.content })),
+    messages: messages.map((m) => ({ role: m.role, content: m.content })),
     tools: [RESPOND_TOOL],
     tool_choice: { type: "tool", name: "respond" },
   });
@@ -199,13 +198,23 @@ export function registerConciergeItineraryRoute(
       );
     }
 
+    // Pre-fetch any URLs in the latest user message before calling either
+    // AI provider, so the model receives the page text inline. Errors here
+    // are non-fatal: fall back to the original messages.
+    let messages: ChatMessage[];
+    try {
+      messages = await injectFetchedUrls(body.messages);
+    } catch {
+      messages = body.messages;
+    }
+
     let result: RespondResult;
     try {
       if (hasAnthropic) {
-        result = await callAnthropic(body.messages, c.env.ANTHROPIC_API_KEY!);
+        result = await callAnthropic(messages, c.env.ANTHROPIC_API_KEY!);
       } else {
         result = await callGeminiVertex(
-          body.messages,
+          messages,
           c.env.VERTEX_SA_JSON!,
           c.env.GCP_PROJECT_ID!,
           SYSTEM_PROMPT,
