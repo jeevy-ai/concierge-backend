@@ -13,6 +13,19 @@ export const FETCH_TIMEOUT_MS = 10_000;
 export const FETCH_MAX_BYTES = 500_000;
 export const FETCH_TEXT_LIMIT = 8_000;
 
+// ---------------------------------------------------------------------------
+// URL extraction from plain text
+// ---------------------------------------------------------------------------
+
+const URL_REGEX = /\bhttps:\/\/[^\s,)"'<>[\]]+/gi;
+const TRAILING_PUNCT = /[.,!?:;]+$/;
+
+/** Extract and sanitise unique https:// URLs from a string. */
+export function extractUrls(text: string, maxUrls = 3): string[] {
+  const raw = text.match(URL_REGEX) ?? [];
+  return [...new Set(raw.map((u) => u.replace(TRAILING_PUNCT, "")))].slice(0, maxUrls);
+}
+
 // Blocks RFC-1918, loopback, and ULA IPv6.
 const PRIVATE_HOSTNAME_RE =
   /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|::1|fd[0-9a-f]{2}:)/i;

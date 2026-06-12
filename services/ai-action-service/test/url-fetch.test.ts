@@ -1,5 +1,45 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { fetchUrlContent, htmlToText, FETCH_TEXT_LIMIT } from "../src/lib/url-fetch.js";
+import { fetchUrlContent, htmlToText, extractUrls, FETCH_TEXT_LIMIT } from "../src/lib/url-fetch.js";
+
+// ---------------------------------------------------------------------------
+// extractUrls
+// ---------------------------------------------------------------------------
+
+describe("extractUrls", () => {
+  it("extracts a bare URL", () => {
+    expect(extractUrls("Visit https://example.com for details")).toEqual(["https://example.com"]);
+  });
+
+  it("strips trailing period from sentence-ending URL", () => {
+    const result = extractUrls("Check https://reactsummit.com. Cool event!");
+    expect(result).toEqual(["https://reactsummit.com"]);
+  });
+
+  it("strips trailing comma", () => {
+    expect(extractUrls("See https://example.com/page, thanks")).toEqual([
+      "https://example.com/page",
+    ]);
+  });
+
+  it("deduplicates identical URLs", () => {
+    expect(
+      extractUrls("https://example.com and also https://example.com"),
+    ).toEqual(["https://example.com"]);
+  });
+
+  it("caps at maxUrls (default 3)", () => {
+    const text = "https://a.com https://b.com https://c.com https://d.com";
+    expect(extractUrls(text)).toHaveLength(3);
+  });
+
+  it("ignores http:// links", () => {
+    expect(extractUrls("see http://example.com")).toEqual([]);
+  });
+
+  it("returns empty array when no URLs present", () => {
+    expect(extractUrls("just some plain text")).toEqual([]);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // htmlToText
