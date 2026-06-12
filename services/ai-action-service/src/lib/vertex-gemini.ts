@@ -104,7 +104,7 @@ const RESPOND_FUNCTION_DECLARATION = {
   description: "Always call this function to produce your response.",
   parameters: {
     type: "object",
-    required: ["reply", "itinerary"],
+    required: ["reply"],
     properties: {
       reply: {
         type: "string",
@@ -112,8 +112,7 @@ const RESPOND_FUNCTION_DECLARATION = {
       },
       itinerary: {
         type: "object",
-        nullable: true,
-        description: "Null while still gathering information; full itinerary object once destination and dates are confirmed.",
+        description: "Omit while still gathering information. Include full itinerary object once destination and dates are confirmed.",
         properties: {
           destination: { type: "string" },
           dates: { type: "string" },
@@ -128,14 +127,27 @@ const RESPOND_FUNCTION_DECLARATION = {
                   type: "array",
                   items: {
                     type: "object",
-                    required: ["time", "title", "detail"],
+                    required: ["time", "title", "detail", "imageUrl"],
                     properties: {
                       time: { type: "string" },
                       title: { type: "string" },
                       detail: { type: "string" },
+                      imageUrl: {
+                        type: "string",
+                        description: "picsum.photos seed URL: https://picsum.photos/seed/{title-kebab}/400/280",
+                      },
                       imageQuery: {
                         type: "string",
                         description: "Vivid 2–5 word Unsplash search phrase for a representative photo.",
+                      },
+                      transport: {
+                        type: "object",
+                        description: "How to get TO this item from the previous. Omit on first item of each day.",
+                        properties: {
+                          mode: { type: "string", description: "Walk / Metro / Taxi / Train / Bus / Ferry" },
+                          duration: { type: "string", description: "e.g. '12 min'" },
+                          detail: { type: "string", description: "e.g. 'From hotel to Shinjuku Station, Oedo Line'" },
+                        },
                       },
                       transportAfter: {
                         type: "object",
@@ -195,7 +207,7 @@ export async function callGeminiVertex(
     tool_config: {
       function_calling_config: { mode: "ANY", allowed_function_names: ["respond"] },
     },
-    generation_config: { max_output_tokens: 2048 },
+    generation_config: { max_output_tokens: 8192 },
   };
 
   const model = "gemini-2.5-flash";
@@ -242,7 +254,9 @@ export async function callGeminiVertex(
   )?.functionCall;
 
   if (!fnCall) {
-    throw new Error("No function call in Gemini response");
+    const raw = JSON.stringify(data).slice(0, 500);
+    console.error("[vertex-gemini] no functionCall in response:", raw);
+    throw new Error(`No function call in Gemini response. Raw: ${raw}`);
   }
 
   const args = fnCall.args as { reply: string; itinerary?: unknown };
