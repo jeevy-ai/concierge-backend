@@ -23,7 +23,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { Hono } from "hono";
 import type { Env, Variables } from "../index.js";
 import { callGeminiVertex } from "../lib/vertex-gemini.js";
-import type { ChatMessage, Itinerary, RespondResult } from "../lib/itinerary-types.js";
+import type { ChatMessage, Itinerary, ItineraryItem, RespondResult } from "../lib/itinerary-types.js";
 import { fetchUrlContent, extractUrls } from "../lib/url-fetch.js";
 
 // ---------------------------------------------------------------------------
