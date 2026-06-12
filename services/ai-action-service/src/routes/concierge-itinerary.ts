@@ -8,6 +8,12 @@
  *
  * Swap to Claude: set ANTHROPIC_API_KEY via `wrangler secret put ANTHROPIC_API_KEY`
  * and redeploy — no code change required.
+ *
+ * Web access (YOU-731): the Anthropic path exposes a `fetch_url` tool so the
+ * model can read user-supplied URLs (conference pages, venues, etc.) without
+ * asking the user to copy/paste. Plain fetch + HTML stripping — no browser
+ * rendering required for static/SSR pages. CF Browser Rendering is the
+ * upgrade path if JS-heavy pages become an issue.
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -15,6 +21,11 @@ import type { Hono } from "hono";
 import type { Env, Variables } from "../index.js";
 import { callGeminiVertex } from "../lib/vertex-gemini.js";
 import type { ChatMessage, Itinerary, RespondResult } from "../lib/itinerary-types.js";
+import { fetchUrlContent, FETCH_TEXT_LIMIT } from "../lib/url-fetch.js";
+
+// ---------------------------------------------------------------------------
+// Prompts and tool definitions
+// ---------------------------------------------------------------------------
 
 const SYSTEM_PROMPT = `You are an AI travel concierge butler. Help users plan detailed travel itineraries through warm, natural conversation.
 
@@ -26,16 +37,18 @@ Gather through conversation:
 - Number of travelers
 - Any special requirements or constraints
 
+When a user mentions a URL (a conference website, event page, venue, or any travel-relevant link), call the \`fetch_url\` tool to read its content so you can extract dates, location, agenda, or other details — do not ask the user to copy and paste content from a page.
+
 Once you have at minimum destination and dates confirmed, generate a full day-by-day itinerary.
 
-ALWAYS respond by calling the \`respond\` tool:
+ALWAYS finish each turn by calling the \`respond\` tool:
 - Set \`reply\` to your conversational message to the user.
 - Set \`itinerary\` to null while still gathering information.
 - Set \`itinerary\` to the complete structured object once destination and dates are confirmed.`;
 
 const RESPOND_TOOL: Anthropic.Tool = {
   name: "respond",
-  description: "Always call this tool to produce your response.",
+  description: "Always call this tool to produce your final response for the current turn.",
   input_schema: {
     type: "object" as const,
     required: ["reply", "itinerary"],
@@ -84,22 +97,100 @@ const RESPOND_TOOL: Anthropic.Tool = {
   },
 };
 
+const FETCH_URL_TOOL: Anthropic.Tool = {
+  name: "fetch_url",
+  description:
+    "Fetch and read the text content of a public web page. Use this when the user provides a URL so you can extract event dates, venue details, conference agendas, or other travel-relevant information without asking the user to copy/paste.",
+  input_schema: {
+    type: "object" as const,
+    required: ["url"],
+    properties: {
+      url: {
+        type: "string",
+        description: "The HTTPS URL to fetch. Must start with https://.",
+      },
+    },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Anthropic multi-turn call (handles fetch_url tool loop)
+// ---------------------------------------------------------------------------
+
+const MAX_TOOL_ITERATIONS = 8;
+
 async function callAnthropic(messages: ChatMessage[], apiKey: string): Promise<RespondResult> {
   const client = new Anthropic({ apiKey });
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 2048,
-    system: SYSTEM_PROMPT,
-    messages,
-    tools: [RESPOND_TOOL],
-    tool_choice: { type: "tool", name: "respond" },
-  });
-  const toolUse = response.content.find((b) => b.type === "tool_use");
-  if (!toolUse || toolUse.type !== "tool_use") {
-    throw new Error("Unexpected response format from Anthropic");
+
+  let currentMessages: Anthropic.MessageParam[] = messages.map((m) => ({
+    role: m.role,
+    content: m.content,
+  }));
+
+  for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 2048,
+      system: SYSTEM_PROMPT,
+      messages: currentMessages,
+      tools: [RESPOND_TOOL, FETCH_URL_TOOL],
+      tool_choice: { type: "auto" },
+    });
+
+    const toolBlocks = response.content.filter(
+      (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
+    );
+
+    // Model called `respond` — we're done.
+    const respondBlock = toolBlocks.find((b) => b.name === "respond");
+    if (respondBlock) {
+      return respondBlock.input as RespondResult;
+    }
+
+    // Model called `fetch_url` — execute and continue the loop.
+    const fetchBlocks = toolBlocks.filter((b) => b.name === "fetch_url");
+    if (fetchBlocks.length === 0) {
+      // No recognised tool call; may be a plain text response — should not happen
+      // with these tools configured but guard against it.
+      throw new Error("Unexpected response: no recognised tool call from Anthropic");
+    }
+
+    // Append assistant turn with all tool-use blocks.
+    currentMessages = [
+      ...currentMessages,
+      { role: "assistant", content: response.content },
+    ];
+
+    // Execute fetches (in parallel) and build tool_result blocks.
+    const toolResults: Anthropic.ToolResultBlockParam[] = await Promise.all(
+      fetchBlocks.map(async (block) => {
+        const input = block.input as { url?: string };
+        const url = typeof input.url === "string" ? input.url : "";
+        const result = await fetchUrlContent(url);
+        const content = result.error
+          ? `Error fetching page: ${result.error}`
+          : `Page content (truncated to ${FETCH_TEXT_LIMIT} chars):\n\n${result.text}`;
+        return {
+          type: "tool_result" as const,
+          tool_use_id: block.id,
+          content,
+        };
+      }),
+    );
+
+    // Append user turn with fetch results so the model can continue.
+    currentMessages = [
+      ...currentMessages,
+      { role: "user", content: toolResults },
+    ];
   }
-  return toolUse.input as RespondResult;
+
+  throw new Error("Tool call loop exceeded maximum iterations — possible infinite loop");
 }
+
+// ---------------------------------------------------------------------------
+// Route
+// ---------------------------------------------------------------------------
 
 interface RequestBody {
   messages: ChatMessage[];
