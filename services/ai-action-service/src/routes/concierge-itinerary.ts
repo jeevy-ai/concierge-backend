@@ -1,31 +1,42 @@
 /**
  * POST /concierge/itinerary — conversational travel itinerary endpoint.
+ * POST /concierge/itinerary/alter — alter an existing itinerary via an edit instruction.
  *
  * Provider selection (first match wins):
  *   1. ANTHROPIC_API_KEY present → Anthropic Claude (desired end state)
  *   2. VERTEX_SA_JSON + GCP_PROJECT_ID present → Gemini on Vertex AI (interim)
  *   3. Neither → 503
  *
- * Swap to Claude: set ANTHROPIC_API_KEY via `wrangler secret put ANTHROPIC_API_KEY`
- * and redeploy — no code change required.
+ * YOU-749 Phase 2 additions:
+ *   - Personalization: demo persona (Noah) injected into system prompt.
+ *   - Images: each ItineraryItem carries imageQuery (AI-generated) + imageUrl
+ *     (resolved to Unsplash Source URL server-side).
+ *   - Transport legs: transportAfter on each item describes the connection to the next.
+ *   - Alter: /concierge/itinerary/alter accepts { instruction, currentItinerary } and
+ *     returns a revised itinerary.
  *
- * Web access (YOU-731): URLs found in the latest user message are fetched
- * server-side before calling the AI provider. The extracted text is injected
- * inline into the user message so the model receives the content directly.
- * No extra tool-calling loop is needed, and it works on both Anthropic and
- * Vertex providers.
- *
- * Build/buy: plain fetch + HTML stripping (url-fetch.ts) rather than
- * Cloudflare Browser Rendering — sufficient for static/SSR conference pages
- * and free. CF Browser Rendering is the upgrade path for JS-heavy SPAs.
+ * Demo persona shape (for future swap to real sessions/profile store):
+ *   { name, travelStyle, dietaryPrefs, pace, budgetBand, homeCity, loyaltyPrograms }
  */
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { Hono } from "hono";
 import type { Env, Variables } from "../index.js";
 import { callGeminiVertex } from "../lib/vertex-gemini.js";
-import type { ChatMessage, RespondResult } from "../lib/itinerary-types.js";
+import type { ChatMessage, Itinerary, RespondResult } from "../lib/itinerary-types.js";
 import { fetchUrlContent, extractUrls } from "../lib/url-fetch.js";
+
+// ---------------------------------------------------------------------------
+// Demo persona — hardcoded for Phase 2. Swap to a real profile store in Phase 3.
+// Shape: { name, travelStyle, dietaryPrefs, pace, budgetBand, homeCity, loyaltyPrograms }
+// ---------------------------------------------------------------------------
+
+const DEMO_PERSONA = `
+## Who you are planning for
+The traveler is Noah Laux. Profile: travel style = boutique/independent, dietary = pescatarian + loves local cuisine, pace = active mornings, budget = €300-500/day, interests = architecture, design, art, great coffee, hidden gems.
+
+Reference these preferences naturally when building the itinerary — suggest places that match his style, note dietary-friendly highlights, and respect his pacing preference.
+`.trim();
 
 // ---------------------------------------------------------------------------
 // URL injection — pre-fetch URLs from the latest user message
@@ -46,9 +57,7 @@ async function injectFetchedUrls(messages: ChatMessage[]): Promise<ChatMessage[]
     }),
   );
 
-  const enrichedContent =
-    lastMsg.content + "\n\n" + snippets.join("\n\n");
-
+  const enrichedContent = lastMsg.content + "\n\n" + snippets.join("\n\n");
   return [
     ...messages.slice(0, -1),
     { role: "user" as const, content: enrichedContent },
@@ -56,27 +65,109 @@ async function injectFetchedUrls(messages: ChatMessage[]): Promise<ChatMessage[]
 }
 
 // ---------------------------------------------------------------------------
+// Image URL resolution — maps AI-generated imageQuery to Unsplash Source URL.
+// Demo-acceptable: Unsplash Source redirects to a relevant photo.
+// Phase 3 upgrade path: swap to Unsplash API with proper access key.
+// ---------------------------------------------------------------------------
+
+function resolveImageUrl(item: ItineraryItem): string {
+  if (item.imageUrl) return item.imageUrl;
+  if (item.imageQuery) {
+    const encoded = encodeURIComponent(item.imageQuery.trim());
+    return `https://source.unsplash.com/featured/800x400/?${encoded}`;
+  }
+  const slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20);
+  return `https://picsum.photos/seed/${slug}/400/280`;
+}
+
+function enrichItineraryImages(itinerary: Itinerary | null): Itinerary | null {
+  if (!itinerary) return null;
+  return {
+    ...itinerary,
+    days: itinerary.days.map((day) => ({
+      ...day,
+      items: day.items.map((item) => ({
+        ...item,
+        imageUrl: resolveImageUrl(item),
+      })),
+    })),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Prompts and tool definitions
 // ---------------------------------------------------------------------------
 
-const SYSTEM_PROMPT = `You are an AI travel concierge butler. Help users plan detailed travel itineraries through warm, natural conversation.
+const SYSTEM_PROMPT = `You are Jeevy, an AI travel concierge butler. Help users plan detailed travel itineraries through warm, natural conversation.
+
+${DEMO_PERSONA}
 
 Gather through conversation:
 - Destination(s)
 - Travel dates
-- Budget range
-- Interests and preferences (culture, food, adventure, relaxation, etc.)
-- Number of travelers
-- Any special requirements or constraints
+- Any additional specifics (who's going, special occasions, etc.)
 
 When a user message includes "[Fetched content of ...]" blocks, immediately extract and use the relevant details (dates, location, agenda, venue) to advance trip planning — do NOT ask the user to summarize, confirm, or copy/paste the page content. You already have it.
 
-Once you have at minimum destination and dates confirmed, generate a full day-by-day itinerary.
+Once you have at minimum destination and dates confirmed, generate a full day-by-day itinerary tailored to Noah's preferences above.
 
 ALWAYS respond by calling the \`respond\` tool:
 - Set \`reply\` to your conversational message to the user.
 - Set \`itinerary\` to null while still gathering information.
-- Set \`itinerary\` to the complete structured object once destination and dates are confirmed.`;
+- Set \`itinerary\` to the complete structured object once destination and dates are confirmed.
+
+For each itinerary item:
+- Set \`imageUrl\` to: \`https://picsum.photos/seed/{SLUG}/400/280\` where {SLUG} is the item title in kebab-case (lowercase, hyphens, no special chars, max 20 chars). Example: 'Tsukiji Market visit' → \`https://picsum.photos/seed/tsukiji-market/400/280\`
+- For each item except the first item of each day, add a \`transport\` object describing how to get there from the previous item. Include mode (Walk/Metro/Taxi/Train/Bus/Ferry), duration (e.g. '12 min'), and detail (e.g. 'From hotel to Shinjuku Station, Oedo Line').
+- Set \`imageQuery\` to a vivid 2–5 word search phrase (e.g. "lisbon pasteis de nata bakery", "tokyo shibuya crossing night") that would return a great representative photo. Be specific and visual.
+- Set \`transportAfter\` to the transport leg FROM this item TO the next (mode: walk/taxi/metro/uber/tram/ferry/etc., duration: estimated time, notes: optional tip). Omit on the last item of a day or when items are in the same location.`;
+
+const ALTER_SYSTEM_PROMPT = `You are an AI travel concierge butler. The user wants to modify their existing itinerary.
+Apply the requested changes while keeping what was good. Maintain the same structure and field requirements as the original itinerary (imageUrl for every item using picsum.photos seed URLs, transport legs between events).
+
+${DEMO_PERSONA}
+
+For imageUrl: use format https://picsum.photos/seed/{title-kebab}/400/280
+For transport: include mode/duration/detail for each item except the first of each day.
+
+ALWAYS respond by calling the respond tool with the complete revised itinerary and a brief reply acknowledging what changed.`;
+
+const ITINERARY_ITEM_SCHEMA = {
+  type: "object" as const,
+  required: ["time", "title", "detail", "imageUrl"],
+  properties: {
+    time: { type: "string" as const },
+    title: { type: "string" as const },
+    detail: { type: "string" as const },
+    imageUrl: {
+      type: "string" as const,
+      description: "picsum.photos seed URL: https://picsum.photos/seed/{title-kebab}/400/280",
+    },
+    transport: {
+      type: "object" as const,
+      description: "How to get TO this item from the previous. Omit on first item of a day.",
+      properties: {
+        mode: { type: "string" as const, description: "Walk / Metro / Taxi / Train / Bus / Ferry" },
+        duration: { type: "string" as const, description: "e.g. '12 min'" },
+        detail: { type: "string" as const, description: "e.g. 'From hotel to Shinjuku Station, Oedo Line'" },
+      },
+    },
+    imageQuery: {
+      type: "string" as const,
+      description: "Vivid 2–5 word Unsplash search phrase for a representative photo.",
+    },
+    transportAfter: {
+      type: "object" as const,
+      description: "Transport from this item to the next. Omit on last item of a day.",
+      required: ["mode", "duration"],
+      properties: {
+        mode: { type: "string" as const, description: "walk / taxi / metro / uber / tram / ferry / bus / car" },
+        duration: { type: "string" as const, description: "Estimated duration e.g. '12 min'" },
+        notes: { type: "string" as const, description: "Optional tip e.g. 'Line 2 towards Odivelas'" },
+      },
+    },
+  },
+};
 
 const RESPOND_TOOL: Anthropic.Tool = {
   name: "respond",
@@ -86,41 +177,33 @@ const RESPOND_TOOL: Anthropic.Tool = {
     required: ["reply", "itinerary"],
     properties: {
       reply: {
-        type: "string",
+        type: "string" as const,
         description: "Conversational reply to the user.",
       },
       itinerary: {
         anyOf: [
-          { type: "null" },
+          { type: "null" as const },
           {
-            type: "object",
+            type: "object" as const,
             required: ["destination", "dates", "days", "summary"],
             properties: {
-              destination: { type: "string" },
-              dates: { type: "string" },
+              destination: { type: "string" as const },
+              dates: { type: "string" as const },
               days: {
-                type: "array",
+                type: "array" as const,
                 items: {
-                  type: "object",
+                  type: "object" as const,
                   required: ["day", "items"],
                   properties: {
-                    day: { type: "string" },
+                    day: { type: "string" as const },
                     items: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        required: ["time", "title", "detail"],
-                        properties: {
-                          time: { type: "string" },
-                          title: { type: "string" },
-                          detail: { type: "string" },
-                        },
-                      },
+                      type: "array" as const,
+                      items: ITINERARY_ITEM_SCHEMA,
                     },
                   },
                 },
               },
-              summary: { type: "string" },
+              summary: { type: "string" as const },
             },
           },
         ],
@@ -133,12 +216,16 @@ const RESPOND_TOOL: Anthropic.Tool = {
 // Anthropic call
 // ---------------------------------------------------------------------------
 
-async function callAnthropic(messages: ChatMessage[], apiKey: string): Promise<RespondResult> {
+async function callAnthropic(
+  messages: ChatMessage[],
+  apiKey: string,
+  systemPrompt: string = SYSTEM_PROMPT,
+): Promise<RespondResult> {
   const client = new Anthropic({ apiKey });
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 2048,
-    system: SYSTEM_PROMPT,
+    max_tokens: 4096,
+    system: systemPrompt,
     messages: messages.map((m) => ({ role: m.role, content: m.content })),
     tools: [RESPOND_TOOL],
     tool_choice: { type: "tool", name: "respond" },
@@ -151,56 +238,75 @@ async function callAnthropic(messages: ChatMessage[], apiKey: string): Promise<R
 }
 
 // ---------------------------------------------------------------------------
-// Route
+// Provider helpers
 // ---------------------------------------------------------------------------
 
-interface RequestBody {
+function hasProvider(env: Env): { anthropic: boolean; vertex: boolean } {
+  return {
+    anthropic: !!env?.ANTHROPIC_API_KEY,
+    vertex: !!(env?.VERTEX_SA_JSON && env?.GCP_PROJECT_ID),
+  };
+}
+
+async function callProvider(
+  messages: ChatMessage[],
+  env: Env,
+  systemPrompt: string = SYSTEM_PROMPT,
+): Promise<RespondResult> {
+  const { anthropic, vertex } = hasProvider(env);
+  if (anthropic) return callAnthropic(messages, env.ANTHROPIC_API_KEY!, systemPrompt);
+  if (vertex) return callGeminiVertex(messages, env.VERTEX_SA_JSON!, env.GCP_PROJECT_ID!, systemPrompt);
+  throw new Error("No AI provider configured");
+}
+
+// ---------------------------------------------------------------------------
+// Route registration
+// ---------------------------------------------------------------------------
+
+interface ItineraryRequestBody {
   messages: ChatMessage[];
+}
+
+interface AlterRequestBody {
+  instruction: string;
+  currentItinerary: Itinerary;
+  messages?: ChatMessage[];
+}
+
+function validateMessages(messages: unknown): messages is ChatMessage[] {
+  if (!Array.isArray(messages) || messages.length === 0) return false;
+  return !messages.some(
+    (m) => (m.role !== "user" && m.role !== "assistant") || typeof m.content !== "string",
+  );
 }
 
 export function registerConciergeItineraryRoute(
   app: Hono<{ Bindings: Env; Variables: Variables }>,
 ): void {
+  // POST /concierge/itinerary — main conversational endpoint
   app.post("/concierge/itinerary", async (c) => {
-    const hasAnthropic = !!c.env?.ANTHROPIC_API_KEY;
-    const hasVertex = !!(c.env?.VERTEX_SA_JSON && c.env?.GCP_PROJECT_ID);
-
-    if (!hasAnthropic && !hasVertex) {
+    const prov = hasProvider(c.env);
+    if (!prov.anthropic && !prov.vertex) {
       return c.json(
-        {
-          error:
-            "AI butler not configured: set ANTHROPIC_API_KEY or VERTEX_SA_JSON + GCP_PROJECT_ID.",
-        },
+        { error: "AI butler not configured: set ANTHROPIC_API_KEY or VERTEX_SA_JSON + GCP_PROJECT_ID." },
         503,
       );
     }
 
-    let body: RequestBody;
+    let body: ItineraryRequestBody;
     try {
-      body = await c.req.json<RequestBody>();
+      body = await c.req.json<ItineraryRequestBody>();
     } catch {
       return c.json({ error: "Invalid JSON body" }, 400);
     }
 
-    if (!Array.isArray(body?.messages) || body.messages.length === 0) {
-      return c.json({ error: "messages must be a non-empty array" }, 400);
-    }
-
-    const invalidMsg = body.messages.find(
-      (m) =>
-        (m.role !== "user" && m.role !== "assistant") ||
-        typeof m.content !== "string",
-    );
-    if (invalidMsg) {
+    if (!validateMessages(body?.messages)) {
       return c.json(
-        { error: "Each message must have role 'user'|'assistant' and string content" },
+        { error: "messages must be a non-empty array of {role:'user'|'assistant', content:string}" },
         400,
       );
     }
 
-    // Pre-fetch any URLs in the latest user message before calling either
-    // AI provider, so the model receives the page text inline. Errors here
-    // are non-fatal: fall back to the original messages.
     let messages: ChatMessage[];
     try {
       messages = await injectFetchedUrls(body.messages);
@@ -210,23 +316,62 @@ export function registerConciergeItineraryRoute(
 
     let result: RespondResult;
     try {
-      if (hasAnthropic) {
-        result = await callAnthropic(messages, c.env.ANTHROPIC_API_KEY!);
-      } else {
-        result = await callGeminiVertex(
-          messages,
-          c.env.VERTEX_SA_JSON!,
-          c.env.GCP_PROJECT_ID!,
-          SYSTEM_PROMPT,
-        );
-      }
+      result = await callProvider(messages, c.env, SYSTEM_PROMPT);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      const provider = hasAnthropic ? "Anthropic" : "Vertex AI";
+      const provider = prov.anthropic ? "Anthropic" : "Vertex AI";
       console.error(`[concierge-itinerary] ${provider} error:`, message);
       return c.json({ error: "AI service error", detail: message }, 502);
     }
 
-    return c.json({ reply: result.reply, itinerary: result.itinerary ?? null });
+    const enriched = enrichItineraryImages(result.itinerary);
+    return c.json({ reply: result.reply, itinerary: enriched });
+  });
+
+  // POST /concierge/itinerary/alter — edit an existing itinerary
+  app.post("/concierge/itinerary/alter", async (c) => {
+    const prov = hasProvider(c.env);
+    if (!prov.anthropic && !prov.vertex) {
+      return c.json(
+        { error: "AI butler not configured: set ANTHROPIC_API_KEY or VERTEX_SA_JSON + GCP_PROJECT_ID." },
+        503,
+      );
+    }
+
+    let body: AlterRequestBody;
+    try {
+      body = await c.req.json<AlterRequestBody>();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+
+    if (!body?.instruction || typeof body.instruction !== "string") {
+      return c.json({ error: "instruction must be a non-empty string" }, 400);
+    }
+    if (!body?.currentItinerary || typeof body.currentItinerary !== "object") {
+      return c.json({ error: "currentItinerary must be an itinerary object" }, 400);
+    }
+
+    const itineraryJson = JSON.stringify(body.currentItinerary, null, 2);
+    const alterMessages: ChatMessage[] = [
+      ...(body.messages ?? []),
+      {
+        role: "user",
+        content: `Here is the current itinerary:\n\`\`\`json\n${itineraryJson}\n\`\`\`\n\nPlease make this change: ${body.instruction}`,
+      },
+    ];
+
+    let result: RespondResult;
+    try {
+      result = await callProvider(alterMessages, c.env, ALTER_SYSTEM_PROMPT);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const provider = prov.anthropic ? "Anthropic" : "Vertex AI";
+      console.error(`[concierge-itinerary/alter] ${provider} error:`, message);
+      return c.json({ error: "AI service error", detail: message }, 502);
+    }
+
+    const enriched = enrichItineraryImages(result.itinerary);
+    return c.json({ reply: result.reply, itinerary: enriched });
   });
 }

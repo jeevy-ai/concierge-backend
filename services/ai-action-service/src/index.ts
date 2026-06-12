@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runDailyAtRiskScan } from "./lib/save-interview.js";
 import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
+import { registerConciergeAlterRoute } from "./routes/concierge-alter.js";
 import { registerConciergeItineraryRoute } from "./routes/concierge-itinerary.js";
 import { registerSaveInterviewRoutes } from "./routes/save-interview.js";
 import { registerStripeWebhookRoute } from "./routes/stripe-webhook.js";
@@ -57,6 +58,7 @@ registerSaveInterviewRoutes(app);
 
 // AI butler: conversational travel itinerary planner (YOU-681)
 registerConciergeItineraryRoute(app);
+registerConciergeAlterRoute(app);
 
 // Protected routes require Clerk auth + active Stripe subscription
 const protected_ = app.use("/api/protected/*", clerkAuthMiddleware(), entitlementGuard());

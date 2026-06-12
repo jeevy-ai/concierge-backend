@@ -128,10 +128,24 @@ const RESPOND_FUNCTION_DECLARATION = {
                   type: "array",
                   items: {
                     type: "object",
+                    required: ["time", "title", "detail"],
                     properties: {
                       time: { type: "string" },
                       title: { type: "string" },
                       detail: { type: "string" },
+                      imageQuery: {
+                        type: "string",
+                        description: "Vivid 2–5 word Unsplash search phrase for a representative photo.",
+                      },
+                      transportAfter: {
+                        type: "object",
+                        description: "Transport from this item to the next. Omit on last item of a day.",
+                        properties: {
+                          mode: { type: "string" },
+                          duration: { type: "string" },
+                          notes: { type: "string" },
+                        },
+                      },
                     },
                   },
                 },
