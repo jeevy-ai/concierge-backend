@@ -70,7 +70,7 @@
     /* ── Layout ── */
     .layout {
       display: grid;
-      grid-template-columns: 300px 1fr;
+      grid-template-columns: 380px 1fr;
       min-height: calc(100vh - 52px);
     }
     .sidebar {
@@ -603,6 +603,293 @@
       .map-pin { animation: none; transition: none; }
       .map-sheet, .s8-map-pane { transition: none; }
     }
+
+    /* ── Layout overrides for timeline ── */
+    .pane-travel {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      position: sticky; top: 52px;
+      max-height: calc(100vh - 52px);
+      padding: 16px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .travel-chat { flex: 1; overflow-y: auto; }
+
+    /* Mobile tab nav */
+    .tab-nav { display: none; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tab-btn {
+      flex: 1; padding: 12px; background: none; border: none;
+      border-bottom: 2px solid transparent; font-size: 14px; font-weight: 600;
+      cursor: pointer; color: var(--text3); transition: color .15s, border-color .15s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Timeline pane ── */
+    .timeline-pane {
+      background: #FAF7F2;
+      padding: 24px 32px 48px;
+      overflow-y: auto;
+      position: relative;
+      min-width: 0;
+    }
+
+    /* Journey header */
+    .journey-header {
+      position: sticky; top: 0; z-index: 10;
+      background: #FAF7F2;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      display: flex; align-items: baseline; gap: 12px;
+      margin-bottom: 12px;
+    }
+    .journey-title { font-size: 18px; font-weight: 600; color: #1a202c; }
+    .journey-dates { font-size: 14px; color: #718096; }
+    .journey-status-badge {
+      margin-left: auto; font-size: 12px; font-weight: 500;
+      padding: 3px 10px; border-radius: 999px;
+      background: #F0EDE8; color: #6B5B4E;
+      transition: background .3s, color .3s;
+    }
+    .journey-status-badge.ready { background: #F0FFF4; color: #276749; }
+    .journey-status-badge.active-day { background: #FFFBEB; color: #92400E; }
+
+    .journey-subline { font-size: 13px; color: #A0856E; font-style: italic; margin-bottom: 28px; }
+
+    /* Timeline wrap + spine */
+    .timeline-wrap { position: relative; padding-left: 52px; }
+    .timeline-wrap::before {
+      content: ''; position: absolute;
+      left: 11px; top: 0; bottom: 0;
+      width: 2px; background: #E8D5C4;
+    }
+
+    /* Timeline entry */
+    .timeline-entry { position: relative; margin-bottom: 16px; }
+    .timeline-entry:last-child { margin-bottom: 0; }
+
+    /* Dot */
+    .timeline-dot {
+      position: absolute;
+      left: -41px; top: 18px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      border: 2px dashed #C9B5A0;
+      background: transparent;
+      z-index: 2;
+      transition: background-color 200ms ease 120ms, border 200ms ease 120ms;
+    }
+    .tl-entry--proposed .timeline-dot { border: none; background: #C96A35; opacity: 0.5; }
+    .tl-entry--confirmed .timeline-dot,
+    .tl-entry--calendar-synced .timeline-dot { border: none; background: #38A169; opacity: 1; }
+    .tl-entry--day-of-active .timeline-dot { border: none; background: #D97706; }
+
+    /* Timeline card (scroll-reveal start state) */
+    .timeline-card {
+      background: #fff; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 280ms cubic-bezier(0.16,1,0.3,1),
+                  transform 280ms cubic-bezier(0.16,1,0.3,1);
+    }
+    .timeline-card.tl-card--visible { opacity: 1; transform: translateY(0); }
+
+    /* Card state borders */
+    .tl-entry--ghost .timeline-card {
+      border: 1.5px dashed rgba(201,106,53,0.3); opacity: 0.72; box-shadow: none;
+    }
+    .tl-entry--proposed .timeline-card { border: 1.5px solid rgba(201,106,53,0.5); }
+    .tl-entry--confirmed .timeline-card,
+    .tl-entry--calendar-synced .timeline-card { border: none; }
+    .tl-entry--day-of-active .timeline-card {
+      border-left: 4px solid #D97706;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    /* Image slot (16:9) */
+    .card-image-slot {
+      position: relative; width: 100%; padding-top: 56.25%; overflow: hidden;
+    }
+    .card-image-slot img, .card-image-fallback {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+    }
+    .card-image-slot img { object-fit: cover; z-index: 1; transition: filter 320ms cubic-bezier(0.16,1,0.3,1); }
+    .card-image-fallback {
+      display: flex; align-items: center; justify-content: center; z-index: 0;
+    }
+    .img-error img { display: none; }
+    .fallback-icon { font-size: 28px; opacity: 0.5; }
+
+    /* Ghost shimmer overlay */
+    .tl-entry--ghost .card-image-slot::before {
+      content: ''; position: absolute; inset: 0; z-index: 2;
+      background: linear-gradient(135deg,rgba(232,112,58,0.12) 0%,rgba(74,107,155,0.12) 100%);
+      animation: ghost-shimmer 2s ease-in-out infinite;
+    }
+
+    /* Proposed: blur + scrim */
+    .tl-entry--proposed .card-image-slot img { filter: blur(4px) brightness(0.85); }
+    .tl-entry--proposed .card-image-slot::after {
+      content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.15); z-index: 2;
+    }
+
+    /* Overlay badge */
+    .card-overlay-badge {
+      display: none; position: absolute; bottom: 8px; left: 8px; z-index: 3;
+      background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; font-weight: 700;
+      padding: 3px 8px; border-radius: 100px;
+    }
+    .tl-entry--proposed .card-overlay-badge,
+    .tl-entry--confirmed .card-overlay-badge,
+    .tl-entry--calendar-synced .card-overlay-badge,
+    .tl-entry--day-of-active .card-overlay-badge { display: block; }
+
+    /* Jeevy suggests chip */
+    .suggests-chip {
+      display: none; position: absolute; top: 10px; right: 10px; z-index: 3;
+      background: #C96A35; color: #fff; font-size: 11px; font-weight: 600;
+      padding: 3px 8px; border-radius: 100px;
+    }
+    .tl-entry--proposed .suggests-chip { display: block; }
+
+    /* Day-of badge */
+    .card-dayof-badge {
+      display: none; position: absolute; top: 10px; right: 10px; z-index: 3;
+      background: #FFFBEB; color: #D97706; font-size: 11px; font-weight: 700;
+      padding: 3px 8px; border-radius: 100px;
+    }
+    .tl-entry--day-of-active .card-dayof-badge { display: block !important; }
+
+    /* Card body */
+    .card-body { padding: 12px 16px 14px; }
+    .ghost-line { background: rgba(0,0,0,0.06); border-radius: 4px; height: 14px; margin-bottom: 8px; }
+    .ghost-line--short { width: 55%; }
+    .ghost-line--medium { width: 75%; }
+
+    .card-ghost-copy { margin-top: 2px; }
+    .card-ghost-primary { font-size: 14px; font-weight: 600; color: #6B5B4E; margin-bottom: 2px; }
+    .card-ghost-secondary { font-size: 12px; color: #A0856E; font-style: italic; }
+
+    /* Real card meta (hidden in ghost) */
+    .card-meta { display: none; }
+    .tl-entry--proposed .card-meta,
+    .tl-entry--confirmed .card-meta,
+    .tl-entry--calendar-synced .card-meta,
+    .tl-entry--day-of-active .card-meta { display: block; }
+    .tl-entry--proposed .card-ghost-copy,
+    .tl-entry--proposed .ghost-lines,
+    .tl-entry--confirmed .card-ghost-copy,
+    .tl-entry--confirmed .ghost-lines,
+    .tl-entry--calendar-synced .card-ghost-copy,
+    .tl-entry--calendar-synced .ghost-lines,
+    .tl-entry--day-of-active .card-ghost-copy,
+    .tl-entry--day-of-active .ghost-lines { display: none; }
+
+    .card-label-chip { font-size: 12px; color: #718096; display: block; margin-bottom: 3px; }
+    .card-primary { font-size: 15px; font-weight: 600; color: #1a202c; margin-bottom: 3px; }
+    .card-secondary { font-size: 13px; color: #4a5568; margin-bottom: 5px; }
+    .card-action-link { font-size: 13px; color: #C96A35; text-decoration: none; }
+    .card-action-link:hover { text-decoration: underline; }
+    .card-cal-tag { display: none; font-size: 11px; color: #38A169; font-weight: 500; padding: 4px 16px 8px; }
+    .tl-entry--calendar-synced .card-cal-tag { display: block; }
+
+    /* Sessions group */
+    .sessions-label { font-size: 14px; color: #718096; font-weight: 500; margin: 20px 0 8px 0; }
+
+    /* Session card (horizontal) */
+    .session-card {
+      background: #fff; border-radius: 12px; overflow: hidden;
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 280ms cubic-bezier(0.16,1,0.3,1),
+                  transform 280ms cubic-bezier(0.16,1,0.3,1);
+    }
+    .session-card.tl-card--visible { opacity: 1; transform: translateY(0); }
+    .tl-entry--ghost .session-card {
+      border: 1.5px dashed rgba(201,106,53,0.3); opacity: 0.72; box-shadow: none;
+    }
+    .tl-entry--proposed .session-card { border: 1.5px solid rgba(201,106,53,0.5); }
+    .tl-entry--confirmed .session-card { border-left: 3px solid #C96A35; }
+    .tl-entry--calendar-synced .session-card { border-left: 3px solid #38A169; }
+
+    .session-card-info { flex: 1; }
+    .session-card-time { font-size: 12px; color: #718096; margin-bottom: 3px; }
+    .session-ghost-title { font-size: 14px; font-weight: 600; color: #6B5B4E; margin-bottom: 2px; }
+    .session-ghost-sub { font-size: 12px; color: #A0856E; font-style: italic; margin-bottom: 4px; }
+    .session-ghost-cta {
+      font-size: 12px; color: #C96A35; background: none; border: none;
+      padding: 0; cursor: pointer; text-decoration: underline;
+    }
+    .session-card-title { font-size: 14px; font-weight: 600; color: #1a202c; margin-bottom: 2px; }
+    .session-card-speaker { font-size: 13px; color: #4a5568; }
+
+    .session-real-meta { display: none; }
+
+    .tl-entry--proposed .session-ghost-title,
+    .tl-entry--proposed .session-ghost-sub,
+    .tl-entry--proposed .session-ghost-cta,
+    .tl-entry--confirmed .session-ghost-title,
+    .tl-entry--confirmed .session-ghost-sub,
+    .tl-entry--confirmed .session-ghost-cta,
+    .tl-entry--calendar-synced .session-ghost-title,
+    .tl-entry--calendar-synced .session-ghost-sub,
+    .tl-entry--calendar-synced .session-ghost-cta { display: none; }
+    .tl-entry--proposed .session-real-meta,
+    .tl-entry--confirmed .session-real-meta,
+    .tl-entry--calendar-synced .session-real-meta { display: block; }
+
+    .session-card-thumb {
+      width: 64px; height: 64px; border-radius: 50%; overflow: hidden;
+      flex-shrink: 0; background: #E8D5C4;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .session-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .session-card-initials { font-size: 18px; font-weight: 700; color: #6B5B4E; display: none; }
+
+    /* Animations */
+    @keyframes ghost-shimmer { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    @keyframes confirm-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(56,161,105,0.5); }
+      70%  { box-shadow: 0 0 0 12px rgba(56,161,105,0); }
+      100% { box-shadow: 0 0 0 0 rgba(56,161,105,0); }
+    }
+    .timeline-dot--pulse { animation: confirm-pulse 500ms cubic-bezier(0.16,1,0.3,1) 1; }
+
+    @keyframes active-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(217,119,6,0.4); }
+      50%     { box-shadow: 0 0 0 8px rgba(217,119,6,0); }
+    }
+    .timeline-dot--active { animation: active-pulse 2s ease-in-out infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .timeline-card, .session-card { opacity: 1; transform: none; transition: none; }
+      .tl-entry--ghost .card-image-slot::before { animation: none; opacity: 0.8; }
+      .timeline-dot--pulse, .timeline-dot--active { animation: none; }
+    }
+
+    /* Mobile: stack layout, tab switcher */
+    @media (max-width: 899px) {
+      .layout { grid-template-columns: 1fr; }
+      .tab-nav { display: flex; position: sticky; top: 52px; z-index: 20; }
+      .pane-travel { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--border); overflow-y: visible; }
+      .travel-chat { overflow-y: visible; }
+      .timeline-pane { padding: 16px 16px 48px; }
+      .timeline-wrap { padding-left: 40px; }
+      body.show-chat .timeline-pane { display: none; }
+      body.show-itinerary .travel-chat > .screen-nav-label,
+      body.show-itinerary .travel-chat > .screen-btn,
+      body.show-itinerary .travel-chat > .nav-divider,
+      body.show-itinerary .travel-chat > .persona-block,
+      body.show-itinerary .travel-chat > .screen { display: none; }
+    }
+
+    /* Tablet (900–1199px) */
+    @media (min-width: 900px) and (max-width: 1199px) {
+      .layout { grid-template-columns: 320px 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -617,8 +904,13 @@
 
 <div class="layout">
 
-  <!-- ── Sidebar nav ── -->
-  <aside class="sidebar">
+  <!-- ── Left pane ── -->
+  <aside id="pane-travel" class="pane-travel">
+    <div class="tab-nav">
+      <button class="tab-btn" id="tab-chat" onclick="switchTab('chat')">Chat</button>
+      <button class="tab-btn active" id="tab-itinerary" onclick="switchTab('itinerary')">Itinerary</button>
+    </div>
+    <div id="travelChat" class="travel-chat">
     <div class="screen-nav-label">Screens</div>
 
     <button class="screen-btn active" onclick="showScreen('s1',this)">
@@ -707,12 +999,6 @@
         <div class="pref-row"><span class="pref-key">Home airport</span><span class="pref-val">SFO</span></div>
       </div>
     </div>
-  </aside>
-
-  <!-- ── Main content ── -->
-  <main class="main-content">
-
-    <!-- ── S1: Butler Nudge ── -->
     <div id="s1" class="screen active">
       <div class="screen-meta">
         <strong>S1 — Butler Nudge.</strong> Jeevy detects calendar event geo-token. No API call — rendered from calendar event metadata. <code>verbId: none</code>
@@ -1502,9 +1788,218 @@
         </div>
       </div>
     </div>
+    </div>
+  </aside>
 
+
+  <!-- ── Timeline pane ── -->
+  <main class="timeline-pane" id="timeline-pane">
+    <div class="journey-header">
+      <span class="journey-title">Web Summit 2026 · Lisbon</span>
+      <span class="journey-dates">Nov 9 – 12</span>
+      <span class="journey-status-badge" id="journey-badge">Planning</span>
+    </div>
+    <p class="journey-subline">Your Lisbon journey is taking shape.</p>
+    <div class="timeline-wrap">
+
+      <!-- 1. Outbound flight -->
+      <div class="timeline-entry tl-entry--ghost" id="tl-flight-out">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="card-image-slot">
+            <img src="./images/travel/flight-sfo-departure-hero.webp" alt="Delta flight UA88, departing SFO" width="640" height="360" loading="lazy" decoding="async" onerror="this.parentElement.classList.add('img-error')">
+            <div class="card-image-fallback" style="background:linear-gradient(135deg,#1a3a5c 0%,#2d6a9f 100%)"><span class="fallback-icon">✈</span></div>
+            <div class="card-overlay-badge">Delta Δ</div>
+            <div class="suggests-chip">Jeevy suggests</div>
+            <div class="card-dayof-badge">Up next</div>
+          </div>
+          <div class="card-body">
+            <div class="ghost-lines"><div class="ghost-line ghost-line--medium"></div><div class="ghost-line ghost-line--short"></div></div>
+            <div class="card-ghost-copy"><div class="card-ghost-primary">Outbound flight</div><div class="card-ghost-secondary">Jeevy is scanning Delta routes from SFO</div></div>
+            <div class="card-meta">
+              <span class="card-label-chip">✈ Outbound · Nov 9</span>
+              <div class="card-primary">Delta UA88 · SFO → LIS</div>
+              <div class="card-secondary">Nov 9, 22:10 PST → Nov 10, 17:45 WET · Seat 4A Business</div>
+              <a class="card-action-link" href="#">View boarding pass →</a>
+            </div>
+            <div class="card-cal-tag">✓ Calendar</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Hotel -->
+      <div class="timeline-entry tl-entry--ghost" id="tl-hotel">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="card-image-slot">
+            <img src="./images/travel/hotel-bairro-alto-bedroom-hero.webp" alt="Superior King room, Bairro Alto Hotel" width="640" height="360" loading="lazy" decoding="async" onerror="this.parentElement.classList.add('img-error')">
+            <div class="card-image-fallback" style="background:linear-gradient(135deg,#3d2b1f 0%,#8b5e3c 100%)"><span class="fallback-icon">🛏</span></div>
+            <div class="card-overlay-badge">Marriott</div>
+            <div class="suggests-chip">Jeevy suggests</div>
+            <div class="card-dayof-badge">Up next</div>
+          </div>
+          <div class="card-body">
+            <div class="ghost-lines"><div class="ghost-line ghost-line--medium"></div><div class="ghost-line ghost-line--short"></div></div>
+            <div class="card-ghost-copy"><div class="card-ghost-primary">Your hotel in Lisbon</div><div class="card-ghost-secondary">Jeevy is finding the perfect Marriott match</div></div>
+            <div class="card-meta">
+              <span class="card-label-chip">🏨 Hotel · Nov 10–12</span>
+              <div class="card-primary">Bairro Alto Hotel · Marriott Bonvoy</div>
+              <div class="card-secondary">Rua da Bica de Duarte Belo 60 · Superior King · 3.2 km from venue</div>
+              <a class="card-action-link" href="#">View hotel →</a>
+            </div>
+            <div class="card-cal-tag">✓ Calendar</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Venue -->
+      <div class="timeline-entry tl-entry--ghost" id="tl-venue">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="card-image-slot">
+            <img src="./images/travel/venue-altice-arena-exterior-hero.webp" alt="Altice Arena, Lisbon" width="640" height="360" loading="lazy" decoding="async" onerror="this.parentElement.classList.add('img-error')">
+            <div class="card-image-fallback" style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)"><span class="fallback-icon">🎤</span></div>
+            <div class="suggests-chip">Jeevy suggests</div>
+            <div class="card-dayof-badge">Up next</div>
+          </div>
+          <div class="card-body">
+            <div class="ghost-lines"><div class="ghost-line ghost-line--medium"></div><div class="ghost-line ghost-line--short"></div></div>
+            <div class="card-ghost-copy"><div class="card-ghost-primary">Web Summit · Altice Arena</div><div class="card-ghost-secondary">Sessions sync pending</div></div>
+            <div class="card-meta">
+              <span class="card-label-chip">📅 Venue · Nov 10–12</span>
+              <div class="card-primary">Altice Arena · Parque das Nações</div>
+              <div class="card-secondary">Rossio dos Olivais · Nov 10–12</div>
+            </div>
+            <div class="card-cal-tag">✓ Calendar</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Sessions group -->
+      <div class="sessions-group">
+        <div class="sessions-label">Conference Sessions</div>
+
+        <div class="timeline-entry tl-entry--ghost" id="tl-sess-k01">
+          <div class="timeline-dot"></div>
+          <div class="session-card">
+            <div class="session-card-info">
+              <div class="session-card-time">Nov 10 · 9:30–10:15 AM</div>
+              <div class="session-ghost-title">Session not yet selected</div>
+              <div class="session-ghost-sub">Choose your sessions in chat</div>
+              <div class="session-real-meta"><div class="session-card-title">The Age of Ambient AI</div><div class="session-card-speaker">Reid Hoffman</div></div>
+              <button class="session-ghost-cta" onclick="sessionGhostCTA()">Choose sessions in chat →</button>
+            </div>
+            <div class="session-card-thumb">
+              <img src="./images/travel/session-reid-hoffman-thumb.webp" alt="Reid Hoffman" width="64" height="64" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+              <div class="session-card-initials" style="display:none">RH</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-entry tl-entry--ghost" id="tl-sess-k02">
+          <div class="timeline-dot"></div>
+          <div class="session-card">
+            <div class="session-card-info">
+              <div class="session-card-time">Nov 10 · 2:00–3:00 PM</div>
+              <div class="session-ghost-title">Session not yet selected</div>
+              <div class="session-ghost-sub">Choose your sessions in chat</div>
+              <div class="session-real-meta"><div class="session-card-title">Future of Work keynote</div><div class="session-card-speaker">Panel</div></div>
+              <button class="session-ghost-cta" onclick="sessionGhostCTA()">Choose sessions in chat →</button>
+            </div>
+            <div class="session-card-thumb">
+              <img src="./images/travel/session-panel-future-work-thumb.webp" alt="Future of Work Panel" width="64" height="64" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+              <div class="session-card-initials" style="display:none">FW</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-entry tl-entry--ghost" id="tl-sess-w07">
+          <div class="timeline-dot"></div>
+          <div class="session-card">
+            <div class="session-card-info">
+              <div class="session-card-time">Nov 11 · 10:00–11:30 AM</div>
+              <div class="session-ghost-title">Session not yet selected</div>
+              <div class="session-ghost-sub">Choose your sessions in chat</div>
+              <div class="session-real-meta"><div class="session-card-title">Product Strategy in the AI Era</div><div class="session-card-speaker">Lenny Rachitsky</div></div>
+              <button class="session-ghost-cta" onclick="sessionGhostCTA()">Choose sessions in chat →</button>
+            </div>
+            <div class="session-card-thumb">
+              <img src="./images/travel/session-lenny-rachitsky-thumb.webp" alt="Lenny Rachitsky" width="64" height="64" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+              <div class="session-card-initials" style="display:none">LR</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-entry tl-entry--ghost" id="tl-sess-k08">
+          <div class="timeline-dot"></div>
+          <div class="session-card">
+            <div class="session-card-info">
+              <div class="session-card-time">Nov 11 · 3:30–5:00 PM</div>
+              <div class="session-ghost-title">Session not yet selected</div>
+              <div class="session-ghost-sub">Choose your sessions in chat</div>
+              <div class="session-real-meta"><div class="session-card-title">Closing Keynote</div><div class="session-card-speaker">Padmasree Warrior</div></div>
+              <button class="session-ghost-cta" onclick="sessionGhostCTA()">Choose sessions in chat →</button>
+            </div>
+            <div class="session-card-thumb">
+              <img src="./images/travel/session-padmasree-warrior-thumb.webp" alt="Padmasree Warrior" width="64" height="64" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+              <div class="session-card-initials" style="display:none">PW</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /sessions-group -->
+
+      <!-- 5. Return flight -->
+      <div class="timeline-entry tl-entry--ghost" id="tl-flight-ret">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="card-image-slot">
+            <img src="./images/travel/flight-lisbon-arrival-hero.webp" alt="Delta flight UA89, departing LIS" width="640" height="360" loading="lazy" decoding="async" onerror="this.parentElement.classList.add('img-error')">
+            <div class="card-image-fallback" style="background:linear-gradient(135deg,#1a3a5c 0%,#2d6a9f 100%)"><span class="fallback-icon">✈</span></div>
+            <div class="card-overlay-badge">Delta Δ</div>
+            <div class="suggests-chip">Jeevy suggests</div>
+            <div class="card-dayof-badge">Up next</div>
+          </div>
+          <div class="card-body">
+            <div class="ghost-lines"><div class="ghost-line ghost-line--medium"></div><div class="ghost-line ghost-line--short"></div></div>
+            <div class="card-ghost-copy"><div class="card-ghost-primary">Return flight</div><div class="card-ghost-secondary">Confirmed after outbound</div></div>
+            <div class="card-meta">
+              <span class="card-label-chip">✈ Return · Nov 12</span>
+              <div class="card-primary">Delta UA89 · LIS → SFO</div>
+              <div class="card-secondary">Nov 12, 09:30 WET → Nov 12, 12:15 PST · Seat 4A Business</div>
+              <a class="card-action-link" href="#">View boarding pass →</a>
+            </div>
+            <div class="card-cal-tag">✓ Calendar</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Packing list -->
+      <div class="timeline-entry tl-entry--ghost" id="tl-packing">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="card-image-slot">
+            <img src="./images/travel/packing-travel-essentials-hero.webp" alt="Travel essentials for Lisbon" width="640" height="360" loading="lazy" decoding="async" onerror="this.parentElement.classList.add('img-error')">
+            <div class="card-image-fallback" style="background:linear-gradient(135deg,#f7e7d3 0%,#e8c9a0 100%)"><span class="fallback-icon">🧳</span></div>
+            <div class="suggests-chip">Jeevy suggests</div>
+            <div class="card-dayof-badge">Up next</div>
+          </div>
+          <div class="card-body">
+            <div class="ghost-lines"><div class="ghost-line ghost-line--medium"></div><div class="ghost-line ghost-line--short"></div></div>
+            <div class="card-ghost-copy"><div class="card-ghost-primary">Packing list</div><div class="card-ghost-secondary">Ready after booking confirms</div></div>
+            <div class="card-meta">
+              <span class="card-label-chip">📦 Packing · Departing Nov 9</span>
+              <div class="card-primary">Packing checklist · Departing Nov 9</div>
+              <div class="card-secondary">Essentials for Lisbon</div>
+              <a class="card-action-link" href="#">Open checklist →</a>
+            </div>
+            <div class="card-cal-tag">✓ Calendar</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /timeline-wrap -->
   </main>
-</div>
 
 <script>
 'use strict';
@@ -1543,10 +2038,8 @@ function showScreen(id, btn) {
   document.querySelectorAll('.screen-btn').forEach(b => b.classList.remove('active'));
   const target = btn || document.querySelector(`.screen-btn[onclick*="'${id}'"]`);
   if (target) target.classList.add('active');
-  // Map pane: toggle full-bleed layout when S8 active
-  const mc = document.querySelector('.main-content');
-  if (mc) mc.classList.toggle('map-active', id === 's8');
   if (id === 's8') setTimeout(onS8Shown, 60);
+  tlOnScreenChange(id);
 }
 
 // ── S1: Not now / dismissed flow ──
@@ -1641,6 +2134,8 @@ function selectFlight(n) {
     el.classList.toggle('dimmed', idx !== n);
   });
   document.getElementById('s3-done').style.display = 'block';
+  tlSetState('tl-flight-out', 'proposed');
+  tlSetState('tl-flight-ret', 'proposed');
 }
 
 function toggleReturn(id) { toggleDisc(id); }
@@ -1655,6 +2150,7 @@ function selectHotel(n) {
     el.classList.toggle('dimmed', idx !== n);
   });
   document.getElementById('s4-done').style.display = 'block';
+  tlSetState('tl-hotel', 'proposed');
 }
 
 // ── S5: Session confirm ──
@@ -1662,10 +2158,17 @@ function selectHotel(n) {
 function confirmSessions(btn) {
   btn.disabled = true;
   btn.textContent = 'Syncing…';
+  ['tl-sess-k01','tl-sess-k02','tl-sess-w07','tl-sess-k08'].forEach(function(id) {
+    tlSetState(id, 'proposed');
+  });
+  tlSetState('tl-venue', 'proposed');
 
   const delay = ms => new Promise(r => setTimeout(r, ms));
   Promise.all([delay(340), delay(520), delay(410), delay(680)]).then(() => {
     btn.textContent = 'Synced ✓';
+    ['tl-sess-k01','tl-sess-k02','tl-sess-w07','tl-sess-k08'].forEach(function(id) {
+      tlSetState(id, 'confirmed');
+    });
 
     const container = document.getElementById('s5-sync-confirm');
     container.style.display = 'block';
@@ -1703,6 +2206,11 @@ function resolveConflict(choice) {
 function confirmReminders() {
   document.getElementById('s7-confirmed').style.display = 'block';
   document.getElementById('s7-confirmed').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  tlSetState('tl-flight-out', 'confirmed');
+  tlSetState('tl-flight-ret', 'confirmed');
+  tlSetState('tl-hotel', 'confirmed');
+  tlSetState('tl-venue', 'confirmed');
+  tlSetState('tl-packing', 'proposed');
 }
 
 // ── S9: Rationale toggle ──
@@ -2042,6 +2550,101 @@ function resetMapView() {
     easing: function(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
   });
 }
+
+// ── Mobile tab switching ──
+function switchTab(tab) {
+  var isChat = tab === 'chat';
+  document.getElementById('tab-chat').classList.toggle('active', isChat);
+  document.getElementById('tab-itinerary').classList.toggle('active', !isChat);
+  document.body.classList.toggle('show-chat', isChat);
+  document.body.classList.toggle('show-itinerary', !isChat);
+}
+
+// ── Session ghost CTA: go to Chat tab, jump to S5 ──
+function sessionGhostCTA() {
+  switchTab('chat');
+  showScreen('s5', null);
+  setTimeout(function() {
+    var s5 = document.getElementById('s5');
+    if (s5) s5.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 80);
+}
+
+// ── Timeline state helpers ──
+function tlSetState(id, state) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove(
+    'tl-entry--ghost', 'tl-entry--proposed',
+    'tl-entry--confirmed', 'tl-entry--calendar-synced', 'tl-entry--day-of-active'
+  );
+  if (state) el.classList.add('tl-entry--' + state);
+  if (state === 'confirmed' || state === 'calendar-synced') {
+    var dot = el.querySelector('.timeline-dot');
+    if (dot) {
+      dot.classList.add('timeline-dot--pulse');
+      setTimeout(function() { dot.classList.remove('timeline-dot--pulse'); }, 600);
+    }
+  }
+  if (state === 'day-of-active') {
+    var dot2 = el.querySelector('.timeline-dot');
+    if (dot2) dot2.classList.add('timeline-dot--active');
+  }
+}
+
+function tlSetJourneyBadge(text, cls) {
+  var badge = document.getElementById('journey-badge');
+  var subline = document.querySelector('.journey-subline');
+  if (!badge) return;
+  badge.textContent = text;
+  badge.className = 'journey-status-badge' + (cls ? ' ' + cls : '');
+  if (subline) {
+    if (cls === 'ready') subline.textContent = 'Your Lisbon journey is ready.';
+    else if (cls === 'active-day') subline.textContent = 'Departure day — safe travels!';
+    else subline.textContent = 'Your Lisbon journey is taking shape.';
+  }
+}
+
+var TL_IDS = ['tl-flight-out','tl-hotel','tl-venue',
+              'tl-sess-k01','tl-sess-k02','tl-sess-w07','tl-sess-k08',
+              'tl-flight-ret','tl-packing'];
+
+function tlOnScreenChange(screenId) {
+  if (screenId === 's3') {
+    // Flight screen shown — no auto-transition; user must select
+  } else if (screenId === 's8') {
+    // Itinerary card: all confirmed → calendar-synced
+    TL_IDS.forEach(function(id) { tlSetState(id, 'calendar-synced'); });
+    tlSetJourneyBadge('Ready', 'ready');
+  } else if (screenId === 's9') {
+    // Day-of: flight out is current block
+    TL_IDS.forEach(function(id) { tlSetState(id, 'calendar-synced'); });
+    tlSetState('tl-flight-out', 'day-of-active');
+    tlSetJourneyBadge('Active', 'active-day');
+  }
+}
+
+// ── Scroll-reveal IntersectionObserver ──
+function initTimelineReveal() {
+  var cards = document.querySelectorAll('.timeline-card, .session-card');
+  if (!window.IntersectionObserver) {
+    cards.forEach(function(el) { el.classList.add('tl-card--visible'); });
+    return;
+  }
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('tl-card--visible');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -40px 0px', threshold: 0.05 });
+  cards.forEach(function(el) { obs.observe(el); });
+}
+
+// Init timeline reveal and default mobile tab
+initTimelineReveal();
+switchTab('itinerary');
 </script>
 </body>
 </html>
