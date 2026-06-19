@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solo Travel Flow — Offline Demo (S1–S9)</title>
+  <title>Solo Travel Flow — Live + Demo (S1–S9)</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -890,6 +890,65 @@
     @media (min-width: 900px) and (max-width: 1199px) {
       .layout { grid-template-columns: 320px 1fr; }
     }
+
+    /* ── Live Planning Panel ── */
+    .live-panel { padding: 16px; }
+    .live-panel-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); margin-bottom: 12px; }
+    .live-prompt-area { display: flex; flex-direction: column; gap: 8px; }
+    .live-prompt-textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: 13px; line-height: 1.5; resize: vertical; min-height: 90px;
+      font-family: inherit; background: var(--surface2); color: var(--text);
+      transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    .live-prompt-textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+    .live-prompt-submit { align-self: flex-end; }
+    .live-status { font-size: 12px; color: var(--text3); margin-top: 6px; min-height: 18px; }
+    .live-status.loading { color: var(--accent); }
+    .live-status.fallback { color: var(--warn); }
+    .live-examples { margin-top: 12px; }
+    .live-examples-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+    .live-example-btn {
+      display: block; width: 100%; text-align: left; padding: 6px 10px;
+      font-size: 12px; color: var(--text2); background: var(--surface2);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      cursor: pointer; margin-bottom: 4px; transition: background 0.1s, border-color 0.1s;
+    }
+    .live-example-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent-dark); }
+
+    /* ── Timeline Day Separator ── */
+    .tl-day-sep {
+      display: flex; align-items: center; gap: 10px;
+      margin: 24px 0 8px; padding: 0;
+    }
+    .tl-day-sep-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text3); white-space: nowrap; flex-shrink: 0;
+    }
+    .tl-day-sep-line { flex: 1; height: 1px; background: var(--border); }
+
+    /* ── Timeline Skeleton (loading) ── */
+    .tl-skeleton-entry { display: flex; gap: 0; margin-bottom: 24px; position: relative; }
+    .tl-skeleton-entry::before {
+      content: ''; position: absolute; left: 7px; top: 22px; bottom: -24px;
+      width: 2px; background: var(--border);
+    }
+    .tl-skeleton-dot {
+      width: 16px; height: 16px; border-radius: 50%; background: var(--border);
+      flex-shrink: 0; margin-top: 4px; margin-right: 12px;
+      animation: sk-pulse 1.4s ease-in-out infinite;
+    }
+    .tl-skeleton-body { flex: 1; display: flex; gap: 12px; }
+    .tl-skeleton-img { width: 96px; height: 68px; border-radius: var(--radius); background: var(--border); flex-shrink: 0; animation: sk-pulse 1.4s ease-in-out infinite; }
+    .tl-skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+    .tl-skeleton-line { height: 11px; border-radius: 4px; background: var(--border); animation: sk-pulse 1.4s ease-in-out infinite; }
+    .tl-skeleton-line--short { width: 45%; }
+    .tl-skeleton-line--med { width: 75%; }
+    .tl-skeleton-line--long { width: 90%; }
+    @keyframes sk-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+    /* ── Transport tag ── */
+    .card-transport { font-size: 11px; color: var(--text3); margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -897,7 +956,7 @@
 <header class="app-header">
   <div style="display:flex;align-items:center;gap:12px">
     <h1>Solo Travel Flow</h1>
-    <span class="badge-demo">Offline Demo · S1–S9</span>
+    <span class="badge-demo">Live + Demo · S1–S9</span>
   </div>
   <a href="index.html" class="back-link">← API tester</a>
 </header>
@@ -985,6 +1044,16 @@
       </div>
     </button>
 
+    <hr class="nav-divider" style="margin-top:8px">
+    <div class="screen-nav-label" style="margin-top:4px">Live API</div>
+    <button class="screen-btn" id="btn-slive" onclick="showLiveScreen()">
+      <span class="s-num" style="background:var(--accent);color:white;font-size:10px">✦</span>
+      <div class="s-info">
+        <div class="s-title">Live Planning</div>
+        <div class="s-desc">POST /concierge/itinerary</div>
+      </div>
+    </button>
+
     <hr class="nav-divider">
 
     <div class="persona-block">
@@ -999,6 +1068,31 @@
         <div class="pref-row"><span class="pref-key">Home airport</span><span class="pref-val">SFO</span></div>
       </div>
     </div>
+    <!-- ── Live Planning Screen ── -->
+    <div id="slive" class="screen" style="display:none">
+      <div class="screen-meta">
+        <strong>Live Mode.</strong> Calls <code>POST /concierge/itinerary</code> at
+        <code>ai-action-service.noahlaux.workers.dev</code>. On error, falls back to
+        <code>soloTravelFixture</code>. Result renders in right-pane timeline.
+      </div>
+      <div class="live-panel">
+        <div class="live-panel-title">Plan a Trip</div>
+        <div class="live-prompt-area">
+          <textarea id="live-prompt" class="live-prompt-textarea"
+            placeholder="e.g. Plan a 3-day trip to Tokyo next month for a tech conference — I fly from SFO, prefer business class and Marriott hotels"
+            rows="4"></textarea>
+          <button class="btn btn-primary live-prompt-submit" id="live-submit-btn" onclick="submitLivePrompt()">Generate itinerary →</button>
+        </div>
+        <div id="live-status" class="live-status"></div>
+        <div class="live-examples">
+          <div class="live-examples-label">Try an example:</div>
+          <button class="live-example-btn" onclick="setLiveExample(this)">Plan a weekend trip to Amsterdam for a design conference, flying from LHR</button>
+          <button class="live-example-btn" onclick="setLiveExample(this)">3 days in Tokyo for a product summit — arrive Nov 10, prefer Park Hyatt</button>
+          <button class="live-example-btn" onclick="setLiveExample(this)">Quick trip to NYC for 2 nights, meetings at Stripe HQ and dinner in Tribeca</button>
+        </div>
+      </div>
+    </div>
+
     <div id="s1" class="screen active">
       <div class="screen-meta">
         <strong>S1 — Butler Nudge.</strong> Jeevy detects calendar event geo-token. No API call — rendered from calendar event metadata. <code>verbId: none</code>
@@ -2645,6 +2739,192 @@ function initTimelineReveal() {
 // Init timeline reveal and default mobile tab
 initTimelineReveal();
 switchTab('itinerary');
+
+// ── Live Planning ──
+
+const ITINERARY_API_URL = 'https://ai-action-service.noahlaux.workers.dev/concierge/itinerary';
+
+const soloTravelFixture = {
+  destination: 'Lisbon, Portugal',
+  dates: 'Nov 9–12, 2026',
+  summary: 'Web Summit 2026 — 3 days of keynotes, workshops, and Lisbon city exploration.',
+  days: [
+    {
+      day: 'Nov 9 — Departure',
+      items: [
+        { time: '22:10 PST', title: 'Delta UA88 · SFO → LIS', detail: 'Business Class · Seat 4A · ~10.5h direct', imageUrl: 'https://picsum.photos/seed/sfo-departure-flight/400/280' }
+      ]
+    },
+    {
+      day: 'Nov 10 — Arrival + Day 1',
+      items: [
+        { time: '17:45 WET', title: 'Arrive Lisbon · LIS Airport', detail: 'Taxi to Bairro Alto Hotel (~25 min)', imageUrl: 'https://picsum.photos/seed/lisbon-lis-airport/400/280', transport: { mode: 'Taxi', duration: '25 min', detail: 'To Bairro Alto Hotel' } },
+        { time: '19:30 WET', title: 'Check-in: Bairro Alto Hotel', detail: 'Rua da Bica de Duarte Belo 60 · Superior King', imageUrl: 'https://picsum.photos/seed/bairro-alto-hotel/400/280' },
+        { time: '09:30 WET', title: 'The Age of Ambient AI', detail: 'Reid Hoffman · Stage 1, Altice Arena · 45 min keynote', imageUrl: 'https://picsum.photos/seed/websummit-keynote-hall/400/280' },
+        { time: '14:00 WET', title: 'Future of Work Keynote', detail: 'Panel · Centre Stage, Altice Arena · 60 min', imageUrl: 'https://picsum.photos/seed/future-work-panel/400/280' }
+      ]
+    },
+    {
+      day: 'Nov 11 — Conference Day 2',
+      items: [
+        { time: '10:00 WET', title: 'Product Strategy in the AI Era', detail: 'Lenny Rachitsky · Workshop Hall C · 90 min', imageUrl: 'https://picsum.photos/seed/lenny-rachitsky-workshop/400/280' },
+        { time: '13:00 WET', title: 'Lunch at Time Out Market', detail: 'Mercado da Ribeira · local Portuguese cuisine', imageUrl: 'https://picsum.photos/seed/timeout-market-lisbon/400/280', transport: { mode: 'Tram 28', duration: '15 min', detail: 'From Altice Arena to Cais do Sodré' } },
+        { time: '15:30 WET', title: 'Closing Keynote', detail: 'Padmasree Warrior · Centre Stage, Altice Arena · 90 min', imageUrl: 'https://picsum.photos/seed/closing-keynote-padmasree/400/280' },
+        { time: '20:00 WET', title: 'Dinner at LX Factory', detail: 'Rua Rodrigues de Faria 103 · creative dining complex', imageUrl: 'https://picsum.photos/seed/lx-factory-night/400/280' }
+      ]
+    },
+    {
+      day: 'Nov 12 — Return',
+      items: [
+        { time: '09:30 WET', title: 'Delta UA89 · LIS → SFO', detail: 'Business Class · Seat 4A · Direct · lands 12:15 PST', imageUrl: 'https://picsum.photos/seed/lis-departure-gate/400/280' }
+      ]
+    }
+  ]
+};
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+}
+
+function showTimelineSkeleton(count) {
+  var wrap = document.querySelector('.timeline-wrap');
+  if (!wrap) return;
+  var html = '';
+  for (var i = 0; i < (count || 5); i++) {
+    html += [
+      '<div class="tl-skeleton-entry">',
+        '<div class="tl-skeleton-dot" style="animation-delay:' + (i * 80) + 'ms"></div>',
+        '<div class="tl-skeleton-body">',
+          '<div class="tl-skeleton-img" style="animation-delay:' + (i * 80 + 40) + 'ms"></div>',
+          '<div class="tl-skeleton-lines">',
+            '<div class="tl-skeleton-line tl-skeleton-line--short" style="animation-delay:' + (i * 80) + 'ms"></div>',
+            '<div class="tl-skeleton-line tl-skeleton-line--long" style="animation-delay:' + (i * 80 + 60) + 'ms"></div>',
+            '<div class="tl-skeleton-line tl-skeleton-line--med" style="animation-delay:' + (i * 80 + 30) + 'ms"></div>',
+          '</div>',
+        '</div>',
+      '</div>'
+    ].join('');
+  }
+  wrap.innerHTML = html;
+}
+
+function renderLiveItinerary(itinerary, isFixture) {
+  var titleEl = document.querySelector('.journey-title');
+  var datesEl = document.querySelector('.journey-dates');
+  var sublineEl = document.querySelector('.journey-subline');
+  if (titleEl) titleEl.textContent = itinerary.destination || '';
+  if (datesEl) datesEl.textContent = itinerary.dates || '';
+  if (sublineEl) sublineEl.textContent = itinerary.summary || '';
+  tlSetJourneyBadge(isFixture ? 'Fixture' : 'Live ✦', isFixture ? '' : 'ready');
+
+  var wrap = document.querySelector('.timeline-wrap');
+  if (!wrap) return;
+
+  var html = '';
+  (itinerary.days || []).forEach(function(day, dayIdx) {
+    html += '<div class="tl-day-sep"><span class="tl-day-sep-label">' + escHtml(day.day) + '</span><div class="tl-day-sep-line"></div></div>';
+    (day.items || []).forEach(function(item, itemIdx) {
+      var entryId = 'tl-live-' + dayIdx + '-' + itemIdx;
+      var transportHtml = '';
+      if (item.transport) {
+        transportHtml = '<div class="card-transport">→ ' + escHtml(item.transport.mode) + ' · ' + escHtml(item.transport.duration) + (item.transport.detail ? ' — ' + escHtml(item.transport.detail) : '') + '</div>';
+      } else if (item.transportAfter) {
+        transportHtml = '<div class="card-transport">→ ' + escHtml(item.transportAfter.mode) + ' · ' + escHtml(item.transportAfter.duration) + '</div>';
+      }
+      var stateClass = isFixture ? 'tl-entry--proposed' : 'tl-entry--confirmed';
+      html += [
+        '<div class="timeline-entry ' + stateClass + ' tl-card--visible" id="' + entryId + '">',
+          '<div class="timeline-dot"></div>',
+          '<div class="timeline-card">',
+            '<div class="card-image-slot">',
+              '<img src="' + escAttr(item.imageUrl || '') + '" alt="' + escAttr(item.title) + '" width="640" height="280" loading="lazy" decoding="async" onerror="this.parentElement.classList.add(\'img-error\')">',
+              '<div class="card-image-fallback"><span class="fallback-icon">📍</span></div>',
+            '</div>',
+            '<div class="card-body">',
+              '<div class="card-meta">',
+                '<span class="card-label-chip">' + escHtml(item.time) + '</span>',
+                '<div class="card-primary">' + escHtml(item.title) + '</div>',
+                '<div class="card-secondary">' + escHtml(item.detail) + '</div>',
+                transportHtml,
+              '</div>',
+            '</div>',
+          '</div>',
+        '</div>'
+      ].join('');
+    });
+  });
+
+  wrap.innerHTML = html;
+}
+
+async function fetchItinerary(prompt) {
+  var res = await fetch(ITINERARY_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+  return res.json();
+}
+
+async function submitLivePrompt() {
+  var prompt = (document.getElementById('live-prompt').value || '').trim();
+  if (!prompt) return;
+
+  var btn = document.getElementById('live-submit-btn');
+  var statusEl = document.getElementById('live-status');
+
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  statusEl.className = 'live-status loading';
+  statusEl.textContent = 'Calling /concierge/itinerary…';
+
+  var titleEl = document.querySelector('.journey-title');
+  if (titleEl) titleEl.textContent = 'Planning your trip…';
+  tlSetJourneyBadge('Generating…', '');
+  showTimelineSkeleton(6);
+
+  try {
+    var data = await fetchItinerary(prompt);
+    if (data && data.itinerary) {
+      renderLiveItinerary(data.itinerary, false);
+      statusEl.className = 'live-status';
+      statusEl.textContent = '✓ Itinerary generated live — ' + (data.itinerary.days || []).length + ' days.';
+    } else {
+      renderLiveItinerary(soloTravelFixture, true);
+      statusEl.className = 'live-status fallback';
+      statusEl.textContent = '⚠ API returned no itinerary — showing fixture fallback.' + (data && data.reply ? ' Reply: ' + data.reply.slice(0, 80) : '');
+    }
+  } catch (err) {
+    renderLiveItinerary(soloTravelFixture, true);
+    statusEl.className = 'live-status fallback';
+    statusEl.textContent = '⚠ API error (' + err.message + ') — showing fixture fallback.';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Generate itinerary →';
+  // On mobile, switch to itinerary pane to show the result
+  switchTab('itinerary');
+}
+
+function showLiveScreen() {
+  document.querySelectorAll('.screen').forEach(function(s) { s.style.display = 'none'; });
+  document.getElementById('slive').style.display = 'block';
+  document.querySelectorAll('.screen-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('btn-slive').classList.add('active');
+  // Pre-load fixture into timeline so the right pane isn't empty
+  renderLiveItinerary(soloTravelFixture, true);
+  document.getElementById('live-status').textContent = '';
+  document.getElementById('live-status').className = 'live-status';
+}
+
+function setLiveExample(btn) {
+  document.getElementById('live-prompt').value = btn.textContent.trim();
+  document.getElementById('live-prompt').focus();
+}
 </script>
 </body>
 </html>
