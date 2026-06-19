@@ -604,6 +604,72 @@
       .map-sheet, .s8-map-pane { transition: none; }
     }
 
+    /* ── Alter plan sheet ── */
+    .alter-sheet-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300; }
+    .alter-sheet-backdrop.open { display: block; }
+    .alter-sheet {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      max-height: 60vh; background: var(--surface); z-index: 400;
+      border-radius: 16px 16px 0 0; flex-direction: column;
+      transform: translateY(100%); transition: transform 280ms cubic-bezier(.32,0,.15,1);
+    }
+    .alter-sheet.open { display: flex; transform: translateY(0); }
+    .alter-sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 10px auto 0; flex-shrink: 0; }
+    .alter-sheet-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; font-size: 14px; font-weight: 600; flex-shrink: 0;
+    }
+    .alter-sheet-header button { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); border-radius: 6px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
+    .alter-sheet-body { padding: 0 16px 24px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+    .alter-instruction {
+      width: 100%; box-sizing: border-box; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg); color: var(--text); font-size: 14px;
+      resize: none; font-family: inherit; line-height: 1.5;
+    }
+    .alter-instruction:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+    .alter-status { font-size: 12px; color: var(--text3); min-height: 16px; }
+    .alter-status.loading { color: var(--accent); }
+    .alter-status.error { color: var(--err); }
+
+    /* ── Edit activity sheet ── */
+    .edit-sheet-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300; }
+    .edit-sheet-backdrop.open { display: block; }
+    .edit-sheet {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      max-height: 70vh; background: var(--surface); z-index: 400;
+      border-radius: 16px 16px 0 0; flex-direction: column;
+      transform: translateY(100%); transition: transform 280ms cubic-bezier(.32,0,.15,1);
+    }
+    .edit-sheet.open { display: flex; transform: translateY(0); }
+    .edit-sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 10px auto 0; flex-shrink: 0; }
+    .edit-sheet-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; font-size: 14px; font-weight: 600; flex-shrink: 0;
+    }
+    .edit-sheet-header button { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); border-radius: 6px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
+    .edit-sheet-body { padding: 0 16px 24px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+    .edit-field { display: flex; flex-direction: column; gap: 4px; }
+    .edit-field label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
+    .edit-input {
+      width: 100%; box-sizing: border-box; padding: 8px 12px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg); color: var(--text); font-size: 14px; font-family: inherit;
+    }
+    .edit-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+    textarea.edit-input { resize: none; line-height: 1.5; }
+
+    /* ── Alter plan trigger + card edit button ── */
+    .alter-plan-trigger { display: none; margin: 0 0 8px; }
+    .alter-plan-trigger.visible { display: block; }
+    .alter-plan-btn { font-size: 12px; color: var(--accent); background: var(--accent-light); border: none; border-radius: 20px; padding: 4px 14px; cursor: pointer; font-weight: 600; }
+    .alter-plan-btn:hover { background: #dde1fc; }
+    .card-edit-btn { font-size: 11px; color: var(--accent); background: none; border: 1px solid var(--border); border-radius: 5px; padding: 2px 8px; cursor: pointer; margin-top: 6px; }
+    .card-edit-btn:hover { background: var(--accent-light); }
+    @media (prefers-reduced-motion: reduce) {
+      .alter-sheet, .edit-sheet { transition: none; }
+    }
+
     /* ── Layout overrides for timeline ── */
     .pane-travel {
       background: var(--surface);
@@ -1885,6 +1951,46 @@
     </div>
   </aside>
 
+  <!-- ── Alter plan sheet ── -->
+  <div id="alter-sheet-backdrop" class="alter-sheet-backdrop" onclick="closeAlterSheet()"></div>
+  <div id="alter-sheet" class="alter-sheet" role="dialog" aria-modal="true" aria-label="Alter itinerary" tabindex="-1">
+    <div class="alter-sheet-handle"></div>
+    <div class="alter-sheet-header">
+      <span>Change your plan</span>
+      <button onclick="closeAlterSheet()">Cancel</button>
+    </div>
+    <div class="alter-sheet-body">
+      <textarea id="alter-instruction" class="alter-instruction" rows="3"
+        placeholder="e.g. Add a morning coffee stop and swap the evening dinner for a rooftop bar"></textarea>
+      <button class="btn btn-primary" id="alter-submit-btn" onclick="submitAlter()">Update plan →</button>
+      <div id="alter-status" class="alter-status"></div>
+    </div>
+  </div>
+
+  <!-- ── Edit activity sheet ── -->
+  <div id="edit-sheet-backdrop" class="edit-sheet-backdrop" onclick="closeEditActivity()"></div>
+  <div id="edit-sheet" class="edit-sheet" role="dialog" aria-modal="true" aria-label="Edit activity" tabindex="-1">
+    <div class="edit-sheet-handle"></div>
+    <div class="edit-sheet-header">
+      <span>Edit activity</span>
+      <button onclick="closeEditActivity()">Cancel</button>
+    </div>
+    <div class="edit-sheet-body">
+      <div class="edit-field">
+        <label for="edit-time">Time</label>
+        <input type="time" id="edit-time" class="edit-input">
+      </div>
+      <div class="edit-field">
+        <label for="edit-title">Title</label>
+        <input type="text" id="edit-title" class="edit-input" placeholder="Activity name">
+      </div>
+      <div class="edit-field">
+        <label for="edit-detail">Details</label>
+        <textarea id="edit-detail" class="edit-input" rows="2" placeholder="Description"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveEditActivity()">Save changes</button>
+    </div>
+  </div>
 
   <!-- ── Timeline pane ── -->
   <main class="timeline-pane" id="timeline-pane">
@@ -1894,6 +2000,9 @@
       <span class="journey-status-badge" id="journey-badge">Planning</span>
     </div>
     <p class="journey-subline">Your Lisbon journey is taking shape.</p>
+    <div id="alter-plan-trigger" class="alter-plan-trigger">
+      <button class="alter-plan-btn" onclick="openAlterSheet()">✦ Change plan</button>
+    </div>
     <div class="timeline-wrap">
 
       <!-- 1. Outbound flight -->
@@ -2812,6 +2921,8 @@ function showTimelineSkeleton(count) {
 }
 
 function renderLiveItinerary(itinerary, isFixture) {
+  currentItinerary = itinerary;
+
   var titleEl = document.querySelector('.journey-title');
   var datesEl = document.querySelector('.journey-dates');
   var sublineEl = document.querySelector('.journey-subline');
@@ -2819,6 +2930,9 @@ function renderLiveItinerary(itinerary, isFixture) {
   if (datesEl) datesEl.textContent = itinerary.dates || '';
   if (sublineEl) sublineEl.textContent = itinerary.summary || '';
   tlSetJourneyBadge(isFixture ? 'Fixture' : 'Live ✦', isFixture ? '' : 'ready');
+
+  var alterTrigger = document.getElementById('alter-plan-trigger');
+  if (alterTrigger) alterTrigger.className = 'alter-plan-trigger visible';
 
   var wrap = document.querySelector('.timeline-wrap');
   if (!wrap) return;
@@ -2849,6 +2963,7 @@ function renderLiveItinerary(itinerary, isFixture) {
                 '<div class="card-primary">' + escHtml(item.title) + '</div>',
                 '<div class="card-secondary">' + escHtml(item.detail) + '</div>',
                 transportHtml,
+                '<button class="card-edit-btn" onclick="openEditActivity(' + dayIdx + ',' + itemIdx + ')">Edit</button>',
               '</div>',
             '</div>',
           '</div>',
@@ -2924,6 +3039,126 @@ function showLiveScreen() {
 function setLiveExample(btn) {
   document.getElementById('live-prompt').value = btn.textContent.trim();
   document.getElementById('live-prompt').focus();
+}
+
+// ── Alter plan + edit activity ──────────────────────────────────────────────
+
+const ALTER_API_URL = 'https://ai-action-service.noahlaux.workers.dev/concierge/alter';
+var currentItinerary = null;
+var editTarget = null;
+
+function parseTimeForInput(timeStr) {
+  if (!timeStr) return '';
+  var s = String(timeStr).trim();
+  // 12h first: "9:00 AM", "2:30 PM" — must check before 24h to avoid early match
+  var m = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (m) {
+    var h = parseInt(m[1], 10), min = m[2], ap = m[3].toUpperCase();
+    if (ap === 'PM' && h !== 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+    return ('0' + h).slice(-2) + ':' + min;
+  }
+  // 24h with optional timezone suffix: "17:45 WET", "22:10 PST"
+  m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (m) return ('0' + parseInt(m[1], 10)).slice(-2) + ':' + m[2];
+  return '';
+}
+
+function openAlterSheet() {
+  if (!currentItinerary) return;
+  var backdrop = document.getElementById('alter-sheet-backdrop');
+  var sheet = document.getElementById('alter-sheet');
+  backdrop.classList.add('open');
+  sheet.style.display = 'flex';
+  requestAnimationFrame(function() { requestAnimationFrame(function() { sheet.classList.add('open'); }); });
+  document.getElementById('alter-instruction').value = '';
+  document.getElementById('alter-status').textContent = '';
+  document.getElementById('alter-status').className = 'alter-status';
+  document.getElementById('alter-submit-btn').disabled = false;
+  document.getElementById('alter-submit-btn').textContent = 'Update plan →';
+  setTimeout(function() { document.getElementById('alter-instruction').focus(); }, 300);
+}
+
+function closeAlterSheet() {
+  var backdrop = document.getElementById('alter-sheet-backdrop');
+  var sheet = document.getElementById('alter-sheet');
+  sheet.classList.remove('open');
+  backdrop.classList.remove('open');
+  setTimeout(function() { sheet.style.display = ''; }, 280);
+}
+
+async function submitAlter() {
+  var instruction = (document.getElementById('alter-instruction').value || '').trim();
+  if (!instruction || !currentItinerary) return;
+  var btn = document.getElementById('alter-submit-btn');
+  var statusEl = document.getElementById('alter-status');
+  btn.disabled = true;
+  btn.textContent = 'Updating…';
+  statusEl.className = 'alter-status loading';
+  statusEl.textContent = 'Jeevy is updating your plan…';
+  try {
+    var res = await fetch(ALTER_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentItinerary: currentItinerary, instruction: instruction })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    if (data && data.itinerary) {
+      renderLiveItinerary(data.itinerary, false);
+      closeAlterSheet();
+    } else {
+      statusEl.className = 'alter-status error';
+      statusEl.textContent = '⚠ No updated itinerary returned. Try a different instruction.';
+    }
+  } catch (err) {
+    statusEl.className = 'alter-status error';
+    statusEl.textContent = '⚠ Error: ' + err.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Update plan →';
+}
+
+function openEditActivity(dayIdx, itemIdx) {
+  if (!currentItinerary) return;
+  var day = (currentItinerary.days || [])[dayIdx];
+  if (!day) return;
+  var item = (day.items || [])[itemIdx];
+  if (!item) return;
+  editTarget = { dayIdx: dayIdx, itemIdx: itemIdx };
+  document.getElementById('edit-time').value = parseTimeForInput(item.time);
+  document.getElementById('edit-title').value = item.title || '';
+  document.getElementById('edit-detail').value = item.detail || '';
+  var backdrop = document.getElementById('edit-sheet-backdrop');
+  var sheet = document.getElementById('edit-sheet');
+  backdrop.classList.add('open');
+  sheet.style.display = 'flex';
+  requestAnimationFrame(function() { requestAnimationFrame(function() { sheet.classList.add('open'); }); });
+  sheet.focus();
+}
+
+function closeEditActivity() {
+  var backdrop = document.getElementById('edit-sheet-backdrop');
+  var sheet = document.getElementById('edit-sheet');
+  sheet.classList.remove('open');
+  backdrop.classList.remove('open');
+  setTimeout(function() { sheet.style.display = ''; editTarget = null; }, 280);
+}
+
+function saveEditActivity() {
+  if (!editTarget || !currentItinerary) return;
+  var day = currentItinerary.days[editTarget.dayIdx];
+  if (!day) return;
+  var item = day.items[editTarget.itemIdx];
+  if (!item) return;
+  var timeVal = document.getElementById('edit-time').value;
+  var titleVal = document.getElementById('edit-title').value.trim();
+  var detailVal = document.getElementById('edit-detail').value.trim();
+  if (timeVal) item.time = timeVal;
+  if (titleVal) item.title = titleVal;
+  if (detailVal) item.detail = detailVal;
+  closeEditActivity();
+  renderLiveItinerary(currentItinerary, currentItinerary === soloTravelFixture);
 }
 </script>
 </body>
