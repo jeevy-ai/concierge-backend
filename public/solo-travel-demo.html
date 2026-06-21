@@ -2852,6 +2852,9 @@ switchTab('itinerary');
 // ── Live Planning ──
 
 const ITINERARY_API_URL = 'https://ai-action-service.noahlaux.workers.dev/concierge/itinerary';
+// Demo secret for /concierge/* endpoints (F3 — YOU-866). Must match CONCIERGE_DEMO_SECRET on the Worker.
+// CORS origin restriction + per-IP rate limiting are the primary defences; this is a deterrent layer.
+const CONCIERGE_DEMO_SECRET = 'ba902012a66b637020c6228245b8e59cb7a4b1779eef20c0';
 
 const soloTravelFixture = {
   destination: 'Lisbon, Portugal',
@@ -2978,7 +2981,8 @@ function renderLiveItinerary(itinerary, isFixture) {
 async function fetchItinerary(prompt) {
   var res = await fetch(ITINERARY_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-concierge-secret': CONCIERGE_DEMO_SECRET },
+    signal: AbortSignal.timeout(60_000),
     body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
   });
   if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
@@ -3016,7 +3020,11 @@ async function submitLivePrompt() {
   } catch (err) {
     renderLiveItinerary(soloTravelFixture, true);
     statusEl.className = 'live-status fallback';
-    statusEl.textContent = '⚠ API error (' + err.message + ') — showing fixture fallback.';
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+      statusEl.textContent = '⚠ Request timed out — try again.';
+    } else {
+      statusEl.textContent = '⚠ API error (' + err.message + ') — showing fixture fallback.';
+    }
   }
 
   btn.disabled = false;
@@ -3099,7 +3107,8 @@ async function submitAlter() {
   try {
     var res = await fetch(ALTER_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-concierge-secret': CONCIERGE_DEMO_SECRET },
+      signal: AbortSignal.timeout(60_000),
       body: JSON.stringify({ currentItinerary: currentItinerary, instruction: instruction })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -3113,7 +3122,11 @@ async function submitAlter() {
     }
   } catch (err) {
     statusEl.className = 'alter-status error';
-    statusEl.textContent = '⚠ Error: ' + err.message;
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+      statusEl.textContent = '⚠ Request timed out — try again.';
+    } else {
+      statusEl.textContent = '⚠ Error: ' + err.message;
+    }
   }
   btn.disabled = false;
   btn.textContent = 'Update plan →';

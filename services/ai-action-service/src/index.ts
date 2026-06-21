@@ -23,6 +23,9 @@ export type Env = {
   SCHEDULING_LINK: string;
   FROM_EMAIL: string;
   INTERNAL_API_SECRET: string;
+  // Shared secret for public /concierge/* demo endpoints (set via `wrangler secret put CONCIERGE_DEMO_SECRET`).
+  // Also hardcoded in public/solo-travel-demo.html. CORS + rate limiting are the primary defenses.
+  CONCIERGE_DEMO_SECRET: string;
   CLERK_SECRET_KEY: string;
   // AI provider keys for POST /concierge/itinerary (YOU-681 / YOU-686).
   // Provider priority: ANTHROPIC_API_KEY → Anthropic; VERTEX_SA_JSON + GCP_PROJECT_ID → Gemini on Vertex.
@@ -39,7 +42,74 @@ export type Variables = {
 
 export const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-app.use("*", cors());
+// Restrict CORS to known demo origins. Wildcard removed (F3 — YOU-866).
+const ALLOWED_ORIGINS = [
+  "https://travel-flow.pages.dev",
+  "https://jeevy.app",
+  "https://www.jeevy.app",
+];
+
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      if (!origin) return "";
+      if (ALLOWED_ORIGINS.includes(origin)) return origin;
+      // Allow localhost for local development.
+      if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+        return origin;
+      }
+      return "";
+    },
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "x-internal-secret", "x-concierge-secret"],
+    exposeHeaders: ["x-correlation-id"],
+  }),
+);
+
+// Per-IP rate limiter for /concierge/* using KV token bucket (F3 — YOU-866).
+// Limit: 30 requests per 60-second window per IP. Not atomic but sufficient for demo traffic.
+async function conciergeRateLimit(ip: string, kv: KVNamespace): Promise<boolean> {
+  const key = `rate:concierge:${ip}`;
+  const WINDOW_MS = 60_000;
+  const MAX_REQUESTS = 30;
+  const now = Date.now();
+
+  type Bucket = { count: number; windowStart: number };
+  const stored = await kv.get<Bucket>(key, "json");
+
+  if (!stored || now - stored.windowStart > WINDOW_MS) {
+    await kv.put(key, JSON.stringify({ count: 1, windowStart: now }), { expirationTtl: 120 });
+    return true;
+  }
+  if (stored.count >= MAX_REQUESTS) return false;
+  await kv.put(
+    key,
+    JSON.stringify({ count: stored.count + 1, windowStart: stored.windowStart }),
+    { expirationTtl: 120 },
+  );
+  return true;
+}
+
+// Auth + rate-limit middleware for /concierge/* (F3 — YOU-866).
+// OPTIONS preflight is exempt from auth; CORS headers are set by the cors() middleware above.
+app.use("/concierge/*", async (c, next) => {
+  if (c.req.method === "OPTIONS") return next();
+
+  const provided = c.req.header("x-concierge-secret");
+  const expected = c.env.CONCIERGE_DEMO_SECRET;
+  if (!expected || !provided || provided !== expected) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const ip = c.req.header("cf-connecting-ip") ?? c.req.header("x-forwarded-for") ?? "unknown";
+  const allowed = await conciergeRateLimit(ip, c.env.ENTITLEMENTS_KV);
+  if (!allowed) {
+    return c.json({ error: "Rate limit exceeded — try again in a minute." }, 429);
+  }
+
+  return next();
+});
 
 app.get("/health", (c) => {
   return c.json({ ok: true, service: "ai-action-service", version: "0.1.0" });

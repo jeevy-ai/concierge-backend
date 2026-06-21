@@ -145,8 +145,16 @@ export function registerConciergeAlterRoute(
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const provider = anthropicKey ? "Anthropic" : "Vertex AI";
-      console.error(`[concierge-alter] ${provider} error:`, message);
-      return c.json({ error: "AI service error", detail: message }, 502);
+      const lc = message.toLowerCase();
+      const code = lc.includes("429") || lc.includes("rate limit") || lc.includes("quota")
+        ? "ai/rate_limited"
+        : lc.includes("401") || lc.includes("403") || lc.includes("auth") || lc.includes("credential")
+          ? "ai/auth_error"
+          : lc.includes("timeout") || lc.includes("timed out") || lc.includes("abort")
+            ? "ai/timeout"
+            : "ai/unavailable";
+      console.error(`[concierge-alter] ${provider} error [${code}]:`, message);
+      return c.json({ error: "AI service temporarily unavailable", code }, 502);
     }
 
     return c.json({ reply: result.reply, itinerary: result.itinerary });

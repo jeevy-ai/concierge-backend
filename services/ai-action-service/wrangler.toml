@@ -18,6 +18,7 @@ FROM_EMAIL = "team@jeevy.app"
 #   RESEND_API_KEY        (Resend API key for transactional email)
 #   SCHEDULING_LINK       (UXDesigner Calendly/Cal.com 20-min link, M-F 9am-5pm)
 #   INTERNAL_API_SECRET   (shared secret for /internal/* routes)
+#   CONCIERGE_DEMO_SECRET (demo secret for /concierge/* — F3 YOU-866; also set in solo-travel-demo.html)
 #   CLERK_SECRET_KEY      (Clerk secret key for user profile lookup in nightly cron)
 #   ANTHROPIC_API_KEY     (Anthropic API key for POST /concierge/itinerary — desired end state, YOU-681)
 #   VERTEX_SA_JSON        (GCP service-account JSON for Gemini on Vertex — interim provider, YOU-686)
