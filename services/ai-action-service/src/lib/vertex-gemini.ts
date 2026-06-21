@@ -20,7 +20,7 @@ interface ServiceAccount {
 // Not shared across cold starts, but eliminates the token exchange on repeat calls.
 let _tokenCache: { token: string; expiresAt: number } | null = null;
 
-const VERTEX_TIMEOUT_MS = 25_000;
+const VERTEX_TIMEOUT_MS = 55_000;
 const TOKEN_TIMEOUT_MS = 5_000;
 
 function uint8ArrayToBase64url(bytes: Uint8Array): string {
