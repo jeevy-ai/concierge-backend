@@ -136,28 +136,6 @@ const RESPOND_FUNCTION_DECLARATION = {
                         type: "string",
                         description: "picsum.photos seed URL: https://picsum.photos/seed/{title-kebab}/400/280",
                       },
-                      imageQuery: {
-                        type: "string",
-                        description: "Vivid 2–5 word Unsplash search phrase for a representative photo.",
-                      },
-                      transport: {
-                        type: "object",
-                        description: "How to get TO this item from the previous. Omit on first item of each day.",
-                        properties: {
-                          mode: { type: "string", description: "Walk / Metro / Taxi / Train / Bus / Ferry" },
-                          duration: { type: "string", description: "e.g. '12 min'" },
-                          detail: { type: "string", description: "e.g. 'From hotel to Shinjuku Station, Oedo Line'" },
-                        },
-                      },
-                      transportAfter: {
-                        type: "object",
-                        description: "Transport from this item to the next. Omit on last item of a day.",
-                        properties: {
-                          mode: { type: "string" },
-                          duration: { type: "string" },
-                          notes: { type: "string" },
-                        },
-                      },
                     },
                   },
                 },
@@ -207,7 +185,7 @@ export async function callGeminiVertex(
     tool_config: {
       function_calling_config: { mode: "ANY", allowed_function_names: ["respond"] },
     },
-    generation_config: { max_output_tokens: 8192 },
+    generation_config: { max_output_tokens: 4096 },
   };
 
   const model = "gemini-2.5-flash";
