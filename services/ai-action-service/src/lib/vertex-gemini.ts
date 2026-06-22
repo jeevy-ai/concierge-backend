@@ -185,7 +185,12 @@ export async function callGeminiVertex(
     tool_config: {
       function_calling_config: { mode: "ANY", allowed_function_names: ["respond"] },
     },
-    generation_config: { max_output_tokens: 4096 },
+    generation_config: {
+      max_output_tokens: 4096,
+      // Disable extended thinking — gemini-2.5-flash thinks by default on complex tasks,
+      // adding 20-50s latency before the first function call token arrives.
+      thinking_config: { thinking_budget: 0 },
+    },
   };
 
   const model = "gemini-2.5-flash";
@@ -217,8 +222,9 @@ export async function callGeminiVertex(
       body: fetchBody,
       signal: AbortSignal.timeout(VERTEX_TIMEOUT_MS),
     });
-    // Retry on 429 (quota) or 5xx (transient)
-    if (res.status === 429 || res.status >= 500) {
+    // Only retry 429 (rate limit). 5xx from generation = model overloaded/timeout on Vertex side;
+    // retrying just doubles the wait and risks hitting the 55s timeout twice.
+    if (res.status === 429) {
       if (attempt < 1) continue;
     }
     break;
