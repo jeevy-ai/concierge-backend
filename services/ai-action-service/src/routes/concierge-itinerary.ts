@@ -71,11 +71,13 @@ async function injectFetchedUrls(messages: ChatMessage[]): Promise<ChatMessage[]
 // ---------------------------------------------------------------------------
 
 function resolveImageUrl(item: ItineraryItem): string {
-  if (item.imageUrl) return item.imageUrl;
+  // imageQuery produces semantically correct destination photos via loremflickr (Flickr CC search).
+  // Always prefer it over the picsum.photos seed URL — seeds are random, not destination-specific.
   if (item.imageQuery) {
-    const encoded = encodeURIComponent(item.imageQuery.trim());
-    return `https://source.unsplash.com/featured/800x400/?${encoded}`;
+    const tags = item.imageQuery.trim().toLowerCase().replace(/\s+/g, ",").replace(/[^a-z0-9,\-]/g, "");
+    return `https://loremflickr.com/640/360/${tags}`;
   }
+  if (item.imageUrl) return item.imageUrl;
   const slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20);
   return `https://picsum.photos/seed/${slug}/400/280`;
 }
@@ -109,25 +111,26 @@ Gather through conversation:
 
 When a user message includes "[Fetched content of ...]" blocks, immediately extract and use the relevant details (dates, location, agenda, venue) to advance trip planning — do NOT ask the user to summarize, confirm, or copy/paste the page content. You already have it.
 
-Once you have at minimum destination and dates confirmed, generate a full day-by-day itinerary tailored to Noah's preferences above.
+Once you have destination and dates, generate a full day-by-day itinerary tailored to Noah's preferences above. Contextual date hints are sufficient — infer specific dates rather than asking. Examples: "cherry blossom season" → assume late March/early April; "summer" → July; "New Year's" → Dec 30–Jan 2. Only ask for dates when the message contains no date context whatsoever.
 
 ALWAYS respond by calling the \`respond\` tool:
 - Set \`reply\` to your conversational message to the user.
 - Set \`itinerary\` to null while still gathering information.
-- Set \`itinerary\` to the complete structured object once destination and dates are confirmed.
+- Set \`itinerary\` to the complete structured object once destination and dates are confirmed. The \`days\` array MUST contain at least one day with items — never return an itinerary with an empty days array.
 
 For each itinerary item:
-- Set \`imageUrl\` to: \`https://picsum.photos/seed/{SLUG}/400/280\` where {SLUG} is the item title in kebab-case (lowercase, hyphens, no special chars, max 20 chars). Example: 'Tsukiji Market visit' → \`https://picsum.photos/seed/tsukiji-market/400/280\`
+- ALWAYS set \`imageQuery\` to a vivid 2–5 word search phrase that includes the destination city and the specific landmark or scene type. This drives the hero image shown on the card — be precise so the photo matches the actual destination. Good examples: "paris eiffel tower dusk", "tokyo shibuya crossing neon", "kyoto arashiyama bamboo forest", "lisbon alfama tram hillside", "barcelona sagrada familia facade". Bad example: "nice view" (no city, too generic).
+- Set \`imageUrl\` to: \`https://picsum.photos/seed/{SLUG}/400/280\` where {SLUG} is the item title in kebab-case (max 20 chars). This is a schema-required fallback only — the server uses \`imageQuery\` when present.
 - For each item except the first item of each day, add a \`transport\` object describing how to get there from the previous item. Include mode (Walk/Metro/Taxi/Train/Bus/Ferry), duration (e.g. '12 min'), and detail (e.g. 'From hotel to Shinjuku Station, Oedo Line').
-- Set \`imageQuery\` to a vivid 2–5 word search phrase (e.g. "lisbon pasteis de nata bakery", "tokyo shibuya crossing night") that would return a great representative photo. Be specific and visual.
 - Set \`transportAfter\` to the transport leg FROM this item TO the next (mode: walk/taxi/metro/uber/tram/ferry/etc., duration: estimated time, notes: optional tip). Omit on the last item of a day or when items are in the same location.`;
 
 const ALTER_SYSTEM_PROMPT = `You are an AI travel concierge butler. The user wants to modify their existing itinerary.
-Apply the requested changes while keeping what was good. Maintain the same structure and field requirements as the original itinerary (imageUrl for every item using picsum.photos seed URLs, transport legs between events).
+Apply the requested changes while keeping what was good. Maintain the same structure and field requirements as the original itinerary.
 
 ${DEMO_PERSONA}
 
-For imageUrl: use format https://picsum.photos/seed/{title-kebab}/400/280
+For imageQuery: ALWAYS include a vivid 2–5 word phrase with city name + landmark/scene, e.g. "paris marais district cafe". This drives the hero image — be destination-specific.
+For imageUrl: use format https://picsum.photos/seed/{title-kebab}/400/280 (schema fallback only).
 For transport: include mode/duration/detail for each item except the first of each day.
 
 ALWAYS respond by calling the respond tool with the complete revised itinerary and a brief reply acknowledging what changed.`;
@@ -333,7 +336,10 @@ export function registerConciergeItineraryRoute(
     }
 
     const enriched = enrichItineraryImages(result.itinerary);
-    return c.json({ reply: result.reply, itinerary: enriched });
+    // Guard: an itinerary with 0 days is a malformed LLM response — treat as null
+    // so the conversation continues rather than rendering an empty itinerary shell.
+    const finalItinerary = (enriched?.days?.length ?? 0) > 0 ? enriched : null;
+    return c.json({ reply: result.reply, itinerary: finalItinerary });
   });
 
   // POST /concierge/itinerary/alter — edit an existing itinerary
@@ -380,6 +386,7 @@ export function registerConciergeItineraryRoute(
     }
 
     const enriched = enrichItineraryImages(result.itinerary);
-    return c.json({ reply: result.reply, itinerary: enriched });
+    const finalItinerary = (enriched?.days?.length ?? 0) > 0 ? enriched : null;
+    return c.json({ reply: result.reply, itinerary: finalItinerary });
   });
 }
