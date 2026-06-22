@@ -221,7 +221,7 @@ async function callAnthropic(
   apiKey: string,
   systemPrompt: string = SYSTEM_PROMPT,
 ): Promise<RespondResult> {
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic({ apiKey, timeout: 20_000 });
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 4096,
