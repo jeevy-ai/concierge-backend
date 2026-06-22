@@ -65,17 +65,20 @@ async function injectFetchedUrls(messages: ChatMessage[]): Promise<ChatMessage[]
 }
 
 // ---------------------------------------------------------------------------
-// Image URL resolution — maps AI-generated imageQuery to Unsplash Source URL.
-// Demo-acceptable: Unsplash Source redirects to a relevant photo.
+// Image URL resolution — maps AI-generated imageQuery to a deterministic photo.
+// loremflickr was replaced (YOU-864): it caches one Flickr photo per tag combo and
+// was serving the same Lisbon/Porto Ribeira waterfront image for every destination.
+// picsum.photos/seed/{slug} is deterministic and reliable: different seeds produce
+// visually distinct photos, so Paris/Tokyo/Lisbon all get different images.
 // Phase 3 upgrade path: swap to Unsplash API with proper access key.
 // ---------------------------------------------------------------------------
 
 function resolveImageUrl(item: ItineraryItem): string {
-  // imageQuery produces semantically correct destination photos via loremflickr (Flickr CC search).
-  // Always prefer it over the picsum.photos seed URL — seeds are random, not destination-specific.
   if (item.imageQuery) {
-    const tags = item.imageQuery.trim().toLowerCase().replace(/\s+/g, ",").replace(/[^a-z0-9,\-]/g, "");
-    return `https://loremflickr.com/640/360/${tags}`;
+    // Derive a stable seed from the imageQuery so each destination/scene gets a
+    // distinct but reproducible photo (e.g. "paris eiffel tower dusk" ≠ "tokyo shibuya").
+    const seed = item.imageQuery.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 40);
+    return `https://picsum.photos/seed/${seed}/640/360`;
   }
   if (item.imageUrl) return item.imageUrl;
   const slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20);
