@@ -3,6 +3,12 @@ main = "src/index.ts"
 compatibility_date = "2024-12-18"
 compatibility_flags = ["nodejs_compat"]
 
+# Unbound usage model — removes the 30s wall-clock cap so Vertex AI calls (26–55s) complete.
+# Billed per GB-s of actual execution; at demo traffic volumes negligible cost difference.
+# YOU-875: fix CF Worker 502s on /concierge/itinerary.
+[limits]
+cpu_ms = 30000
+
 [vars]
 ENVIRONMENT = "development"
 POSTHOG_HOST = "https://eu.i.posthog.com"
@@ -49,6 +55,9 @@ preview_id = "49051f56c5294cbb8751c7d4af6aa83f"
 [env.staging]
 name = "ai-action-service-staging"
 
+[env.staging.limits]
+cpu_ms = 30000
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
 POSTHOG_HOST = "https://eu.i.posthog.com"
@@ -64,6 +73,9 @@ id = "9e12aea1abcb4e668633abffee66b56c"
 
 [env.production]
 name = "ai-action-service-production"
+
+[env.production.limits]
+cpu_ms = 30000
 
 [env.production.vars]
 ENVIRONMENT = "production"

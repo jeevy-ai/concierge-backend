@@ -189,9 +189,12 @@ export async function callGeminiVertex(
   };
 
   const model = "gemini-2.5-flash";
+  // Use streamGenerateContent so CF Worker receives first bytes within ~1-2s,
+  // avoiding the 30s subrequest timeout on long itinerary generations (YOU-875).
+  // We buffer the full SSE stream and parse the function call from the final chunk.
   const url =
     `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}` +
-    `/locations/us-central1/publishers/google/models/${model}:generateContent`;
+    `/locations/us-central1/publishers/google/models/${model}:streamGenerateContent?alt=sse`;
 
   const fetchHeaders = {
     Authorization: `Bearer ${accessToken}`,
@@ -226,15 +229,31 @@ export async function callGeminiVertex(
     throw new Error(`Vertex AI error (${res?.status ?? 0}): ${text}`);
   }
 
-  const data = (await res.json()) as GeminiResponse;
-  const fnCall = data.candidates[0]?.content?.parts?.find(
-    (p) => p.functionCall?.name === "respond",
-  )?.functionCall;
+  // Buffer the full SSE stream. Each "data: {...}" line is a GeminiResponse chunk.
+  // Function calls appear in a single chunk (not split across events), so we take
+  // the last one found to handle any redundant closing chunks.
+  const responseText = await res.text();
+  let fnCall: { name: string; args: Record<string, unknown> } | null = null;
+  for (const line of responseText.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("data: ")) continue;
+    const jsonStr = trimmed.slice(6).trim();
+    if (!jsonStr) continue;
+    try {
+      const chunk = JSON.parse(jsonStr) as GeminiResponse;
+      const found = chunk.candidates?.[0]?.content?.parts?.find(
+        (p) => p.functionCall?.name === "respond",
+      )?.functionCall;
+      if (found) fnCall = found;
+    } catch {
+      // skip malformed SSE events
+    }
+  }
 
   if (!fnCall) {
-    const raw = JSON.stringify(data).slice(0, 500);
-    console.error("[vertex-gemini] no functionCall in response:", raw);
-    throw new Error(`No function call in Gemini response. Raw: ${raw}`);
+    const raw = responseText.slice(0, 500);
+    console.error("[vertex-gemini] no functionCall in streaming response:", raw);
+    throw new Error(`No function call in Gemini streaming response. Raw: ${raw}`);
   }
 
   const args = fnCall.args as { reply: string; itinerary?: unknown };
