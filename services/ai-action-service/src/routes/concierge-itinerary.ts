@@ -22,9 +22,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Hono } from "hono";
 import type { Env, Variables } from "../index.js";
+import { enrichItineraryImages } from "../lib/image-utils.js";
+import type { ChatMessage, Itinerary, RespondResult } from "../lib/itinerary-types.js";
 import { callGeminiVertex } from "../lib/vertex-gemini.js";
-import type { ChatMessage, Itinerary, ItineraryItem, RespondResult } from "../lib/itinerary-types.js";
-import { fetchUrlContent, extractUrls } from "../lib/url-fetch.js";
+import { extractUrls, fetchUrlContent } from "../lib/url-fetch.js";
 
 // ---------------------------------------------------------------------------
 // Demo persona — hardcoded for Phase 2. Swap to a real profile store in Phase 3.
@@ -62,51 +63,6 @@ async function injectFetchedUrls(messages: ChatMessage[]): Promise<ChatMessage[]
     ...messages.slice(0, -1),
     { role: "user" as const, content: enrichedContent },
   ];
-}
-
-// ---------------------------------------------------------------------------
-// Image URL resolution — maps AI-generated imageQuery to a destination-specific photo.
-// loremflickr was replaced (YOU-864): it caches one Flickr photo per tag combo and
-// was serving the same Lisbon/Porto Ribeira waterfront image for every destination.
-// Now uses source.unsplash.com/featured with a semantic query so "paris eiffel tower
-// dusk" actually returns a Paris photo, "tokyo shibuya neon" returns a Tokyo photo.
-// A stable sig derived from the query text makes the same destination return the same
-// photo across requests (Unsplash caches the redirect by sig).
-// Phase 3 upgrade path: swap to Unsplash API with proper access key.
-// ---------------------------------------------------------------------------
-
-function imageQuerySig(query: string): number {
-  // Unsigned 32-bit djb2-style hash — stable across runs, no Date/Math.random.
-  let h = 0;
-  for (let i = 0; i < query.length; i++) {
-    h = (h * 31 + query.charCodeAt(i)) >>> 0;
-  }
-  return h;
-}
-
-function resolveImageUrl(item: ItineraryItem): string {
-  if (item.imageQuery) {
-    const q = item.imageQuery.trim();
-    const sig = imageQuerySig(q);
-    return `https://source.unsplash.com/featured/?${encodeURIComponent(q)}&w=640&h=360&sig=${sig}`;
-  }
-  if (item.imageUrl) return item.imageUrl;
-  const slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20);
-  return `https://picsum.photos/seed/${slug}/400/280`;
-}
-
-function enrichItineraryImages(itinerary: Itinerary | null): Itinerary | null {
-  if (!itinerary) return null;
-  return {
-    ...itinerary,
-    days: itinerary.days.map((day) => ({
-      ...day,
-      items: day.items.map((item) => ({
-        ...item,
-        imageUrl: resolveImageUrl(item),
-      })),
-    })),
-  };
 }
 
 // ---------------------------------------------------------------------------

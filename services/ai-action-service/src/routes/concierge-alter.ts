@@ -1,15 +1,17 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Hono } from "hono";
 import type { Env, Variables } from "../index.js";
+import { enrichItineraryImages } from "../lib/image-utils.js";
 import { callGeminiVertex } from "../lib/vertex-gemini.js";
-import type { Itinerary, ChatMessage, RespondResult } from "../lib/itinerary-types.js";
+import type { ChatMessage, Itinerary, RespondResult } from "../lib/itinerary-types.js";
 
 const ALTER_SYSTEM_PROMPT = `You are an AI travel concierge butler. The user wants to modify their existing itinerary.
-Apply the requested changes while keeping what was good. Maintain the same structure and field requirements as the original itinerary (imageUrl for every item using picsum.photos seed URLs, transport legs between events).
+Apply the requested changes while keeping what was good. Maintain the same structure and field requirements as the original itinerary.
 
 The traveler is Noah Laux. Profile: boutique/independent travel style, pescatarian + loves local cuisine, active mornings, €300-500/day budget, interests = architecture, design, art, great coffee, hidden gems.
 
-For imageUrl: use format https://picsum.photos/seed/{title-kebab}/400/280
+For imageQuery: ALWAYS set a vivid 2–5 word phrase that includes the destination city name + landmark/scene, e.g. "paris marais district cafe", "tokyo shibuya crossing neon", "lisbon alfama tram hillside". Never omit the city. This drives the hero image shown on the card.
+For imageUrl: use format https://picsum.photos/seed/{title-kebab}/400/280 (schema-required fallback only — imageQuery takes precedence server-side).
 For transport: include mode/duration/detail for each item except the first of each day.
 
 ALWAYS respond by calling the respond tool with the complete revised itinerary and a brief reply acknowledging what changed.`;
@@ -53,6 +55,10 @@ const RESPOND_TOOL: Anthropic.Tool = {
                           imageUrl: {
                             type: "string" as const,
                             description: "picsum.photos seed URL: https://picsum.photos/seed/{title-kebab}/400/280",
+                          },
+                          imageQuery: {
+                            type: "string" as const,
+                            description: "Vivid 2–5 word Unsplash search phrase including destination city, e.g. 'paris eiffel tower dusk'.",
                           },
                           transport: {
                             type: "object" as const,
@@ -157,6 +163,8 @@ export function registerConciergeAlterRoute(
       return c.json({ error: "AI service temporarily unavailable", code }, 502);
     }
 
-    return c.json({ reply: result.reply, itinerary: result.itinerary });
+    const enriched = enrichItineraryImages(result.itinerary);
+    const finalItinerary = (enriched?.days?.length ?? 0) > 0 ? enriched : null;
+    return c.json({ reply: result.reply, itinerary: finalItinerary });
   });
 }
