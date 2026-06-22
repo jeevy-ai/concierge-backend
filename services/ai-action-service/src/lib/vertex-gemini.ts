@@ -136,6 +136,10 @@ const RESPOND_FUNCTION_DECLARATION = {
                         type: "string",
                         description: "picsum.photos seed URL: https://picsum.photos/seed/{title-kebab}/400/280",
                       },
+                      imageQuery: {
+                        type: "string",
+                        description: "Vivid 2–5 word phrase with city name + landmark/scene for the hero image. Example: 'paris eiffel tower dusk', 'tokyo shibuya crossing neon'. ALWAYS include the destination city.",
+                      },
                     },
                   },
                 },

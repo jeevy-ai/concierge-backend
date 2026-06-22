@@ -2944,8 +2944,9 @@ function renderLiveItinerary(itinerary, isFixture) {
   var sublineEl = document.querySelector('.journey-subline');
   if (titleEl) titleEl.textContent = itinerary.destination || '';
   if (datesEl) datesEl.textContent = itinerary.dates || '';
-  if (sublineEl) sublineEl.textContent = itinerary.summary || '';
+  // Set badge first (it overwrites subline with a generic string), then set the real summary.
   tlSetJourneyBadge(isFixture ? 'Fixture' : 'Live ✦', isFixture ? '' : 'ready');
+  if (sublineEl) sublineEl.textContent = itinerary.summary || '';
 
   var alterTrigger = document.getElementById('alter-plan-trigger');
   if (alterTrigger) alterTrigger.className = 'alter-plan-trigger visible';
