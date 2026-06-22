@@ -62,7 +62,7 @@ app.use(
       return "";
     },
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "x-internal-secret", "x-concierge-secret"],
+    allowHeaders: ["Content-Type", "Authorization", "x-internal-secret", "x-internal-api-secret", "x-concierge-secret"],
     exposeHeaders: ["x-correlation-id"],
   }),
 );
@@ -96,7 +96,8 @@ async function conciergeRateLimit(ip: string, kv: KVNamespace): Promise<boolean>
 app.use("/concierge/*", async (c, next) => {
   if (c.req.method === "OPTIONS") return next();
 
-  const provided = c.req.header("x-concierge-secret");
+  // Accept the demo-page header (x-concierge-secret) or the React-app header (x-internal-api-secret).
+  const provided = c.req.header("x-concierge-secret") ?? c.req.header("x-internal-api-secret");
   const expected = c.env.CONCIERGE_DEMO_SECRET;
   if (!expected || !provided || provided !== expected) {
     return c.json({ error: "Unauthorized" }, 401);
