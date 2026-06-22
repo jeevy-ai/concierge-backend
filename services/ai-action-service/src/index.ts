@@ -29,6 +29,8 @@ export type Env = {
   // Interim provider: Gemini on Vertex AI (active until Anthropic key is approved).
   VERTEX_SA_JSON?: string;   // GCP service-account JSON blob
   GCP_PROJECT_ID?: string;   // GCP project that has Vertex AI enabled
+  // Rate limiter for /concierge/* (YOU-866)
+  CONCIERGE_RATE_LIMITER: RateLimit;
 };
 
 export type Variables = {
@@ -38,7 +40,22 @@ export type Variables = {
 
 export const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-app.use("*", cors());
+app.use("*", cors({
+  origin: ["https://travel-flow.pages.dev", "https://jeevy.app"],
+}));
+
+app.use("/concierge/*", async (c, next) => {
+  const secret = c.req.header("X-Internal-Api-Secret");
+  if (!secret || secret !== c.env.INTERNAL_API_SECRET) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const ip = c.req.header("CF-Connecting-IP") ?? "unknown";
+  const { success } = await c.env.CONCIERGE_RATE_LIMITER.limit({ key: ip });
+  if (!success) {
+    return c.json({ error: "Too many requests", code: "rate_limited" }, 429);
+  }
+  await next();
+});
 
 app.get("/health", (c) => {
   return c.json({ ok: true, service: "ai-action-service", version: "0.1.0" });

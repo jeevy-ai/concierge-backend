@@ -161,7 +161,15 @@ export function registerConciergeItineraryRoute(
       const message = err instanceof Error ? err.message : String(err);
       const provider = hasAnthropic ? "Anthropic" : "Vertex AI";
       console.error(`[concierge-itinerary] ${provider} error:`, message);
-      return c.json({ error: "AI service error", detail: message }, 502);
+      const lower = message.toLowerCase();
+      const code = lower.includes("429") || lower.includes("rate")
+        ? "rate_limited"
+        : lower.includes("auth") || lower.includes("401") || lower.includes("403")
+          ? "auth_error"
+          : lower.includes("timeout") || lower.includes("timed out") || lower.includes("aborterror")
+            ? "timeout"
+            : "provider_error";
+      return c.json({ error: "AI service temporarily unavailable", code }, 502);
     }
 
     return c.json({ reply: result.reply, itinerary: result.itinerary ?? null });
