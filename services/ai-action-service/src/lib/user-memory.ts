@@ -16,20 +16,81 @@ export interface UserPreferences {
   interests?: string[];
   dietaryPrefs?: string[];
   travelStyle?: string;
-  homeCity?: string;
+  /** Home airport IATA code or city, e.g. "CPH" or "Copenhagen" */
+  homeAirport?: string;
+  airline?: string;
+  seatPreference?: string;
+  hotelChain?: string;
+  cabinClass?: string;
+  firstName?: string;
 }
 
 export interface TripEntry {
+  tripId: string; // deterministic: destination+savedAt slug
   destination: string;
   dates: string;
   summary: string;
   savedAt: string; // ISO-8601
+  highlightVenues: string[]; // populated from itinerary items at save time
 }
 
 export interface UserProfile {
   userId: string;
   prefs: UserPreferences;
   trips: TripEntry[];
+}
+
+/** Response shape surfaced to the FE (YOU-896). */
+export interface UserProfileResponse {
+  userId: string;
+  firstName: string;
+  isReturning: boolean;
+  tripHistory: {
+    tripId: string;
+    destination: string;
+    dates: string;
+    highlightVenues: string[];
+  }[];
+  preferences: {
+    airline: string;
+    seatPreference: string;
+    hotelChain: string;
+    cabinClass: string;
+    homeAirport: string;
+    travelStyle: string;
+    dietaryPrefs: string[];
+    pace: string;
+    budgetBand: string;
+    interests: string[];
+  };
+}
+
+/** Map internal UserProfile to the FE response contract. */
+export function toProfileResponse(profile: UserProfile): UserProfileResponse {
+  const p = profile.prefs;
+  return {
+    userId: profile.userId,
+    firstName: p.firstName ?? "",
+    isReturning: profile.trips.length > 0,
+    tripHistory: profile.trips.map((t) => ({
+      tripId: t.tripId,
+      destination: t.destination,
+      dates: t.dates,
+      highlightVenues: t.highlightVenues,
+    })),
+    preferences: {
+      airline: p.airline ?? "",
+      seatPreference: p.seatPreference ?? "",
+      hotelChain: p.hotelChain ?? "",
+      cabinClass: p.cabinClass ?? "",
+      homeAirport: p.homeAirport ?? "",
+      travelStyle: p.travelStyle ?? "",
+      dietaryPrefs: p.dietaryPrefs ?? [],
+      pace: p.pace ?? "",
+      budgetBand: p.budgetBand ?? "",
+      interests: p.interests ?? [],
+    },
+  };
 }
 
 const MAX_TRIPS = 10;
@@ -62,11 +123,18 @@ export async function saveTrip(
       trips: [],
     };
 
+    const savedAt = new Date().toISOString();
+    const tripId = `${itinerary.destination.toLowerCase().replace(/\s+/g, "-")}-${savedAt.slice(0, 10)}`;
+    const highlightVenues = itinerary.days
+      .flatMap((d) => d.items.map((i) => i.title))
+      .slice(0, 5);
     const entry: TripEntry = {
+      tripId,
       destination: itinerary.destination,
       dates: itinerary.dates,
       summary: itinerary.summary,
-      savedAt: new Date().toISOString(),
+      savedAt,
+      highlightVenues,
     };
 
     const trips = [entry, ...existing.trips].slice(0, MAX_TRIPS);
@@ -130,7 +198,7 @@ export function buildMemoryContext(profile: UserProfile | null): string {
   if (p.travelStyle) prefLines.push(`style: ${p.travelStyle}`);
   if (p.interests?.length) prefLines.push(`interests: ${p.interests.join(", ")}`);
   if (p.dietaryPrefs?.length) prefLines.push(`dietary: ${p.dietaryPrefs.join(", ")}`);
-  if (p.homeCity) prefLines.push(`home city: ${p.homeCity}`);
+  if (p.homeAirport) prefLines.push(`home airport: ${p.homeAirport}`);
 
   if (prefLines.length > 0) {
     parts.push(`## Stated preferences\n${prefLines.join("\n")}`);

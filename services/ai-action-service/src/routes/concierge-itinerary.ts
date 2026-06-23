@@ -125,6 +125,10 @@ const ITINERARY_ITEM_SCHEMA = {
         detail: { type: "string" as const, description: "e.g. 'From hotel to Shinjuku Station, Oedo Line'" },
       },
     },
+    rationale: {
+      type: "string" as const,
+      description: "Short phrase (≤12 words) explaining why this activity suits this traveler. Written as chip copy, e.g. 'Matches your love of street food' or 'Perfect for an active afternoon'. Omit when there is no personalization context.",
+    },
     imageQuery: {
       type: "string" as const,
       description: "Vivid 2–5 word Unsplash search phrase for a representative photo.",
