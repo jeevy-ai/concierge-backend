@@ -30,6 +30,12 @@
       --radius: 8px;
       --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
       --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+      /* Phase 7: Butler Remembers warm palette */
+      --warm-bg: #FAF7F2;
+      --warm-border: #E8D5C4;
+      --warm-text: #6B5B4E;
+      --warm-text2: #A0856E;
+      --warm-accent: #C96A35;
     }
 
     body {
@@ -1015,6 +1021,166 @@
 
     /* ── Transport tag ── */
     .card-transport { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+    /* ── Phase 7: Butler Remembers — R1 / R2 / R3 (YOU-895) ── */
+
+    /* Sidebar returning-user toggle */
+    .return-mode-section { padding: 8px 16px 4px; }
+    .toggle-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+    .toggle-switch {
+      position: relative; display: inline-block;
+      width: 36px; height: 20px; flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--border); border-radius: 20px; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-track { background: var(--accent); }
+    .toggle-track::before {
+      content: ''; position: absolute;
+      width: 14px; height: 14px; left: 3px; top: 3px;
+      background: white; border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-track::before { transform: translateX(16px); }
+    .toggle-label { font-size: 12px; color: var(--text2); line-height: 1.3; }
+
+    /* R1: Recall bubble */
+    .recall-bubble {
+      display: none;
+      background: linear-gradient(135deg, #FAF7F2 0%, #F3EDE7 100%);
+      border: 1px solid #E8D5C4;
+      border-radius: 12px; border-top-left-radius: 3px;
+      padding: 12px 16px; margin-bottom: 16px;
+      box-shadow: var(--shadow);
+      animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    body.returning-mode .recall-bubble { display: block; }
+    .recall-sender {
+      font-size: 11px; font-weight: 700; color: var(--warm-accent);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .recall-sender::before { content: '✦'; font-size: 9px; }
+    .recall-text { font-size: 14px; color: var(--warm-text); line-height: 1.6; }
+    .recall-text strong { color: var(--text); }
+
+    /* R1: Preference chips row */
+    .pref-chips-row {
+      display: none;
+      flex-wrap: wrap; gap: 6px;
+      margin-bottom: 16px; align-items: center;
+    }
+    body.returning-mode .pref-chips-row { display: flex; }
+    .pref-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 100px; padding: 4px 10px;
+      font-size: 12px; color: var(--text2); font-weight: 500;
+      box-shadow: var(--shadow);
+    }
+    .pref-chip-icon { font-size: 13px; }
+    .pref-chips-edit {
+      font-size: 12px; color: var(--accent); background: none; border: none;
+      cursor: pointer; padding: 4px 6px; text-decoration: underline;
+      margin-left: 2px;
+    }
+    .pref-chips-edit:hover { color: var(--accent-dark); }
+
+    /* R2: Rationale chip (proposed cards, top-left of image slot) */
+    .rationale-chip {
+      display: none;
+      position: absolute; top: 10px; left: 10px; z-index: 4;
+      background: rgba(90,103,216,0.88); color: #fff;
+      font-size: 10px; font-weight: 600;
+      padding: 3px 8px; border-radius: 100px;
+      align-items: center; gap: 4px;
+      cursor: pointer; border: none;
+    }
+    .rationale-chip::before { content: '✦'; font-size: 8px; }
+    body.returning-mode .rationale-chip { display: flex; }
+    .rationale-chip-expand {
+      display: none;
+      background: var(--accent-light); border-left: 3px solid var(--accent);
+      border-radius: 4px; padding: 8px 12px; margin: 4px 0 6px;
+      font-size: 12px; color: var(--accent-dark); line-height: 1.5;
+    }
+    .rationale-chip-expand.open { display: block; }
+
+    /* R3: Prefs sheet (slide-up) */
+    .prefs-sheet-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300;
+    }
+    .prefs-sheet-backdrop.open { display: block; }
+    .prefs-sheet {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      max-height: 82vh; background: var(--surface); z-index: 400;
+      border-radius: 20px 20px 0 0; flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 280ms cubic-bezier(0.32, 0, 0.15, 1);
+    }
+    .prefs-sheet.open { display: flex; transform: translateY(0); }
+    .prefs-sheet-handle {
+      width: 40px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 12px auto 0; flex-shrink: 0;
+    }
+    .prefs-sheet-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px 8px; flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .prefs-sheet-title { font-size: 16px; font-weight: 700; }
+    .prefs-sheet-close {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 14px; font-size: 13px;
+      color: var(--text2); cursor: pointer; font-weight: 600;
+    }
+    .prefs-sheet-body { padding: 16px 20px 32px; overflow-y: auto; flex: 1; }
+    .prefs-section { margin-bottom: 24px; }
+    .prefs-section-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--text3); margin-bottom: 10px;
+    }
+    .trip-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .trip-dot {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--warm-bg); border: 1px solid var(--warm-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0; margin-top: 2px;
+    }
+    .trip-info { flex: 1; min-width: 0; }
+    .trip-name { font-weight: 600; font-size: 13px; }
+    .trip-meta { font-size: 11px; color: var(--text3); margin-top: 1px; }
+    .trip-highlights { font-size: 11px; color: var(--accent); margin-top: 2px; }
+    .pref-edit-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px;
+    }
+    .pref-edit-row:last-child { border-bottom: none; }
+    .pref-edit-row-content { flex: 1; min-width: 0; }
+    .pref-edit-label { font-size: 12px; color: var(--text3); }
+    .pref-edit-value { font-size: 13px; font-weight: 600; color: var(--text); }
+    .pref-edit-btn {
+      font-size: 12px; color: var(--accent); background: none;
+      border: none; cursor: pointer; text-decoration: underline; flex-shrink: 0;
+    }
+    .interests-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .interest-tag {
+      background: var(--accent-light); color: var(--accent-dark);
+      border-radius: 100px; padding: 4px 10px; font-size: 12px; font-weight: 500;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .recall-bubble { animation: none; }
+      .prefs-sheet { transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -1122,6 +1288,19 @@
 
     <hr class="nav-divider">
 
+    <div class="screen-nav-label" style="margin-top:4px">User State</div>
+    <div class="return-mode-section">
+      <div class="toggle-row">
+        <label class="toggle-switch" title="Toggle returning-user mode (R1–R3)">
+          <input type="checkbox" id="returning-toggle" onchange="setReturningMode(this.checked)">
+          <span class="toggle-track"></span>
+        </label>
+        <span class="toggle-label">Returning user<br><span style="color:var(--text3);font-size:10px">Shows R1 recall · R2 rationale · R3 prefs</span></span>
+      </div>
+    </div>
+
+    <hr class="nav-divider">
+
     <div class="persona-block">
       <div class="persona-label">Persona — fixture userId</div>
       <div class="persona-name">Alex Chen</div>
@@ -1183,6 +1362,25 @@
       </div>
 
       <div class="chat-thread">
+
+        <!-- R1: Recall bubble — rendered once per session when isReturning:true -->
+        <div class="recall-bubble" id="recall-bubble" role="status" aria-label="Jeevy memory greeting">
+          <div class="recall-sender">Jeevy remembers</div>
+          <div class="recall-text">
+            Welcome back, <strong>Noah</strong> — based on your trip to <strong>Lisbon</strong> last November,
+            I've loaded your preferences. I'll apply them automatically unless you say otherwise.
+          </div>
+        </div>
+
+        <!-- R1: Preference chips row — max 4 chips from stored preferences -->
+        <div class="pref-chips-row" id="pref-chips-row" aria-label="Saved travel preferences">
+          <span class="pref-chip"><span class="pref-chip-icon">✈️</span> Biz class (5h+)</span>
+          <span class="pref-chip"><span class="pref-chip-icon">🏨</span> Boutique</span>
+          <span class="pref-chip"><span class="pref-chip-icon">🍽️</span> Pescatarian</span>
+          <span class="pref-chip"><span class="pref-chip-icon">☕</span> Coffee districts</span>
+          <button class="pref-chips-edit" onclick="openPrefsSheet()" aria-label="Edit travel preferences">Edit ›</button>
+        </div>
+
         <div class="chat-bubble">
           <div class="bubble-sender">Jeevy</div>
           <div class="bubble-text">
@@ -2039,6 +2237,12 @@
             <div class="card-image-fallback" style="background:linear-gradient(135deg,#3d2b1f 0%,#8b5e3c 100%)"><span class="fallback-icon">🛏</span></div>
             <div class="card-overlay-badge">Marriott</div>
             <div class="suggests-chip">Jeevy suggests</div>
+            <!-- R2: Rationale chip — visible when returning-mode is on, proposed cards only -->
+            <button class="rationale-chip" data-expands="rat-hotel"
+                    onclick="toggleRationaleChip('rat-hotel')"
+                    aria-expanded="false" aria-controls="rat-hotel" tabindex="0">
+              Based on Lisbon
+            </button>
             <div class="card-dayof-badge">Up next</div>
           </div>
           <div class="card-body">
@@ -2048,6 +2252,10 @@
               <span class="card-label-chip">🏨 Hotel · Nov 10–12</span>
               <div class="card-primary">Bairro Alto Hotel · Marriott Bonvoy</div>
               <div class="card-secondary">Rua da Bica de Duarte Belo 60 · Superior King · 3.2 km from venue</div>
+              <!-- R2: Rationale expand box (hidden; opens on chip tap) -->
+              <div id="rat-hotel" class="rationale-chip-expand">
+                You stayed at Bairro Alto Hotel on your Lisbon trip last November — boutique, design district, walkable to coffee and architecture. Jeevy matched the same hotel. Budget: ~€240/night, within your ≤€300 band.
+              </div>
               <a class="card-action-link" href="#">View hotel →</a>
             </div>
             <div class="card-cal-tag">✓ Calendar</div>
@@ -2185,6 +2393,12 @@
             <img src="./images/travel/packing-travel-essentials-hero.webp" alt="Travel essentials for Lisbon" width="640" height="360" loading="lazy" decoding="async" onerror="this.parentElement.classList.add('img-error')">
             <div class="card-image-fallback" style="background:linear-gradient(135deg,#f7e7d3 0%,#e8c9a0 100%)"><span class="fallback-icon">🧳</span></div>
             <div class="suggests-chip">Jeevy suggests</div>
+            <!-- R2: Rationale chip — "Your pace" (active-mornings preference) -->
+            <button class="rationale-chip" data-expands="rat-packing"
+                    onclick="toggleRationaleChip('rat-packing')"
+                    aria-expanded="false" aria-controls="rat-packing" tabindex="0">
+              Your pace
+            </button>
             <div class="card-dayof-badge">Up next</div>
           </div>
           <div class="card-body">
@@ -2194,6 +2408,10 @@
               <span class="card-label-chip">📦 Packing · Departing Nov 9</span>
               <div class="card-primary">Packing checklist · Departing Nov 9</div>
               <div class="card-secondary">Essentials for Lisbon</div>
+              <!-- R2: Rationale expand box -->
+              <div id="rat-packing" class="rationale-chip-expand">
+                You prefer active mornings — the list includes walking shoes, a lightweight layer for early starts, and a coffee-district card for the Bairro Alto neighbourhood.
+              </div>
               <a class="card-action-link" href="#">Open checklist →</a>
             </div>
             <div class="card-cal-tag">✓ Calendar</div>
@@ -2203,6 +2421,146 @@
 
     </div><!-- /timeline-wrap -->
   </main>
+
+<!-- ── R3: Prefs Sheet (YOU-895) — slide-up, reuses alter-sheet pattern ── -->
+<div class="prefs-sheet-backdrop" id="prefs-sheet-backdrop" onclick="closePrefsSheet()"></div>
+<div class="prefs-sheet" id="prefs-sheet" role="dialog" aria-modal="true" aria-label="Your Travel Preferences" tabindex="-1">
+  <div class="prefs-sheet-handle"></div>
+  <div class="prefs-sheet-header">
+    <div class="prefs-sheet-title">Your Travel Profile</div>
+    <button class="prefs-sheet-close" onclick="closePrefsSheet()">Done</button>
+  </div>
+  <div class="prefs-sheet-body">
+
+    <!-- Past trips (read-only) -->
+    <div class="prefs-section">
+      <div class="prefs-section-label">Past trips</div>
+      <div class="trip-row">
+        <div class="trip-dot">🇵🇹</div>
+        <div class="trip-info">
+          <div class="trip-name">Lisbon, Portugal</div>
+          <div class="trip-meta">Nov 9–13, 2025 · Web Summit 2025</div>
+          <div class="trip-highlights">Bairro Alto Hotel · Time Out Market · LX Factory</div>
+        </div>
+      </div>
+      <div class="trip-row">
+        <div class="trip-dot">🇯🇵</div>
+        <div class="trip-info">
+          <div class="trip-name">Kyoto, Japan</div>
+          <div class="trip-meta">Apr 1–5, 2025 · Cherry blossom trip</div>
+          <div class="trip-highlights">Suiran Ryokan · Arashiyama · Ogawa Coffee</div>
+        </div>
+      </div>
+      <div class="trip-row">
+        <div class="trip-dot">🇳🇱</div>
+        <div class="trip-info">
+          <div class="trip-name">Amsterdam, Netherlands</div>
+          <div class="trip-meta">Feb 2025 · Design conference</div>
+          <div class="trip-highlights">Conservatorium Hotel · FOAM Museum · Lot Sixty One Coffee</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Travel logistics (editable) -->
+    <div class="prefs-section">
+      <div class="prefs-section-label">Travel logistics</div>
+      <div class="pref-edit-row">
+        <div class="pref-edit-row-content">
+          <div class="pref-edit-label">Airline</div>
+          <div class="pref-edit-value" id="pref-val-airline">Delta Airlines · SkyMiles</div>
+        </div>
+        <button class="pref-edit-btn" onclick="editPref('airline','Airline','Delta Airlines · SkyMiles')">Change</button>
+      </div>
+      <div class="pref-edit-row">
+        <div class="pref-edit-row-content">
+          <div class="pref-edit-label">Seat preference</div>
+          <div class="pref-edit-value" id="pref-val-seat">Aisle</div>
+        </div>
+        <button class="pref-edit-btn" onclick="editPref('seat','Seat preference','Aisle')">Change</button>
+      </div>
+      <div class="pref-edit-row">
+        <div class="pref-edit-row-content">
+          <div class="pref-edit-label">Hotel chain</div>
+          <div class="pref-edit-value" id="pref-val-hotel">Marriott Bonvoy · Platinum</div>
+        </div>
+        <button class="pref-edit-btn" onclick="editPref('hotel','Hotel chain','Marriott Bonvoy · Platinum')">Change</button>
+      </div>
+      <div class="pref-edit-row">
+        <div class="pref-edit-row-content">
+          <div class="pref-edit-label">Cabin class</div>
+          <div class="pref-edit-value" id="pref-val-cabin">Business (flights &gt; 5h)</div>
+        </div>
+        <button class="pref-edit-btn" onclick="editPref('cabin','Cabin class','Business (flights > 5h)')">Change</button>
+      </div>
+      <div class="pref-edit-row">
+        <div class="pref-edit-row-content">
+          <div class="pref-edit-label">Home airport</div>
+          <div class="pref-edit-value" id="pref-val-airport">SFO — San Francisco</div>
+        </div>
+        <button class="pref-edit-btn" onclick="editPref('airport','Home airport','SFO — San Francisco')">Change</button>
+      </div>
+    </div>
+
+    <!-- Personal style (editable) -->
+    <div class="prefs-section">
+      <div class="prefs-section-label">Personal style</div>
+      <div class="pref-edit-row">
+        <div class="pref-edit-row-content">
+          <div class="pref-edit-label">Travel style</div>
+          <div class="pref-edit-value" id="pref-val-style">Boutique / independent</div>
+        </div>
+        <button class="pref-edit-btn" onclick="editPref('style','Travel style','Boutique / independent')">Change</button>
+      </div>
+      <div class="pref-edit-row">
+        <div class="pref-edit-row-content">
+          <div class="pref-edit-label">Dietary</div>
+          <div class="pref-edit-value" id="pref-val-dietary">Pescatarian · local cuisine</div>
+        </div>
+        <button class="pref-edit-btn" onclick="editPref('dietary','Dietary','Pescatarian · local cuisine')">Change</button>
+      </div>
+      <div class="pref-edit-row">
+        <div class="pref-edit-row-content">
+          <div class="pref-edit-label">Pace</div>
+          <div class="pref-edit-value" id="pref-val-pace">Active mornings</div>
+        </div>
+        <button class="pref-edit-btn" onclick="editPref('pace','Pace','Active mornings')">Change</button>
+      </div>
+      <div class="pref-edit-row">
+        <div class="pref-edit-row-content">
+          <div class="pref-edit-label">Daily budget</div>
+          <div class="pref-edit-value" id="pref-val-budget">€300–500 / day</div>
+        </div>
+        <button class="pref-edit-btn" onclick="editPref('budget','Daily budget','€300–500 / day')">Change</button>
+      </div>
+      <div class="pref-edit-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <div class="pref-edit-label">Interests</div>
+        <div class="interests-row" id="interests-row">
+          <span class="interest-tag">Architecture</span>
+          <span class="interest-tag">Design</span>
+          <span class="interest-tag">Contemporary art</span>
+          <span class="interest-tag">Great coffee</span>
+          <span class="interest-tag">Hidden gems</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.prefs-sheet-body -->
+</div><!-- /.prefs-sheet -->
+
+<!-- Inline pref editor (reuses existing input pattern) -->
+<div class="alter-sheet-backdrop" id="pref-edit-backdrop" onclick="closePrefEditor()"></div>
+<div class="alter-sheet" id="pref-edit-sheet">
+  <div class="alter-sheet-handle"></div>
+  <div class="alter-sheet-header">
+    <span id="pref-edit-field-label">Edit preference</span>
+    <button onclick="closePrefEditor()">Cancel</button>
+  </div>
+  <div class="alter-sheet-body" style="padding-top:8px">
+    <input type="text" class="alter-instruction" id="pref-edit-input" style="padding:10px 12px;resize:none" autocomplete="off">
+    <button class="btn btn-primary" onclick="savePrefEdit()">Save</button>
+    <div id="pref-edit-status" class="alter-status"></div>
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -3190,6 +3548,120 @@ function saveEditActivity() {
   closeEditActivity();
   renderLiveItinerary(currentItinerary, currentItinerary === soloTravelFixture);
 }
+
+// ── Phase 7: Butler Remembers — R1 / R2 / R3 (YOU-895) ──
+
+var RETURNING_SESSION_KEY = 'jeevy_returning_mode';
+var _prefEditKey = null;
+
+function setReturningMode(on) {
+  if (on) {
+    document.body.classList.add('returning-mode');
+    try { sessionStorage.setItem(RETURNING_SESSION_KEY, '1'); } catch (_) {}
+  } else {
+    document.body.classList.remove('returning-mode');
+    try { sessionStorage.removeItem(RETURNING_SESSION_KEY); } catch (_) {}
+  }
+  var toggle = document.getElementById('returning-toggle');
+  if (toggle) toggle.checked = on;
+}
+
+// R3: Prefs sheet open/close
+function openPrefsSheet() {
+  document.getElementById('prefs-sheet-backdrop').classList.add('open');
+  var sheet = document.getElementById('prefs-sheet');
+  sheet.style.display = 'flex';
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      sheet.classList.add('open');
+      sheet.focus();
+    });
+  });
+}
+
+function closePrefsSheet() {
+  var backdrop = document.getElementById('prefs-sheet-backdrop');
+  var sheet = document.getElementById('prefs-sheet');
+  backdrop.classList.remove('open');
+  sheet.classList.remove('open');
+  setTimeout(function() { sheet.style.display = ''; }, 280);
+}
+
+// R3: Inline pref editor
+function editPref(key, label, currentVal) {
+  _prefEditKey = key;
+  document.getElementById('pref-edit-field-label').textContent = label;
+  document.getElementById('pref-edit-input').value = currentVal;
+  document.getElementById('pref-edit-status').textContent = '';
+  var backdrop = document.getElementById('pref-edit-backdrop');
+  var sheet = document.getElementById('pref-edit-sheet');
+  backdrop.classList.add('open');
+  sheet.style.display = 'flex';
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      sheet.classList.add('open');
+      document.getElementById('pref-edit-input').focus();
+    });
+  });
+}
+
+function closePrefEditor() {
+  var backdrop = document.getElementById('pref-edit-backdrop');
+  var sheet = document.getElementById('pref-edit-sheet');
+  backdrop.classList.remove('open');
+  sheet.classList.remove('open');
+  setTimeout(function() { sheet.style.display = ''; _prefEditKey = null; }, 280);
+}
+
+function savePrefEdit() {
+  if (!_prefEditKey) return;
+  var newVal = document.getElementById('pref-edit-input').value.trim();
+  if (!newVal) return;
+  var valEl = document.getElementById('pref-val-' + _prefEditKey);
+  if (valEl) valEl.textContent = newVal;
+  var status = document.getElementById('pref-edit-status');
+  status.textContent = '✓ Saved';
+  status.style.color = 'var(--success)';
+  setTimeout(closePrefEditor, 700);
+}
+
+// R2: Rationale chip expand/collapse (distinct from S9 toggleRationale)
+function toggleRationaleChip(id) {
+  var expand = document.getElementById(id);
+  if (!expand) return;
+  var open = expand.classList.toggle('open');
+  var chip = document.querySelector('[data-expands="' + id + '"]');
+  if (chip) chip.setAttribute('aria-expanded', String(open));
+}
+
+// Keyboard support for R2 rationale chips
+document.querySelectorAll('.rationale-chip').forEach(function(chip) {
+  chip.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      chip.click();
+    }
+  });
+});
+
+// Keyboard dismiss for prefs sheet (Escape)
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var prefSheet = document.getElementById('prefs-sheet');
+    var editSheet = document.getElementById('pref-edit-sheet');
+    if (editSheet && editSheet.classList.contains('open')) { closePrefEditor(); return; }
+    if (prefSheet && prefSheet.classList.contains('open')) { closePrefsSheet(); }
+  }
+});
+
+// Init: restore returning mode from sessionStorage
+(function initReturningMode() {
+  try {
+    if (sessionStorage.getItem(RETURNING_SESSION_KEY) === '1') {
+      setReturningMode(true);
+    }
+  } catch (_) {}
+})();
 </script>
 </body>
 </html>
