@@ -5,6 +5,7 @@ import { runDailyAtRiskScan } from "./lib/save-interview.js";
 import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
 import { registerConciergeAlterRoute } from "./routes/concierge-alter.js";
 import { registerConciergeItineraryRoute } from "./routes/concierge-itinerary.js";
+import { registerConciergeProfileRoute } from "./routes/concierge-profile.js";
 import { registerSaveInterviewRoutes } from "./routes/save-interview.js";
 import { registerStripeWebhookRoute } from "./routes/stripe-webhook.js";
 
@@ -19,6 +20,8 @@ export type Env = {
   ENTITLEMENTS_KV: KVNamespace;
   // Save-interview bindings — see wrangler.toml for provisioning instructions
   INTERVIEWS_KV: KVNamespace;
+  // Concierge user memory: trip history + preference signals (YOU-893).
+  CONCIERGE_KV?: KVNamespace;
   RESEND_API_KEY: string;
   SCHEDULING_LINK: string;
   FROM_EMAIL: string;
@@ -130,6 +133,7 @@ registerSaveInterviewRoutes(app);
 // AI butler: conversational travel itinerary planner (YOU-681)
 registerConciergeItineraryRoute(app);
 registerConciergeAlterRoute(app);
+registerConciergeProfileRoute(app);
 
 // Protected routes require Clerk auth + active Stripe subscription
 const protected_ = app.use("/api/protected/*", clerkAuthMiddleware(), entitlementGuard());

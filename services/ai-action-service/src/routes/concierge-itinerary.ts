@@ -24,6 +24,7 @@ import type { Hono } from "hono";
 import type { Env, Variables } from "../index.js";
 import { enrichItineraryImages } from "../lib/image-utils.js";
 import type { ChatMessage, Itinerary, RespondResult } from "../lib/itinerary-types.js";
+import { buildMemoryContext, getUserProfile, saveTrip } from "../lib/user-memory.js";
 import { callGeminiVertex } from "../lib/vertex-gemini.js";
 import { extractUrls, fetchUrlContent } from "../lib/url-fetch.js";
 
@@ -237,6 +238,7 @@ async function callProvider(
 
 interface ItineraryRequestBody {
   messages: ChatMessage[];
+  userId?: string;
 }
 
 interface AlterRequestBody {
@@ -279,6 +281,14 @@ export function registerConciergeItineraryRoute(
       );
     }
 
+    // Load user memory (best-effort: no-op if KV unavailable or userId absent).
+    const userId = typeof body.userId === "string" && body.userId.trim() ? body.userId.trim() : null;
+    const userProfile = userId && c.env.CONCIERGE_KV
+      ? await getUserProfile(c.env.CONCIERGE_KV, userId)
+      : null;
+    const memoryContext = buildMemoryContext(userProfile);
+    const systemPrompt = memoryContext ? SYSTEM_PROMPT + memoryContext : SYSTEM_PROMPT;
+
     let messages: ChatMessage[];
     try {
       messages = await injectFetchedUrls(body.messages);
@@ -288,7 +298,7 @@ export function registerConciergeItineraryRoute(
 
     let result: RespondResult;
     try {
-      result = await callProvider(messages, c.env, SYSTEM_PROMPT);
+      result = await callProvider(messages, c.env, systemPrompt);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const provider = prov.anthropic ? "Anthropic" : "Vertex AI";
@@ -308,7 +318,13 @@ export function registerConciergeItineraryRoute(
     // Guard: an itinerary with 0 days is a malformed LLM response — treat as null
     // so the conversation continues rather than rendering an empty itinerary shell.
     const finalItinerary = (enriched?.days?.length ?? 0) > 0 ? enriched : null;
-    return c.json({ reply: result.reply, itinerary: finalItinerary });
+
+    // Persist the completed itinerary to user memory (fire-and-forget).
+    if (finalItinerary && userId && c.env.CONCIERGE_KV) {
+      c.executionCtx.waitUntil(saveTrip(c.env.CONCIERGE_KV, userId, finalItinerary));
+    }
+
+    return c.json({ reply: result.reply, itinerary: finalItinerary, userId: userId ?? undefined });
   });
 
   // POST /concierge/itinerary/alter — edit an existing itinerary

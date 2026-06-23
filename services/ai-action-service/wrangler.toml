@@ -48,6 +48,13 @@ binding = "INTERVIEWS_KV"
 id = "49051f56c5294cbb8751c7d4af6aa83f"
 preview_id = "49051f56c5294cbb8751c7d4af6aa83f"
 
+# KV namespace for concierge user memory: trip history + preference signals.
+# Provisioned 2026-06-23 for YOU-893.
+[[kv_namespaces]]
+binding = "CONCIERGE_KV"
+id = "912311d3f44046038ecb82164b90290f"
+preview_id = "912311d3f44046038ecb82164b90290f"
+
 # --- Named environments ---
 # Deploy: `wrangler deploy --env staging` / `wrangler deploy --env production`
 # Secrets: `wrangler secret put POSTHOG_API_KEY --env staging` (after first deploy)
@@ -71,6 +78,10 @@ id = "fed8625627b042f0a07069d7bb03a5f1"
 binding = "INTERVIEWS_KV"
 id = "9e12aea1abcb4e668633abffee66b56c"
 
+[[env.staging.kv_namespaces]]
+binding = "CONCIERGE_KV"
+id = "3869105e18f240029c504a3762814531"
+
 [env.production]
 name = "ai-action-service-production"
 
@@ -89,3 +100,7 @@ id = "f8c6bfb4943e436d8591691d22b7037b"
 [[env.production.kv_namespaces]]
 binding = "INTERVIEWS_KV"
 id = "68e68d7db26c4bda8c97bb222c3d9018"
+
+[[env.production.kv_namespaces]]
+binding = "CONCIERGE_KV"
+id = "4c911a21b40c49408a1c81565ff774b0"
