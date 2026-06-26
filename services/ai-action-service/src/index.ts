@@ -5,6 +5,7 @@ import { runDailyAtRiskScan } from "./lib/save-interview.js";
 import { clerkAuthMiddleware, entitlementGuard } from "./middleware/entitlement.js";
 import { registerConciergeAlterRoute } from "./routes/concierge-alter.js";
 import { registerConciergeItineraryRoute } from "./routes/concierge-itinerary.js";
+import { registerConciergeMe } from "./routes/concierge-me.js";
 import { registerConciergeProfileRoute } from "./routes/concierge-profile.js";
 import { registerSaveInterviewRoutes } from "./routes/save-interview.js";
 import { registerStripeWebhookRoute } from "./routes/stripe-webhook.js";
@@ -36,6 +37,10 @@ export type Env = {
   // Interim provider: Gemini on Vertex AI (active until Anthropic key is approved).
   VERTEX_SA_JSON?: string;   // GCP service-account JSON blob
   GCP_PROJECT_ID?: string;   // GCP project that has Vertex AI enabled
+  // YOU-913 Phase 8: Neon Postgres connection string for durable per-account butler persistence.
+  // Set via: wrangler secret put NEON_DATABASE_URL --env production
+  // Schema: db/schema.sql
+  NEON_DATABASE_URL?: string;
 };
 
 export type Variables = {
@@ -95,11 +100,15 @@ async function conciergeRateLimit(ip: string, kv: KVNamespace): Promise<boolean>
 }
 
 // Auth + rate-limit middleware for /concierge/* (F3 — YOU-866).
-// OPTIONS preflight is exempt from auth; CORS headers are set by the cors() middleware above.
+// /concierge/me/* is exempt: those routes carry their own Clerk JWT auth (YOU-913).
+// OPTIONS preflight is always exempt; CORS headers are set by the cors() middleware above.
 app.use("/concierge/*", async (c, next) => {
   if (c.req.method === "OPTIONS") return next();
 
-  // Accept the demo-page header (x-concierge-secret) or the React-app header (x-internal-api-secret).
+  // Authenticated routes handle their own auth via Clerk JWT middleware.
+  if (c.req.path.startsWith("/concierge/me")) return next();
+
+  // All other /concierge/* routes require the shared demo secret.
   const provided = c.req.header("x-concierge-secret") ?? c.req.header("x-internal-api-secret");
   const expected = c.env.CONCIERGE_DEMO_SECRET;
   if (!expected || !provided || provided !== expected) {
@@ -133,6 +142,11 @@ registerSaveInterviewRoutes(app);
 // AI butler: conversational travel itinerary planner (YOU-681)
 registerConciergeItineraryRoute(app);
 registerConciergeAlterRoute(app);
+
+// YOU-913 Phase 8: authenticated per-account butler endpoints (Clerk JWT + Neon).
+registerConciergeMe(app);
+
+// Legacy demo profile routes (KV-backed, CONCIERGE_DEMO_SECRET auth).
 registerConciergeProfileRoute(app);
 
 // Protected routes require Clerk auth + active Stripe subscription

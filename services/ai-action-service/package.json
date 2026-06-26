@@ -15,6 +15,7 @@
     "@jeevy/analytics": "workspace:*",
     "@jeevy/contracts": "workspace:*",
     "@jeevy/entitlement": "workspace:*",
+    "@neondatabase/serverless": "^1.1.0",
     "hono": "^4.6.20"
   },
   "devDependencies": {
