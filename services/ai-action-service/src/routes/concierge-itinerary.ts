@@ -20,12 +20,19 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { neon } from "@neondatabase/serverless";
 import type { Hono } from "hono";
 import type { Env, Variables } from "../index.js";
 import { enrichItineraryImages } from "../lib/image-utils.js";
 import type { ChatMessage, Itinerary, RespondResult } from "../lib/itinerary-types.js";
+import {
+  buildMemoryContext as buildNeonMemoryContext,
+  getProfile,
+  saveTrip as neonSaveTrip,
+} from "../lib/neon-butler.js";
 import { buildMemoryContext, getUserProfile, saveTrip } from "../lib/user-memory.js";
 import { callGeminiVertex } from "../lib/vertex-gemini.js";
+import { verifyClerkJwt } from "@jeevy/entitlement";
 import { extractUrls, fetchUrlContent } from "../lib/url-fetch.js";
 
 // ---------------------------------------------------------------------------
@@ -285,12 +292,33 @@ export function registerConciergeItineraryRoute(
       );
     }
 
-    // Load user memory (best-effort: no-op if KV unavailable or userId absent).
-    const userId = typeof body.userId === "string" && body.userId.trim() ? body.userId.trim() : null;
-    const userProfile = userId && c.env.CONCIERGE_KV
-      ? await getUserProfile(c.env.CONCIERGE_KV, userId)
-      : null;
-    const memoryContext = buildMemoryContext(userProfile);
+    // Resolve userId: prefer Clerk JWT (Phase 8 real auth), fall back to body param (demo compat).
+    let authenticatedUserId: string | null = null;
+    const authHeader = c.req.header("authorization");
+    if (authHeader?.startsWith("Bearer ") && c.env.CLERK_JWKS_URL) {
+      try {
+        const claims = await verifyClerkJwt(authHeader.slice(7), c.env.CLERK_JWKS_URL);
+        authenticatedUserId = claims.sub;
+      } catch {
+        // Not a valid Clerk JWT — continue in demo mode
+      }
+    }
+
+    const demoUserId = typeof body.userId === "string" && body.userId.trim() ? body.userId.trim() : null;
+    const userId = authenticatedUserId ?? demoUserId;
+
+    // Load memory context: Neon for authenticated users, KV for demo mode.
+    let memoryContext = "";
+    if (userId) {
+      if (authenticatedUserId && c.env.NEON_DATABASE_URL) {
+        const sql = neon(c.env.NEON_DATABASE_URL);
+        const profile = await getProfile(sql, authenticatedUserId).catch(() => null);
+        memoryContext = buildNeonMemoryContext(profile);
+      } else if (c.env.CONCIERGE_KV) {
+        const kvProfile = await getUserProfile(c.env.CONCIERGE_KV, userId);
+        memoryContext = buildMemoryContext(kvProfile);
+      }
+    }
     const systemPrompt = memoryContext ? SYSTEM_PROMPT + memoryContext : SYSTEM_PROMPT;
 
     let messages: ChatMessage[];
@@ -323,9 +351,14 @@ export function registerConciergeItineraryRoute(
     // so the conversation continues rather than rendering an empty itinerary shell.
     const finalItinerary = (enriched?.days?.length ?? 0) > 0 ? enriched : null;
 
-    // Persist the completed itinerary to user memory (fire-and-forget).
-    if (finalItinerary && userId && c.env.CONCIERGE_KV) {
-      c.executionCtx.waitUntil(saveTrip(c.env.CONCIERGE_KV, userId, finalItinerary));
+    // Persist completed itinerary (fire-and-forget): Neon for auth'd, KV for demo.
+    if (finalItinerary && userId) {
+      if (authenticatedUserId && c.env.NEON_DATABASE_URL) {
+        const sql = neon(c.env.NEON_DATABASE_URL);
+        c.executionCtx.waitUntil(neonSaveTrip(sql, authenticatedUserId, finalItinerary));
+      } else if (c.env.CONCIERGE_KV) {
+        c.executionCtx.waitUntil(saveTrip(c.env.CONCIERGE_KV, userId, finalItinerary));
+      }
     }
 
     return c.json({ reply: result.reply, itinerary: finalItinerary, userId: userId ?? undefined });
