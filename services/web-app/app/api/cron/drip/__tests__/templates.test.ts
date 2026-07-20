@@ -22,7 +22,7 @@ describe("renderDrip", () => {
 
   for (const step of steps) {
     it(`step ${step} renders subject and non-empty text`, () => {
-      const result = renderDrip(step, { ...vars, pricing: step === 5 ? "$29/month" : undefined });
+      const result = renderDrip(step, { ...vars, ...(step === 5 ? { pricing: "$29/month" } : {}) });
       expect(result.subject).toBeTruthy();
       expect(result.text.length).toBeGreaterThan(100);
       expect(result.text).toContain("Alex");

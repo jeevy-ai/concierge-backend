@@ -105,7 +105,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       firstName,
       product: productName,
       founderName,
-      proposedTime,
+      ...(proposedTime !== undefined ? { proposedTime } : {}),
     });
 
     try {

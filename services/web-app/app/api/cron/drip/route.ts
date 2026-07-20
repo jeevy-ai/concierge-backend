@@ -178,7 +178,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const { subject, text } = renderDrip(stepDue, {
       firstName: lead.firstName,
       productDomain,
-      pricing,
+      ...(pricing !== undefined ? { pricing } : {}),
     });
 
     try {

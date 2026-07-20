@@ -60,7 +60,7 @@ export function track<K extends AnalyticsEventName>(
     return;
   }
 
-  const isDev = (globalThis as Record<string, unknown>).__ANALYTICS_DEV__ === true;
+  const isDev = (globalThis as { __ANALYTICS_DEV__?: boolean }).__ANALYTICS_DEV__ === true;
   if (isDev) {
     const schema = analyticsEventSchemas[event];
     const result = schema.safeParse(props);

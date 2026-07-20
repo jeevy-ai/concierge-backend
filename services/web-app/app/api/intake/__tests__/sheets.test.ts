@@ -54,14 +54,14 @@ describe("appendToSheet row shape", () => {
   it("appends to Tracker!A:Y range", async () => {
     await appendToSheet(PAYLOAD);
 
-    const call = appendMock.mock.calls[0][0] as { range: string };
+    const call = appendMock.mock.calls[0]?.[0] as { range: string };
     expect(call.range).toBe("Tracker!A:Y");
   });
 
   it("writes exactly 25 columns", async () => {
     await appendToSheet(PAYLOAD);
 
-    const call = appendMock.mock.calls[0][0] as { requestBody: { values: unknown[][] } };
+    const call = appendMock.mock.calls[0]?.[0] as { requestBody: { values: [unknown[]] } };
     const row = call.requestBody.values[0];
     expect(row).toHaveLength(25);
   });
@@ -69,7 +69,7 @@ describe("appendToSheet row shape", () => {
   it("lowercases email (col D, index 3)", async () => {
     await appendToSheet(PAYLOAD);
 
-    const call = appendMock.mock.calls[0][0] as { requestBody: { values: unknown[][] } };
+    const call = appendMock.mock.calls[0]?.[0] as { requestBody: { values: [unknown[]] } };
     const row = call.requestBody.values[0];
     expect(row[3]).toBe("jane@example.com");
   });
@@ -77,7 +77,7 @@ describe("appendToSheet row shape", () => {
   it("sets stage=intake (col L, index 11)", async () => {
     await appendToSheet(PAYLOAD);
 
-    const call = appendMock.mock.calls[0][0] as { requestBody: { values: unknown[][] } };
+    const call = appendMock.mock.calls[0]?.[0] as { requestBody: { values: [unknown[]] } };
     const row = call.requestBody.values[0];
     expect(row[11]).toBe("intake");
   });
@@ -85,7 +85,7 @@ describe("appendToSheet row shape", () => {
   it("sets owner=CEO (col M, index 12)", async () => {
     await appendToSheet(PAYLOAD);
 
-    const call = appendMock.mock.calls[0][0] as { requestBody: { values: unknown[][] } };
+    const call = appendMock.mock.calls[0]?.[0] as { requestBody: { values: [unknown[]] } };
     const row = call.requestBody.values[0];
     expect(row[12]).toBe("CEO");
   });
@@ -93,7 +93,7 @@ describe("appendToSheet row shape", () => {
   it("sets last_touch_at=submittedAt (col X, index 23)", async () => {
     await appendToSheet(PAYLOAD);
 
-    const call = appendMock.mock.calls[0][0] as { requestBody: { values: unknown[][] } };
+    const call = appendMock.mock.calls[0]?.[0] as { requestBody: { values: [unknown[]] } };
     const row = call.requestBody.values[0];
     expect(row[23]).toBe(PAYLOAD.submittedAt);
   });
@@ -101,7 +101,7 @@ describe("appendToSheet row shape", () => {
   it("serializes goals with other field (col F, index 5)", async () => {
     await appendToSheet(PAYLOAD);
 
-    const call = appendMock.mock.calls[0][0] as { requestBody: { values: unknown[][] } };
+    const call = appendMock.mock.calls[0]?.[0] as { requestBody: { values: [unknown[]] } };
     const row = call.requestBody.values[0];
     expect(row[5]).toBe(JSON.stringify({ goals: PAYLOAD.goals, other: "custom goal" }));
   });
@@ -109,7 +109,7 @@ describe("appendToSheet row shape", () => {
   it("serializes calendars with other field (col G, index 6)", async () => {
     await appendToSheet(PAYLOAD);
 
-    const call = appendMock.mock.calls[0][0] as { requestBody: { values: unknown[][] } };
+    const call = appendMock.mock.calls[0]?.[0] as { requestBody: { values: [unknown[]] } };
     const row = call.requestBody.values[0];
     expect(row[6]).toBe(JSON.stringify({ calendars: PAYLOAD.calendars, other: "Fantastical" }));
   });
@@ -117,7 +117,7 @@ describe("appendToSheet row shape", () => {
   it("serializes messaging tools with other field (col H, index 7)", async () => {
     await appendToSheet(PAYLOAD);
 
-    const call = appendMock.mock.calls[0][0] as { requestBody: { values: unknown[][] } };
+    const call = appendMock.mock.calls[0]?.[0] as { requestBody: { values: [unknown[]] } };
     const row = call.requestBody.values[0];
     expect(row[7]).toBe(JSON.stringify({ tools: PAYLOAD.messagingTools, other: "Teams" }));
   });
@@ -132,7 +132,7 @@ describe("appendToSheet row shape", () => {
 
     await appendToSheet(payloadNoOthers);
 
-    const call = appendMock.mock.calls[0][0] as { requestBody: { values: unknown[][] } };
+    const call = appendMock.mock.calls[0]?.[0] as { requestBody: { values: [unknown[]] } };
     const row = call.requestBody.values[0];
     expect(row[5]).toBe(JSON.stringify({ goals: PAYLOAD.goals, other: null }));
     expect(row[6]).toBe(JSON.stringify({ calendars: PAYLOAD.calendars, other: null }));
